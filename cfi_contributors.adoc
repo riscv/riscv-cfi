@@ -1,0 +1,6 @@
+== Contributors
+
+This RISC-V specification has been contributed to directly or indirectly by (in alphabetical order):
+
+[%hardbreaks]
+Andrew Waterman, Nick Kossifidis, George Christou, Vedvyas Shanbhogue

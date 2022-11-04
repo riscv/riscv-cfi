@@ -1,0 +1,434 @@
+[[backward]]
+== Backward-edge control-flow integrity
+
+A shadow stack is a second stack used to push the link register if it needs to
+be spilled to make a new procedure call. Leaf functions do not need to spill the
+link register. A shadow stack is active for a privilege level `x` if `xBCFIEN`
+is 1.  The shadow stack, similar to the regular stack, grows downwards, i.e.
+from higher addresses to lower addresses. Each entry on the shadow stack is
+`XLEN` wide and holds the link register value. The `ssp` points to the top of
+the shadow stack, i.e. address of the last element pushed on the shadow stack.
+
+[NOTE]
+====
+Compilers when generating code for a CFI enabled program must protect the link
+register, e.g. `x1` and/or `x5`, from arbitrary modification by not emitting
+unsafe code sequences.
+====
+
+== Backward-edge CFI instruction encoding
+
+The backward-edge CFI extension introduces the following instructions for shadow
+stack operations. All instructions are encoded using the SYSTEM major opcode and
+using the `mop.r` and `mop.rr` instructions defined by the Zimops extension.
+
+[width=100%]
+[%header, cols="6,<6,>6,<3,>3,<3,>3,<3,>3,<3,>3", grid=rows, frame=none]
+|===
+|   `(mop.r)`   |`31`    |      `20`    |`19` | `15`|`14` | `12` |`11` | `7`|`6` | `0`
+|  mnemonic  2+^|`1.00..0111..`      2+^|`rs1`   2+^|`func3`  2+^|`rd`   2+^|`opcode`
+|`sspush`    2+^|`100000011100`      2+^|`src`   2+^|`100`    2+^|`0`    2+^|`1110011`
+|`ssppop`    2+^|`100000011100`      2+^|`0`     2+^|`100`    2+^|`dst`  2+^|`1110011`
+|`ssprr`     2+^|`100000011101`      2+^|`0`     2+^|`100`    2+^|`dst`  2+^|`1110011`
+|            2+^|`12`                2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
+|===
+
+
+[width=100%]
+[%header, cols="6,<3,>3,<3,>3,<3,>3,<3,>3,<3,>3,<3,>3", grid=rows, frame=none]
+|===
+|`(mop.rr)`     |`31`  |  `25`|`24`|`20`|`19` | `15`|`14` |  `12`|`11` | `7`|`6` | `0`
+|mnemonic    2+^|`1.00..1` 2+^|`rs2` 2+^|`rs1`   2+^|`func3`  2+^|`rd`   2+^|`opcode` 
+|`ssamoswap` 2+^|`1000001` 2+^|`src` 2+^|`addr`  2+^|`100`    2+^|`dst`  2+^|`1110011`
+|`sschkra`   2+^|`1000101` 2+^|`1`   2+^|`5`     2+^|`100`    2+^|`0`    2+^|`1110011`
+|            2+^|`7`       2+^|`5`   2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
+|===
+
+If xBCFIEN is 0, the behavior of all backward-edge CFI instructions is as
+defined by the Zimops extension and the instructions just write 0 to [rd].
+
+[NOTE]
+====
+When programs using shadow stack instructions are installed on a machine that
+supports the CFI extensions but the operating system installed does not enable
+the CFI extensions, the program continues to function due to Zimops defined
+behavior of writing 0 to [rd] and not causing an illegal-instruction exception.
+
+When programs using shadow stack instructions are installed on a machine that
+does not support the CFI extensions but support the Zimops extension, the
+program continues to function due to Zimops defined behavior of writing 0 to
+[rd] and not causing an illegal-instruction exception.
+On machines that do not support Zimops extension, the instructions cause an
+illegal-instruction exception. Installing programs that use the shadow stack
+instructions on such machines is not supported.
+====
+
+=== Push to and Pop from the shadow stack
+
+A push operation is defined as decrement of the `ssp` by `XLEN` followed by a
+write of the link register at the new top of the shadow stack. A pop operation
+is defined as a `XLEN` wide read from the current top of the shadow stack
+followed by an increment of the `ssp`.
+
+To push a link register on the shadow stack, the CFI extension provides
+`sspush` instruction. To pop a link register from the shadow stack, the CFI
+extension provides `sspop` instruction.
+
+[NOTE]
+====
+Programs operating in shadow stack mode store the return address to the data
+stack as well as the shadow stack in the function prologue. Such programs when
+returning from the function load the link register from the data stack and load
+a shadow copy of the link register from the shadow stack. The two values are
+then compared (using the sschkra instruction that is discussed later). If the
+values do not match it is indicative of a shadow stack violation and causes an
+illegal-instruction exception. The function prologue and epilog of a function
+using shadow stacks is as follows:
+
+    function_entry:
+        sspush x1      # push link register x1 on shadow stack
+         :
+         : 
+        sspop x5       # pop from shadow stack into x5
+        sschkra x1, x5 # compare link register x1 to shadow 
+                       # link register x5; faults if not same
+        ret
+
+When x1 is used by the ABI as the link register, the x5 may be used to load the
+shadow link register value from the shadow stack. Alternatively, if the ABI uses
+x5 as the link register, then the x1 register may be used as the shadow link
+register. 
+
+A leaf function i.e. a function that does not itself make function calls does
+not need to push the link register to the shadow stack or pop it from the shadow
+stack. The return value may be held in the link register itself for the duration
+of the function execution.
+
+In the RVI psABI, the x1 register is designated as the link register and x5
+register is designated as a temporary register. SInce the shadow link register
+is loaded at the tail of the function, prior to return, the x5 register being
+used as the shadow link register does not impose a burden on the compiler as the
+x5 register, being a temporary register that is not preserved across a call, is
+usually free for use at the tail of the function.
+
+Programs operating in the control stack mode may store the return address only
+to the shadow stack in the function prologue. Such functions when returning from
+the function load the link register value from the shadow stack. Such programs
+may either use the x1 or x5 register, depending on their ABI, as the link
+register. The hardware return-address prediction stacks detect the use of x1/x5
+as the rd and x1/x5 as the source for a JALR instruction to infer if the JALR is
+used for a call or a return semantic for the purposes of prediction. To support
+both options the CFI extension provides the x1 and x5 variants of the shadow
+stack load and store.
+====
+
+`sspop` performs a load identically to the existing `LOAD` instruction with the
+difference that the base is implicitly `ssp`, the width is implicitly `XLEN`.
+`sspush` performs a store identically to the existing `STORE` instruction with
+the difference that the base is implicitly `ssp`, the width is implicitly `XLEN`.
+
+The `sspush` and `sspop` require the virtual address in `ssp` to have a shadow stack
+attribute (see Shadow Stack Memory Protection). 
+
+If the virtual address in `ssp` is not `XLEN` aligned then the instructions cause a
+load or store/AMO address-misaligned exception.
+
+[NOTE]
+====
+Misaligned accesses to shadow stack are not required and enforcing alignment is
+more secure to detect errors in the program.
+====
+
+The operation of the `sspush` instructions is as follows:
+
+.`sspush` operation
+[source, text]
+----
+If xBCFIEN != 0
+    [ssp] = [ssp] - (XLEN/8)   # decrement ssp by XLEN/8
+   *[ssp] = [src]              # Store src value to address in ssp
+else
+    [dst] = 0
+endif`
+----
+
+The operation of the `sspop` instructions is as follows:
+
+.`sspop` operation
+[source, text]
+----
+If xBCFIEN != 0
+    dst   = *[ssp]             # Load dst from address in ssp
+    [ssp] = [ssp] + (XLEN/8)   # increment ssp by XLEN/8
+else
+    [dst] = 0;
+endif
+----
+
+[NOTE]
+====
+Store to load forwarding is a common technique employed by high performance
+processor implementations. CFI implementations may restrict forwarding from a
+non-shadow-stack store to a `sspop` instruction. A non-shadow-stack store causes a
+fault if done to a page mapped as a shadow stack. However such determination may
+be delayed till the PTE has been examined and thus may be used to transiently
+forward the data from such stores to a `sspop`.
+====
+
+[NOTE]
+====
+A common operation performed on stacks is to unwind them to support constructs
+like setjmp/longjmp, C++ exception handling, etc. A program that uses shadow
+stacks must unwind the shadow stack in addition to the stack used to store data.
+The unwind function must verify that it does not accidentally unwind past the
+bounds of the shadow stack. Shadow stacks are expected to be bounded on each end
+using guard pages i.e. pages that do not have a shadow stack attribute. To
+detect if the unwind occurs past the bounds of the shadow stack the unwind may
+be done in maximal increments of 4 KiB and testing for the ssp to be still
+pointing to a shadow stack page or has unwound into the guard page. The
+following examples illustrate use of backward-edge CFI instructions to unwind a
+shadow stack.
+
+[literal]
+setjmp() {
+    :
+    :
+    // read and save top of stack pointer to jmp_buf
+    asm(“ssprr %0” : “=r”(cur_ssp):);
+    jmp_buf->saved_ssp = cur_ssp;
+    :
+    :
+}
+longjmp() {
+    :
+    // Read current shadow stack pointer and 
+    // compute number of call frames to unwind
+    asm(“ssprr %0” : “=r”(cur_ssp):);
+    // Skip the unwind if backward-edge CFI not active
+    asm(“beqz %0, 1f” : “=r”(cur_ssp):);
+    num_unwind = jmp_buf->saved_ssp - cur_ssp;
+    // Unwind the frames in a loop
+    while ( num_unwind > 0 ) {
+        step = ( num_unwind >= 4096 ) ? 4096 : num_unwind;
+        cur_ssp += step;
+        num_unwind -= step;
+        // write the ssp register with unwound value
+        asm(“csrw %0, $ssp_csr_num” : “=r”(cur_ssp):);
+        // Test if unwound past the shadow stack bounds
+        asm(“sspush x5”);
+        asm(“sspop  x5”);
+    }
+1f:
+    :
+}
+====
+
+
+=== Read `ssp` into a register
+
+The `ssprr` instruction is provided to move the contents of `ssp` to the destination
+register. 
+
+The operation of the `ssprr` instructions is as follows:
+
+.`ssprr` operation
+[source, text]
+----
+If xBCFIEN != 0    
+    [dst] = [ssp]
+else
+    [dst] = 0;
+endif
+----
+
+[NOTE]
+====
+The property of Zimops writing 0 to the rd when the extension using Zimops is
+not present or not active may be used by such functions to skip over unwind
+actions by dynamically detecting if the backward-edge CFI extension is active.
+
+An example sequence such as the following may be used:
+
+[literal]
+    ssprr t0                  # mv ssp to t0
+    beqz bcfi_not_active      # zero is not a valid shadow stack
+                              # pointer by convention
+    # Shadow stacks active
+    :
+    :
+bcfi_not_active:
+====
+
+
+=== Verifying return address
+
+Programs operating with a shadow stack push the return address onto the data
+stack as well as the shadow stack in the function prologue. Such programs when
+returning from the function pop the link register from the data stack and pop a
+shadow copy of the link register from the shadow stack. The two values are then
+compared. If the values do not match it is indicative of a corruption of the
+return address variable and the program causes an illegal instruction exception.
+
+When x1 is used by the ABI as the link register, the x5 may be used to hold the
+shadow link register value from the shadow stack. Alternatively, if the ABI uses
+x5 as the link register, then the x1 register may be used as the shadow link
+register. 
+
+A `sschkra` instruction is provided to perform the comparison. The `sschkra`
+instruction causes an illegal instruction exception if the both of following
+conditions are satisfied:
+
+*  x1 is not equal to x5
+*  `xBCFIEN` is 1 i.e., backward-edge CFI is enabled for the program
+
+
+=== Atomic Swap from a shadow stack location
+
+The CFI extension defines an `ssamoswap` instruction to atomically swap the `XLEN`
+bits of src register with `XLEN` bits on the shadow stack at address in `addr` and
+store the value from address in `src` into register `dst`.
+
+The `ssamoswap` is always sequentially consistent and cannot be reordered with
+earlier or later memory operations from the same hart. 
+
+The `ssamoswap` requires the virtual address in `ssp` to have a shadow stack
+attribute (see Shadow Stack Memory Protection).
+
+If the virtual address is not `XLEN` aligned then the instructions cause a
+store/AMO address-misaligned exception.
+
+The operation of the `ssamoswap` instructions is as follows:
+
+.`ssamoswap` operation
+[source, text]
+----
+If xBCFIEN != 0
+    Perform the following atomically with sequential consistency
+        [dst]  = *[addr]
+       *[addr] = [src]
+else
+    [dst] = 0;
+endif
+----
+
+[NOTE]
+====
+Stack switching is a common operation in user programs as well as supervisor
+programs. When a stack switch is performed the stack pointer of the currently
+active stack is saved into a context data structure and the new stack is made
+active by loading a new stack pointer from a context data structure. 
+
+When shadow stacks are enabled for a program, the program needs to additionally
+switch the shadow stack pointer. The pointer to the top of the deactivated
+shadow stack if held in a context data structure may be susceptible to memory
+corruption vulnerabilities. To protect the pointer value the program may then
+store it at the top of the shadow stack itself and thus create a checkpoint. 
+
+An example sequence to store and restore the shadow stack pointer is as follows:
+
+[literal]
+# The a0 register holds the pointer to top of new shadow
+# to switch to. The current ssp is first pushed on the current
+# shadow stack and the ssp is restored from new shadow stack
+save_shadow_stack_pointer:
+    ssprr  x5                   # read ssp and push value onto
+    sspush x5                   # shadow stack. The [ssp] now
+                                # holds ssp+8. Save away x5
+                                # into a context structure to
+                                # restore later.
+restore_shadow_stack_pointer:
+    ssamoswap t0, a0, x0        # t0=*[ssp] and *[ssp]=0
+    addi      t0, t0, (XLEN/8)  # t0+XLEN/8 must match to a0
+    bnez      t0, a0, crash     # if not crash program
+    csrw      ssp, t0           # setup new ssp
+
+Further the program may enforce an invariant that a shadow stack can be active
+only on one hart by using the ssamoswap when performing the restore from the
+checkpoint such that the checkpointed data is zeroed as part of the restore
+sequence and multiple hart attempt to restore the checkpointed data only one of
+them succeeds.
+====
+
+
+=== Shadow Stack Memory Protection
+
+To protect shadow stack memory the memory is associated with a new attribute -
+Shadow Stack (SS) in the page tables and in the PMP configuration registers.
+When a virtual-memory system is enabled, the SS attribute is obtained from the
+page tables alone. When a virtual-memory system is disabled or not active, the
+SS attribute is obtained from the PMP configuration registers. The rules
+enforced by the SS attribute are specified in this section.
+
+==== When Virtual-Memory system is enabled
+The shadow stack memory is protected using page table attributes such that it
+cannot be written by instructions other than sspush and amossswap. The shadow
+stack can be read using all instructions that load from memory. 
+
+The encoding R=0, W=1, and X=0, is defined as the shadow stack attribute when
+UBCFIEN or SBCFIEN is 1. When UBCFIEN and SBCFIEN are 0, this encoding continues
+to be reserved. The following faults occur:
+
+. If the accessed page has SS attribute set
+.. Stores other than `sspush`, and `ssamoswap` cause write/AMO page faults.
+.. Instructions fetch causes an instruction page fault
+. if the accessed page does not have an SS attribute.
+.. `ssamoswap` causes store/AMO page fault
+.. `sspush` cause store/AMO page fault
+.. `sspop` cause load page fault
+
+The `U` and `SUM` bit enforcement is performed normally. Svpbmt extension and
+Svnapot extensions are supported for shadow stack mappings. 
+
+When a virtual-memory system is enabled, the SS attribute from a matching PMP
+entry is ignored.
+
+[NOTE]
+====
+Operating systems should protect against writeable non-shadow-stack alias
+virtual-addresses mappings being created to the shadow stack physical memory. 
+====
+
+The G-stage address translation and protections are not affected by the shadow
+stack extension. When G-stage page tables are active, the `ssamoswap`, and
+`sspop` instructions require the G-stage page table mapping the accessed memory to
+have read permission and the `ssamoswap` and `sspush` instructions require write
+permission. The SS encoding in the G-stage PTE remains reserved.
+
+[NOTE]
+====
+A future extension may define shadow stack encoding the G-stage page table to
+support use cases such as a hypervisor enforcing shadow stack protections for
+virtual-supervisor.
+====
+
+[NOTE]
+====
+All loads are allowed to read the shadow stack. The shadow stack only holds a
+copy of the link register as saved on the regular stack. The ability to read the
+shadow stack is useful for debug, performance profiling, and other use cases.
+====
+
+==== When Virtual-Memory system is not enabled
+
+When operating in M-mode, the virtual-memory system is not enabled. When
+operating in S-mode or U-mode (including when V=1), if the `satp` has `MODE`
+field set to `Bare`, then the virtual-memory system is not enabled. 
+
+A `pmpsscfg` CSR is a M-mode MXLEN wide register that is used to associate a PMP
+entry with shadow stack attributes. The fields of `pmpsscfg` register are WARL
+and bit `i` corresponds to the PMP entry `i`. When the backward-edge CFI
+extension is not supported the register is read-only zero. When bit `i` is set
+in `pmpsscfg`, the R/W/X permission bits in the corresponding `pmp<i>cfg` must
+be set to `010b`. 
+
+A memory access by `sspush`, `sspop`, and `ssamoswap` instructions to PMP `i`
+succeeds only if bit `i` of `pmpsscfg` is 1 and the R=0, W=1, and X=0 in the
+corresponding `pmp<i>cfg`.
+
+A store to memory by instructions other than `sspush` and `ssamoswap` does not
+succeed if bit `i` of `pmpsscfg` is 1 and the R=0, W=1, and X=0 in the
+corresponding `pmp<i>cfg`. 
+
+Execute access that matches PMP entry `i` does not succeed if bit `i` of
+`pmpsscfg` is 1 and the R=0, W=1, and X=0 in the corresponding `pmp<i>cfg`. 
+

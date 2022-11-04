@@ -1,0 +1,103 @@
+[[CSRs]]
+== Shadow Stack and Landing Pad CSRs
+
+This chapter specifies the CSR state of the Zicfi extension.
+
+=== Machine CFI status (`mcfistatus`)
+
+The `mcfistatus` CSR is a machine-mode WARL read-write 32-bit register used
+to keep track of the processor’s CFI state at M-mode, HS/S-mode and U-mode.
+
+.`mcfistatus` for RV32 and RV64
+[wavedrom, , ]
+....
+{reg: [
+  {bits: 1, name: 'MFCFIEN'},
+  {bits: 1, name: 'MBCFIEN'},
+  {bits: 1, name: 'SFCFIEN'},
+  {bits: 1, name: 'SBCFIEN'},
+  {bits: 1, name: 'UFCFIEN'},
+  {bits: 1, name: 'UBCFIEN'},
+  {bits: 1, name: 'MPELP'},
+  {bits: 1, name: 'SPELP'},
+  {bits: 24, name: 'reserved'},
+], config:{lanes: 2, hspace:1024}}
+....
+
+The `MFCFIEN`, `SFCFIEN`, and `UFCFIEN` are WARL fields that when set to 1 enable
+forward-edge CFI at M-mode, S-mode (if supported), and U-mode (if supported)
+respectively. 
+
+The `MBCFIEN`, `SBCFIEN`, and `UBCFIEN` are WARL fields that when set to 1 enable
+backward-edge CFI at M-mode, S-mode (if supported), and U-mode (if supported)
+respectively. 
+
+The `MPELP` and `SPELP` WARL fields are updated when a trap is taken into M-mode
+or S-mode respectively. When a trap is taken into privilege mode `x`, the `xPELP`
+fields are updated to indicate the type of landing pad that was expected at the
+privilege level at the time of taking the trap. 
+
+The `xPELP` fields are encoded as follows:
+
+* 0 - `NO_LP_EXPECTED` - no landing pad instruction expected
+* 1 - `LP_EXPECTED` - landing pad instruction expected
+
+=== Supervisor and Virtual-supervisor CFI status (`scfistatus`/`vscfistatus`)
+
+The `scfistatus` CSR is a supervisor-mode read-write 32-bit register which is a
+subset of the `mcfistatus` CSR and is used to keep track of the processor’s CFI
+state at HS/S-mode and U-mode. Reading any implemented field, or writing any
+writable field, of `scfistatus` effects a read or write of the homonymous field of
+`mcfistatus`.
+
+.`scfistatus` and `vscfistatus` for RV32 and RV64
+[wavedrom, , ]
+....
+{reg: [
+  {bits: 1, name: 'WPRI'},
+  {bits: 1, name: 'WPRI'},
+  {bits: 1, name: 'SFCFIEN'},
+  {bits: 1, name: 'SBCFIEN'},
+  {bits: 1, name: 'UFCFIEN'},
+  {bits: 1, name: 'UBCFIEN'},
+  {bits: 1, name: 'WPRI'},
+  {bits: 1, name: 'SPELP'},
+  {bits: 24, name: 'reserved'},
+], config:{lanes: 2, hspace:1024}}
+....
+
+The `SFCFIEN`, and `UFCFIEN` are WARL fields that when set to 1 enable forward-edge
+CFI at S-mode, and U-mode respectively. 
+
+The `vscfistatus` CSR is a virtual-supervisor mode read-write 32-bit register
+which is VS-mode version of the scfistatus CSR and is used to keep track of the
+processor’s CFI state at VS-mode. When V=1, `vscfistatus` substitutes for the
+usual `scfistatus`, so instructions that normally read or modify `scfistatus`
+actually access `vscfistatus` instead.
+
+
+=== Landing pad label register (`lplr`)
+
+The `lplr` CSR is a user-mode read-write (URW) 32-bit register that holds the
+label expected at the target of an indirect call or an indirect jump. The label
+is split into a 8-bit upper label (`UL`), 8-bit middle label (`ML`), and a
+9-bit lower label (`LL`).
+
+.`lplr` for RV32 and RV64
+[wavedrom, , ]
+....
+{reg: [
+  {bits: 9, name: 'LL'},
+  {bits: 8, name: 'ML'},
+  {bits: 8, name: 'UL'},
+  {bits: 7, name: 'WPRI'},
+], config:{lanes: 1, hspace:1024}}
+....
+
+
+=== Shadow stack pointer (`ssp`) 
+
+The `ssp` CSR is an unprivileged read-only (URW) CSR that reads and writes `XLEN`
+low order bits of the shadow stack pointer (`ssp`). There is no high CSR defined
+as the `ssp` is always as wide as the `XLEN` of the current privilege level.
+
