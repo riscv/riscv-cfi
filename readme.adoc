@@ -1,10 +1,14 @@
-= RISC-V docs-spec-template
+= RISC-V CFI specification
 
-This repository is used to prime GitHub repos for the RISC-V organization which will be used 
-to create specifications.  
+This document is capturing discussions at the SSLPCFI TG and attempts to document the baseline.
+This is not official specification and everything in this document may change. Control-flow
+Integrity (CFI) provides CPU instruction set architecture (ISA) capabilities to defend against
+Return-Oriented Programming (ROP) and Call/Jump-Oriented Programming (COP/JOP) style
+control-flow subversion attacks.
 
-**If you are reading this in a specification repo, please update the title for this section and 
-provide your introduction to your repository.**
+To enforce backward edge control flow integrity, the extension introduces a shadow stack. To
+enforce forward edge control flow integrity, the extension introduces labeled landing pad
+instructions.
 
 = License
 
