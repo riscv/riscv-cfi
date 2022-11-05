@@ -3,11 +3,12 @@
 
 A shadow stack is a second stack used to push the link register if it needs to
 be spilled to make a new procedure call. Leaf functions do not need to spill the
-link register. A shadow stack is active for a privilege level `x` if `xBCFIEN`
-is 1.  The shadow stack, similar to the regular stack, grows downwards, i.e.
-from higher addresses to lower addresses. Each entry on the shadow stack is
-`XLEN` wide and holds the link register value. The `ssp` points to the top of
-the shadow stack, i.e. address of the last element pushed on the shadow stack.
+link register.
+
+The shadow stack, similar to the regular stack, grows downwards, i.e. from higher
+addresses to lower addresses. Each entry on the shadow stack is `XLEN` wide and
+holds the link register value. The `ssp` points to the top of the shadow stack,
+i.e. address of the last element pushed on the shadow stack.
 
 [NOTE]
 ====
@@ -44,8 +45,11 @@ using the `mop.r` and `mop.rr` instructions defined by the Zimops extension.
 |            2+^|`7`       2+^|`5`   2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
 |===
 
-If xBCFIEN is 0, the behavior of all backward-edge CFI instructions is as
-defined by the Zimops extension and the instructions just write 0 to [rd].
+If `menvcfg.CFI` is 0, the behavior of all backward-edge CFI instructions at
+privilege modes less than M-mode, is as defined by the Zimops extension and the
+instructions just write 0 to [rd]. When `menvcfg.CFI` is 1 but `henvcfg.CFI` is
+0, the behavior of all backward-edge CFI instructions when `V=1` is as defined
+by the Zimops extension and the instructions just write 0 to [rd].
 
 [NOTE]
 ====
@@ -144,7 +148,7 @@ The operation of the `sspush` instructions is as follows:
 .`sspush` operation
 [source, text]
 ----
-If xBCFIEN != 0
+If ((menvcfg.CFI = 1) || (V=1 && henvcfg.CFI = 1))
     [ssp] = [ssp] - (XLEN/8)   # decrement ssp by XLEN/8
    *[ssp] = [src]              # Store src value to address in ssp
 else
@@ -157,7 +161,7 @@ The operation of the `sspop` instructions is as follows:
 .`sspop` operation
 [source, text]
 ----
-If xBCFIEN != 0
+If ((menvcfg.CFI = 1) || (V=1 && henvcfg.CFI = 1))
     dst   = *[ssp]             # Load dst from address in ssp
     [ssp] = [ssp] + (XLEN/8)   # increment ssp by XLEN/8
 else
@@ -234,7 +238,7 @@ The operation of the `ssprr` instructions is as follows:
 .`ssprr` operation
 [source, text]
 ----
-If xBCFIEN != 0    
+If ((menvcfg.CFI = 1) || (V=1 && henvcfg.CFI = 1))
     [dst] = [ssp]
 else
     [dst] = 0;
@@ -274,13 +278,21 @@ shadow link register value from the shadow stack. Alternatively, if the ABI uses
 x5 as the link register, then the x1 register may be used as the shadow link
 register. 
 
-A `sschkra` instruction is provided to perform the comparison. The `sschkra`
-instruction causes an illegal instruction exception if the both of following
-conditions are satisfied:
+A `sschkra` instruction is provided to perform the comparison.
 
-*  x1 is not equal to x5
-*  `xBCFIEN` is 1 i.e., backward-edge CFI is enabled for the program
+The operation of the `sschkra` instruction is as follows:
 
+.`sschkra` operation
+[source, text]
+----
+If ((menvcfg.CFI = 1) || (V=1 && henvcfg.CFI = 1))
+   if [x1] != [x5]
+       Raise illegal-instruction exception
+   endif
+else
+    [dst] = 0;
+endif
+----
 
 === Atomic Swap from a shadow stack location
 
@@ -302,7 +314,7 @@ The operation of the `ssamoswap` instructions is as follows:
 .`ssamoswap` operation
 [source, text]
 ----
-If xBCFIEN != 0
+If ((menvcfg.CFI = 1) || (V=1 && henvcfg.CFI = 1))
     Perform the following atomically with sequential consistency
         [dst]  = *[addr]
        *[addr] = [src]
@@ -364,17 +376,44 @@ The shadow stack memory is protected using page table attributes such that it
 cannot be written by instructions other than sspush and amossswap. The shadow
 stack can be read using all instructions that load from memory. 
 
-The encoding R=0, W=1, and X=0, is defined as the shadow stack attribute when
-UBCFIEN or SBCFIEN is 1. When UBCFIEN and SBCFIEN are 0, this encoding continues
-to be reserved. The following faults occur:
+The encoding R=0, W=1, and X=0, is defined to mean a shadow stack page. When
+`V=0` and `menvcfg.CFI=0, this encoding continues to be reserved. When `V=1`
+and `henvcfg.CFI=0`, this encoding continues to be reserved at `VS` and `VU`.
 
-. If the accessed page has SS attribute set
-.. Stores other than `sspush`, and `ssamoswap` cause write/AMO page faults.
+The following faults occur:
+
+. If the accessed page is a shadow stack page
+.. Stores other than `sspush` and `ssamoswap` cause write/AMO access faults.
 .. Instructions fetch causes an instruction page fault
-. if the accessed page does not have an SS attribute.
-.. `ssamoswap` causes store/AMO page fault
-.. `sspush` cause store/AMO page fault
-.. `sspop` cause load page fault
+. if the accessed page is not a shadow stack page
+.. `ssamoswap` and `sspush` causes store/AMO access fault
+.. `sspop` cause load access fault
+
+To support these rules, the virtual address translation process specified in
+section 4.3.2 of the Privileged Specification cite:[PRIV] is modified as
+follows:
+
+3. If `pte.v = 0`, of if any bits of encodings that are reserved for future
+   standard use are set within `pte`, stop and raise a page-fault exception
+   corresponding to the original access type. The encoding `pte.xwr = 010b`
+   is not reserved if `V=0` and `menvcfg.CFI` is 0 or if `V=1` and 
+   `henvcfg.CFI` is 0
+   
+4. Otherwise, the PTE is valid. If `pte.r = 1` or `pte.w = 1` or `pte.x = 1`,
+   go to step 5. Otherwise, this PTE is a pointer to the next level of the page
+   table. Let `i = i - 1`. If `i < 0`, store and raise a page-fault exception
+   corresponding to the original access type. Otherwise, let `a = pte.ppn x
+   PAGESIZE` and go to step 2.
+
+5. A leaf PTE has been found. If the memory access is a load from shadow stack
+   or store to shadow stack and `pte.xwr != 010b` then cause an access-violation
+   exception corresponding to the original access type. If the memory acccess is
+   a store and `pte.xwr == 010b` then cause an access-violation exception
+   corresponding to the original access type. If the requested memory access is
+   not allowed by the `pte.r`, `pte.w`, `pte.x`, and `pte.u` bits, given the
+   current privilege mode and the value of the `SUM` and `MXR` fields of the
+   `mstatus` register, stop and raise a page-fault exception corresponding to
+   the original access type.
 
 The `U` and `SUM` bit enforcement is performed normally. Svpbmt extension and
 Svnapot extensions are supported for shadow stack mappings. 
