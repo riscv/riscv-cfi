@@ -38,7 +38,11 @@ The `SFCFIEN` (bit 24) and `UFCFIEN` (bit 23) are WARL fields that when set to 1
 enable forward-edge CFI S-mode (if supported), and U-mode (if supported)
 respectively.
 
-The `MPELP` (bit 27) and `SPELP` (bit 26) WARL fields are updated when a trap is
+The `SBCFIEN` (bit 26) and `UBCFIEN` (bit 27) are WARL fields that when set to 1
+enable backward-edge CFI S-mode (if supported), and U-mode (if supported)
+respectively.
+
+The `MPELP` (bit 29) and `SPELP` (bit 28) WARL fields are updated when a trap is
 taken into M-mode or S-mode respectively. When a trap is taken into privilege
 mode `x`, the `xPELP` fields are updated to indicate that a landing pad was
 expected at the privilege level `xPP` at the time of taking the trap. 
@@ -56,7 +60,9 @@ zero.
 
 * `UFCFIEN` (bit 23)
 * `SFCFIEN` (bit 24)
-* `SPELP` (bit 26)
+* `UBCFIEN` (bit 26)
+* `SBCFIEN` (bit 27)
+* `SPELP` (bit 28)
 
 === Virtual supervisor status registers (`vsstatus`)
 
@@ -65,7 +71,9 @@ extension introduces the following fields.
 
 * `UFCFIEN` (bit 23)
 * `SFCFIEN` (bit 24)
-* `SPELP` (bit 26)
+* `UBCFIEN` (bit 26)
+* `SBCFIEN` (bit 27)
+* `SPELP` (bit 28)
 
 When `henvcfg.CFI` is 0, these fields are read-only zero.
 

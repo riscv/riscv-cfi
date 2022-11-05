@@ -96,33 +96,33 @@ M and forward-edge CFI is not active at privilege levels less than M.
 When `V=0` and `menvcfg.CFI` is 1, then forward-edge CFI is active at S-mode if
 `mstatus.SFCFIEN` is 1 and is active at U-mode if `mstatus.UFCFIEN` is 1.
 
-When `henvcfg.CFI` is 0, then Zicfi is not enabled use when `V=1`.
+When `henvcfg.CFI` is 0, then Zicfi is not enabled for use when `V=1`.
 
 When `V=1` and `menvcfg.CFI` and `henvcfg.CFI` are both 1, then forward-edge CFI
 is active at S-mode if `vsstatus.SFCFIEN` is 1 and is active at U-mode if
 `vsstatus.UFCFIEN` is 1.
 
-The term `xFCFIEN`, used to determine if forward-edge CFI is active, is defined
-as follows:
+The term `xFCFIACT` is used to determine if forward-edge CFI is active at
+privilege level `x` and is defined as follows:
 
-.`xFCFIEN` determination
+.`xFCFIACT` determination
 [source, text]
 ----
 if ( privilege == M-mode ) 
-    xFCFIEN = mstatus.MFCFIEN
+    xFCFIACT = mstatus.MFCFIEN
 else if ( menvcfg.CFI == 1 && V == 0 && privilege == S-mode )
-    xFCFIEN = mstatus.SFCFIEN
+    xFCFIACT = mstatus.SFCFIEN
 else if ( menvcfg.CFI == 1 && V == 0 && privilege == U-mode )
-    xFCFIEN = mstatus.UFCFIEN
+    xFCFIACT = mstatus.UFCFIEN
 else if ( menvcfg.CFI == 1 && henvcfg.CFI == 1 & V == 1 && privilege == S-mode )
-    xFCFIEN = vsstatus.SFCFIEN
+    xFCFIACT = vsstatus.SFCFIEN
 else if ( menvcfg.CFI == 1 && henvcfg.CFI == 1 & V == 1 && privilege == U-mode )
-    xFCFIEN = vsstatus.UFCFIEN
+    xFCFIACT = vsstatus.UFCFIEN
 else
-    xFCFIEN = 0
+    xFCFIACT = 0
 ----
 
-When forward-edge CFI is not active(`xFCFIEN = 0`):
+When forward-edge CFI is not active(`xFCFIACT = 0`):
 
 * The implementation does not update expected landing pad (`ELP`) state on
   indirect call or jump and does not require the instruction at the target of a
@@ -149,7 +149,7 @@ The operation of the `lpcll` instruction is as follows:
 .`lpcll` operation
 [source, text]
 ----
-If xFCFIEN != 0
+If xFCFIACT != 0
     // If PC not 4-byte aligned then illegal-instruction
     if pc[1:0] != 0
         Cause illegal-instruction exception
@@ -178,7 +178,7 @@ The operation of the `lpcml` instruction is as follows:
 .`lpcml` operation
 [source, text]
 ----
-If xFCFIEN != 0
+If xFCFIACT != 0
     if (lplr.ML != inst.MLPL)
         cause illegal-instruction exception
 else
@@ -191,7 +191,7 @@ The operation of the `lpcul` instruction is as follows:
 .`lpcul` operation
 [source, text]
 ----
-If xFCFIEN != 0
+If xFCFIACT != 0
     if (lplr.UL != inst.ULPL)
         cause illegal-instruction exception
 else
@@ -213,7 +213,7 @@ The operation of this instruction is as follows:
 .`lpsll` operation
 [source, text]
 ----
-If xFCFIEN == 1
+If xFCFIACT == 1
    lplr.LL = inst.LLPL
    lplr.ML = lplr.UL = 0
 else
@@ -251,7 +251,7 @@ The operation of this instruction is as follows:
 .`lpsml` operation
 [source, text]
 ----
-If xFCFIEN == 1
+If xFCFIACT == 1
    lplr.ML = inst.MLPL
 else
    [rd] = 0;
@@ -290,7 +290,7 @@ The operation of this instruction is as follows:
 .`lpsul` operation
 [source, text]
 ----
-If xFCFIEN == 1
+If xFCFIACT == 1
    lplr.ML = inst.MLPL
 else
    [rd] = 0;
