@@ -408,12 +408,12 @@ follows:
 5. A leaf PTE has been found. If the memory access is a load from shadow stack
    or store to shadow stack and `pte.xwr != 010b` then cause an access-violation
    exception corresponding to the original access type. If the memory acccess is
-   a store and `pte.xwr == 010b` then cause an access-violation exception
-   corresponding to the original access type. If the requested memory access is
-   not allowed by the `pte.r`, `pte.w`, `pte.x`, and `pte.u` bits, given the
-   current privilege mode and the value of the `SUM` and `MXR` fields of the
-   `mstatus` register, stop and raise a page-fault exception corresponding to
-   the original access type.
+   a store or an instruction fetch and `pte.xwr == 010b` then cause an 
+   access-violation exception corresponding to the original access type. If the
+   requested memory access is not allowed by the `pte.r`, `pte.w`, `pte.x`, and
+   `pte.u` bits, given the current privilege mode and the value of the `SUM` and
+   `MXR` fields of the `mstatus` register, stop and raise a page-fault exception
+   corresponding to the original access type.
 
 The `U` and `SUM` bit enforcement is performed normally. Svpbmt extension and
 Svnapot extensions are supported for shadow stack mappings. 
