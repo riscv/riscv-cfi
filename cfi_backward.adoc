@@ -60,19 +60,19 @@ is active at S-mode if `vsstatus.SBCFIEN` is 1 and is active at U-mode if
 The term `xBCFIACT` is used to determine if backward-edge CFI is active at a
 privilege level `x` and is defined as follows:
 
-.`xFCFIACT` determination
+.`xBCFIACT` determination
 [source, text]
 ----
 if ( privilege == M-mode ) 
     xBCFIACT = 1
 else if ( menvcfg.CFI == 1 && V == 0 && privilege == S-mode )
-    xFCFIACT = mstatus.SBCFIEN
+    xBCFIACT = mstatus.SBCFIEN
 else if ( menvcfg.CFI == 1 && V == 0 && privilege == U-mode )
-    xFCFIACT = mstatus.UBCFIEN
+    xBCFIACT = mstatus.UBCFIEN
 else if ( menvcfg.CFI == 1 && henvcfg.CFI == 1 & V == 1 && privilege == S-mode )
-    xFCFIACT = vsstatus.SBCFIEN
+    xBCFIACT = vsstatus.SBCFIEN
 else if ( menvcfg.CFI == 1 && henvcfg.CFI == 1 & V == 1 && privilege == U-mode )
-    xFCFIACT = vsstatus.UBCFIEN
+    xBCFIACT = vsstatus.UBCFIEN
 else
     xBCFIACT = 0
 ----
