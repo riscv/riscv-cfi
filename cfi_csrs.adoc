@@ -3,78 +3,79 @@
 
 This chapter specifies the CSR state of the Zicfi extension.
 
-=== Machine CFI status (`mcfistatus`)
+=== Machine environment configuration regisers (`menvcfg and menvcfgh`)
 
-The `mcfistatus` CSR is a machine-mode WARL read-write 32-bit register used
-to keep track of the processor’s CFI state at M-mode, HS/S-mode and U-mode.
+The `CFI` (bit 60) bit controls if Zicfi extension is available for use in
+modes less privileged than M. 
 
-.`mcfistatus` for RV32 and RV64
-[wavedrom, , ]
-....
-{reg: [
-  {bits: 1, name: 'MFCFIEN'},
-  {bits: 1, name: 'MBCFIEN'},
-  {bits: 1, name: 'SFCFIEN'},
-  {bits: 1, name: 'SBCFIEN'},
-  {bits: 1, name: 'UFCFIEN'},
-  {bits: 1, name: 'UBCFIEN'},
-  {bits: 1, name: 'MPELP'},
-  {bits: 1, name: 'SPELP'},
-  {bits: 24, name: 'reserved'},
-], config:{lanes: 2, hspace:1024}}
-....
+When `menvcfgCFI` bit is 0, then at privilege modes less privileged than M:
 
-The `MFCFIEN`, `SFCFIEN`, and `UFCFIEN` are WARL fields that when set to 1 enable
-forward-edge CFI at M-mode, S-mode (if supported), and U-mode (if supported)
-respectively. 
+* Attempts to access `ssp` CSR and `lplr` CSR raise an illegal instruction
+  exception.
+* Zicfi extension instructions revert to the Zimops defined behavior.
+* The `SFCFIEN` and `SPELP` fields in `mstatus` are read-only zero.
+* The `CFI` field in `henvcfg` is read-only zero.
+* The `pte.xwr=010b` encoding in S-stage page tables is reserved.
 
-The `MBCFIEN`, `SBCFIEN`, and `UBCFIEN` are WARL fields that when set to 1 enable
-backward-edge CFI at M-mode, S-mode (if supported), and U-mode (if supported)
-respectively. 
+=== Hypervisor environment configuration regisers (`henvcfg and henvcfgh`)
 
-The `MPELP` and `SPELP` WARL fields are updated when a trap is taken into M-mode
-or S-mode respectively. When a trap is taken into privilege mode `x`, the `xPELP`
-fields are updated to indicate the type of landing pad that was expected at the
-privilege level at the time of taking the trap. 
+The `CFI` (bit 60) bit controls if Zicfi extension is available for use in
+VS and VU modes. When `menvcfg.CFI` is 0, `henvcfg.CFI` is read-only zero.
+
+When `henvcfg.CFI` bit is 0, then at privilege modes VS and VU:
+
+* Attempts to access `ssp` CSR and `lplr` CSR raise an illegal instruction
+  exception.
+* The `SFCFIEN` and `SPELP` fields in `vsstatus` are read-only zero.
+* The `pte.xwr=010b` encoding in VS-stage page tables remains reserved.
+
+=== Machine status registers (`mstatus`)
+
+The `MFCFIEN` (bit 25) is a WARL fields that when set to 1 enables forward-edge
+CFI at M-mode.
+
+The `SFCFIEN` (bit 24) and `UFCFIEN` (bit 23) are WARL fields that when set to 1
+enable forward-edge CFI S-mode (if supported), and U-mode (if supported)
+respectively.
+
+The `SBCFIEN` (bit 26) and `UBCFIEN` (bit 27) are WARL fields that when set to 1
+enable backward-edge CFI S-mode (if supported), and U-mode (if supported)
+respectively.
+
+The `MPELP` (bit 29) and `SPELP` (bit 28) WARL fields are updated when a trap is
+taken into M-mode or S-mode respectively. When a trap is taken into privilege
+mode `x`, the `xPELP` fields are updated to indicate that a landing pad was
+expected at the privilege level `xPP` at the time of taking the trap. 
 
 The `xPELP` fields are encoded as follows:
 
 * 0 - `NO_LP_EXPECTED` - no landing pad instruction expected
 * 1 - `LP_EXPECTED` - landing pad instruction expected
 
-=== Supervisor and Virtual-supervisor CFI status (`scfistatus`/`vscfistatus`)
+=== Supervisor status registers (`sstatus`)
 
-The `scfistatus` CSR is a supervisor-mode read-write 32-bit register which is a
-subset of the `mcfistatus` CSR and is used to keep track of the processor’s CFI
-state at HS/S-mode and U-mode. Reading any implemented field, or writing any
-writable field, of `scfistatus` effects a read or write of the homonymous field of
-`mcfistatus`.
+When `menvcfg.CFI` is 1, access to the following fields accesses the homonymous
+field of `mstatus` register. When `menvcfg.CFI` is 0, these fields are read-only
+zero.
 
-.`scfistatus` and `vscfistatus` for RV32 and RV64
-[wavedrom, , ]
-....
-{reg: [
-  {bits: 1, name: 'WPRI'},
-  {bits: 1, name: 'WPRI'},
-  {bits: 1, name: 'SFCFIEN'},
-  {bits: 1, name: 'SBCFIEN'},
-  {bits: 1, name: 'UFCFIEN'},
-  {bits: 1, name: 'UBCFIEN'},
-  {bits: 1, name: 'WPRI'},
-  {bits: 1, name: 'SPELP'},
-  {bits: 24, name: 'reserved'},
-], config:{lanes: 2, hspace:1024}}
-....
+* `UFCFIEN` (bit 23)
+* `SFCFIEN` (bit 24)
+* `UBCFIEN` (bit 26)
+* `SBCFIEN` (bit 27)
+* `SPELP` (bit 28)
 
-The `SFCFIEN`, and `UFCFIEN` are WARL fields that when set to 1 enable forward-edge
-CFI at S-mode, and U-mode respectively. 
+=== Virtual supervisor status registers (`vsstatus`)
 
-The `vscfistatus` CSR is a virtual-supervisor mode read-write 32-bit register
-which is VS-mode version of the scfistatus CSR and is used to keep track of the
-processor’s CFI state at VS-mode. When V=1, `vscfistatus` substitutes for the
-usual `scfistatus`, so instructions that normally read or modify `scfistatus`
-actually access `vscfistatus` instead.
+The `vsstatus` register is VS-mode's version of `sstatus` and the Zicfi
+extension introduces the following fields.
 
+* `UFCFIEN` (bit 23)
+* `SFCFIEN` (bit 24)
+* `UBCFIEN` (bit 26)
+* `SBCFIEN` (bit 27)
+* `SPELP` (bit 28)
+
+When `henvcfg.CFI` is 0, these fields are read-only zero.
 
 === Landing pad label register (`lplr`)
 
@@ -94,6 +95,10 @@ is split into a 8-bit upper label (`UL`), 8-bit middle label (`ML`), and a
 ], config:{lanes: 1, hspace:1024}}
 ....
 
+When `menvcfg.CFI` is 0, an attempt to access `lplr` in a mode other than M-mode
+raises an illegal instruction exception. When `menvcfg.CFI` is 1 but
+`henvcfg.CFI` is 0, an attempt to access `lplr` when `V=1` raises a virtual
+instruction exception.
 
 === Shadow stack pointer (`ssp`) 
 
@@ -101,3 +106,7 @@ The `ssp` CSR is an unprivileged read-only (URW) CSR that reads and writes `XLEN
 low order bits of the shadow stack pointer (`ssp`). There is no high CSR defined
 as the `ssp` is always as wide as the `XLEN` of the current privilege level.
 
+When `menvcfg.CFI` is 0, an attempt to access `ssp` in a mode other than M-mode
+raises an illegal instruction exception. When `menvcfg.CFI` is 1 but
+`henvcfg.CFI` is 0, an attempt to access `ssp` when `V=1` raises a virtual
+instruction exception.

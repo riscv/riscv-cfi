@@ -1,25 +1,24 @@
 [[forward]]
 == Forward-edge control-flow integrity
 
-The forward CFI extension introduces landing pad instructions that enable
-software to indicate valid targets for indirect calls and indirect jumps in a
-program. 
+The forward-edge CFI introduces landing pad instructions that enable software to
+indicate valid targets for indirect calls and indirect jumps in a program. 
 
 A landing pad (`lpcul`) instruction is defined as the instruction that must be
 placed at the program locations that can be valid targets of indirect jumps or
 calls. 
 
 To enforce that the target of an indirect call or indirect jump must be a valid
-landing pad instruction, the hart maintains  an expected landing pad (`ELP`) state
-to determine the landing pad instruction that is required at the target of a
-JALR instruction. The ELP state can be one of:
+landing pad instruction, the hart maintains an expected landing pad (`ELP`) state
+to determine if a landing pad instruction is required at the target of a `JALR`
+instruction. The `ELP` state can be one of:
 
-* 0 - NO_LP_EXPECTED
-* 1 - LP_EXPECTED
+* 0 - `NO_LP_EXPECTED`
+* 1 - `LP_EXPECTED`
 
-A JALR with rd is x1/x5 is an indirect call; it updates ELP to `LP_EXPECTED`. A
-JALR with rd != x1/x5 and where rs1 is not x1/x5 is an indirect jump; it updates
-the `ELP` to `LP_EXPECTED`.
+A `JALR` with `rd = x1` or `rd = x5` is an indirect call; it updates `ELP` to
+`LP_EXPECTED`. A `JALR` with `rd != x1` and `rd != x5` and where `rs1 != x1` and
+`rs1 != x5` is an indirect jump; it updates the `ELP` to `LP_EXPECTED`.
 
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
 stream is not `lpcll`, then an illegal instruction exception is raised. If the
@@ -37,14 +36,14 @@ as Spectre variant 2, that use speculative execution to leak data through side
 channels.
 ====
 
-The forward-edge CFI extension also supports labeling of landing pads. By itself
-a landing pad allows, for example, an indirect call to land on any `lpcll` in the
-program. This significantly reduces the number of valid targets for an indirect
-call. Labeling of the landing pads enables software to achieve greater precision
-in pairing up indirect call sites or indirect jump sites with valid targets. To
+The forward-edge CFI also supports labeling of landing pads. By itself a landing
+pad allows, for example, an indirect call to land on any `lpcll` in the program.
+This significantly reduces the number of valid targets for an indirect call.
+Labeling of the landing pads enables software to achieve greater precision in
+pairing up indirect call sites or indirect jump sites with valid targets. To
 support labeled landing pads, the indirect call/jump sites establish an expected
-landing pad label in the landing pad label register (`lplr`). If the target of the
-indirect call/jump is a valid landing pad instruction, the expected label
+landing pad label in the landing pad label register (`lplr`). If the target of
+the indirect call/jump is a valid landing pad instruction, the expected label
 established in the `lplr` is matched with the target's label. If a mismatch is
 detected then the label check instruction causes an illegal instruction
 exception.
@@ -53,9 +52,9 @@ Each landing pad may be labeled with a label that may be upto 25-bits wide. The
 `lplr` has three subfields - a 9-bit lower label (`LL`), a 8-bit middle label
 (`ML`), and an 8-bit upper label (`UL`).
 
-The forward CFI extension provides a `lpsll` instruction to establish the
-expected `LL` in the `lplr`, a `lpsml` instruction to establish the `ML`, and a
-`lpsul` instruction to establish the `UL` in the `lplr`. 
+The forward-edge CFI provides a `lpsll` instruction to establish the expected
+`LL` in the `lplr`, a `lpsml` instruction to establish the `ML`, and a `lpsul`
+instruction to establish the `UL` in the `lplr`. 
 
 The `lpcll` instructions embed a 9-bit immediate field. The instruction compares
 this value to the `LL` and on a mismatch causes an illegal-instruction exception.
@@ -70,7 +69,7 @@ and on a mismatch causes an illegal-instruction exception.
 
 === Forward-edge CFI Instruction encoding
 
-The forward-edge CFI extension introduces the following instructions for landing
+The forward-edge CFI introduces the following instructions for landing
 pad operations. All instructions are encoded using the SYSTEM major opcode and
 using the `mop.rr` instructions defined by the Zimops extension. 
 
@@ -88,14 +87,59 @@ using the `mop.rr` instructions defined by the Zimops extension.
 |            2+^|`7`         ^|`1`    |`1` 2+^|  `8`           2+^|`3`      2+^|`5`    2+^|`7` 
 |===
 
+When privilege level is M, the forward-edge CFI is active when `MFCFIEN` is 1 in
+`mstatus` register. 
+
+When `menvcfg.CFI` is 0, then Zicfi is not enabled for privilege modes less than
+M and forward-edge CFI is not active at privilege levels less than M.
+
+When `V=0` and `menvcfg.CFI` is 1, then forward-edge CFI is active at S-mode if
+`mstatus.SFCFIEN` is 1 and is active at U-mode if `mstatus.UFCFIEN` is 1.
+
+When `henvcfg.CFI` is 0, then Zicfi is not enabled for use when `V=1`.
+
+When `V=1` and `menvcfg.CFI` and `henvcfg.CFI` are both 1, then forward-edge CFI
+is active at S-mode if `vsstatus.SFCFIEN` is 1 and is active at U-mode if
+`vsstatus.UFCFIEN` is 1.
+
+The term `xFCFIACT` is used to determine if forward-edge CFI is active at
+privilege level `x` and is defined as follows:
+
+.`xFCFIACT` determination
+[source, text]
+----
+if ( privilege == M-mode ) 
+    xFCFIACT = mstatus.MFCFIEN
+else if ( menvcfg.CFI == 1 && V == 0 && privilege == S-mode )
+    xFCFIACT = mstatus.SFCFIEN
+else if ( menvcfg.CFI == 1 && V == 0 && privilege == U-mode )
+    xFCFIACT = mstatus.UFCFIEN
+else if ( menvcfg.CFI == 1 && henvcfg.CFI == 1 & V == 1 && privilege == S-mode )
+    xFCFIACT = vsstatus.SFCFIEN
+else if ( menvcfg.CFI == 1 && henvcfg.CFI == 1 & V == 1 && privilege == U-mode )
+    xFCFIACT = vsstatus.UFCFIEN
+else
+    xFCFIACT = 0
+----
+
+When forward-edge CFI is not active(`xFCFIACT = 0`):
+
+* The implementation does not update expected landing pad (`ELP`) state on
+  indirect call or jump and does not require the instruction at the target of a
+  indirect call or jump to be a landing pad instruction.
+* The implementation does not update expected landing pad (`ELP`) when `lpcll`
+  is executed.
+* The instructions defined for forward-edge CFI revert to their Zimops defined
+  behavior and write 0 to [rd].
+
 === Landing pad instruction
 
 `lpcll` is the valid landing pad instructions at target of indirect jumps and
-indirect calls. When a forward CFI is enabled, the instructions cause an illegal
-instruction exception if they are not placed at a 4-byte aligned `pc`. The `lpcll`
-has the lower landing pad label embedded in the `LLPL` field. `lpcll` causes an
-illegal instruction exception if the `LLPL` field in the instruction does not
-match the `lplr.LL` field.
+indirect calls. When a forward-edge CFI is active, the instructions cause an
+illegal instruction exception if they are not placed at a 4-byte aligned `pc`.
+The `lpcll` has the lower landing pad label embedded in the `LLPL` field.
+`lpcll` causes an illegal instruction exception if the `LLPL` field in the
+instruction does not match the `lplr.LL` field.
 
 When the instructions cause an illegal-instruction exception, the `ELP` does not
 change.
@@ -105,7 +149,7 @@ The operation of the `lpcll` instruction is as follows:
 .`lpcll` operation
 [source, text]
 ----
-If xFCFIEN != 0
+If xFCFIACT != 0
     // If PC not 4-byte aligned then illegal-instruction
     if pc[1:0] != 0
         Cause illegal-instruction exception
@@ -134,7 +178,7 @@ The operation of the `lpcml` instruction is as follows:
 .`lpcml` operation
 [source, text]
 ----
-If xFCFIEN != 0
+If xFCFIACT != 0
     if (lplr.ML != inst.MLPL)
         cause illegal-instruction exception
 else
@@ -147,7 +191,7 @@ The operation of the `lpcul` instruction is as follows:
 .`lpcul` operation
 [source, text]
 ----
-If xFCFIEN != 0
+If xFCFIACT != 0
     if (lplr.UL != inst.ULPL)
         cause illegal-instruction exception
 else
@@ -169,7 +213,7 @@ The operation of this instruction is as follows:
 .`lpsll` operation
 [source, text]
 ----
-If xFCFIEN == 1
+If xFCFIACT == 1
    lplr.LL = inst.LLPL
    lplr.ML = lplr.UL = 0
 else
@@ -207,7 +251,7 @@ The operation of this instruction is as follows:
 .`lpsml` operation
 [source, text]
 ----
-If xFCFIEN == 1
+If xFCFIACT == 1
    lplr.ML = inst.MLPL
 else
    [rd] = 0;
@@ -246,7 +290,7 @@ The operation of this instruction is as follows:
 .`lpsul` operation
 [source, text]
 ----
-If xFCFIEN == 1
+If xFCFIACT == 1
    lplr.ML = inst.MLPL
 else
    [rd] = 0;
