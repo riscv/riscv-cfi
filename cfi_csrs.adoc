@@ -1,25 +1,25 @@
 [[CSRs]]
 == Shadow Stack and Landing Pad CSRs
 
-This chapter specifies the CSR state of the Zicfi extension.
+This chapter specifies the CSR state of the Zisslpcfi extension.
 
 === Machine environment configuration regisers (`menvcfg and menvcfgh`)
 
-The `CFI` (bit 60) bit controls if Zicfi extension is available for use in
+The `CFI` (bit 60) bit controls if Zisslpcfi extension is available for use in
 modes less privileged than M. 
 
 When `menvcfgCFI` bit is 0, then at privilege modes less privileged than M:
 
 * Attempts to access `ssp` CSR and `lplr` CSR raise an illegal instruction
   exception.
-* Zicfi extension instructions revert to the Zimops defined behavior.
+* Zisslpcfi extension instructions revert to the Zimops defined behavior.
 * The `SFCFIEN` and `SPELP` fields in `mstatus` are read-only zero.
 * The `CFI` field in `henvcfg` is read-only zero.
 * The `pte.xwr=010b` encoding in S-stage page tables is reserved.
 
 === Hypervisor environment configuration regisers (`henvcfg and henvcfgh`)
 
-The `CFI` (bit 60) bit controls if Zicfi extension is available for use in
+The `CFI` (bit 60) bit controls if Zisslpcfi extension is available for use in
 VS and VU modes. When `menvcfg.CFI` is 0, `henvcfg.CFI` is read-only zero.
 
 When `henvcfg.CFI` bit is 0, then at privilege modes VS and VU:
@@ -66,7 +66,7 @@ zero.
 
 === Virtual supervisor status registers (`vsstatus`)
 
-The `vsstatus` register is VS-mode's version of `sstatus` and the Zicfi
+The `vsstatus` register is VS-mode's version of `sstatus` and the Zisslpcfi
 extension introduces the following fields.
 
 * `UFCFIEN` (bit 23)

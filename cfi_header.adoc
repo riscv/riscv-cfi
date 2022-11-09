@@ -1,5 +1,5 @@
 [[header]]
-:description: RISC-V Control-flow Integrity (Zicfi)
+:description: RISC-V Shadow Stacks and Landing Pads (Zisslpcfi)
 :company: RISC-V.org
 :revdate: 11/2022
 :revnumber: 0.1
@@ -36,7 +36,7 @@ endif::[]
 :footnote:
 :xrefstyle: short
 
-= RISC-V Control-flow integrity (Zicfi)
+= RISC-V Shadow Stacks and Landing Pads (Zisslpcfi)
 RISC-V Shadow-stack and Landing-pads Task Group
 
 // Preamble
