@@ -45,13 +45,13 @@ using the `mop.r` and `mop.rr` instructions defined by the Zimops extension.
 |            2+^|`7`       2+^|`5`   2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
 |===
 
-When `menvcfg.CFI` is 0, then Zicfi is not enabled for privilege modes less than
+When `menvcfg.CFI` is 0, then Zisslpcfi is not enabled for privilege modes less than
 M and backward-edge CFI is not active at privilege levels less than M.
 
 When `V=0` and `menvcfg.CFI` is 1, then backward-edge CFI is active at S-mode if
 `mstatus.SBCFIEN` is 1 and is active at U-mode if `mstatus.UBCFIEN` is 1.
 
-When `henvcfg.CFI` is 0, then Zicfi is not enabled for use when `V=1`.
+When `henvcfg.CFI` is 0, then Zisslpcfi is not enabled for use when `V=1`.
 
 When `V=1` and `menvcfg.CFI` and `henvcfg.CFI` are both 1, then backward-edge CFI
 is active at S-mode if `vsstatus.SBCFIEN` is 1 and is active at U-mode if

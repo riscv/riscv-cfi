@@ -90,13 +90,13 @@ using the `mop.rr` instructions defined by the Zimops extension.
 When privilege level is M, the forward-edge CFI is active when `MFCFIEN` is 1 in
 `mstatus` register. 
 
-When `menvcfg.CFI` is 0, then Zicfi is not enabled for privilege modes less than
+When `menvcfg.CFI` is 0, then Zisslpcfi is not enabled for privilege modes less than
 M and forward-edge CFI is not active at privilege levels less than M.
 
 When `V=0` and `menvcfg.CFI` is 1, then forward-edge CFI is active at S-mode if
 `mstatus.SFCFIEN` is 1 and is active at U-mode if `mstatus.UFCFIEN` is 1.
 
-When `henvcfg.CFI` is 0, then Zicfi is not enabled for use when `V=1`.
+When `henvcfg.CFI` is 0, then Zisslpcfi is not enabled for use when `V=1`.
 
 When `V=1` and `menvcfg.CFI` and `henvcfg.CFI` are both 1, then forward-edge CFI
 is active at S-mode if `vsstatus.SFCFIEN` is 1 and is active at U-mode if
