@@ -417,7 +417,7 @@ The following faults may occur:
 
 . If the accessed page is a shadow stack page
 .. Stores other than `sspush` and `ssamoswap` cause write/AMO access faults.
-.. Instructions fetch causes an instruction access fault
+.. Instructions fetch causes a page fault
 . if the accessed page is not a shadow stack page
 .. `ssamoswap` and `sspush` cause a store/AMO access fault
 .. `sspop` causes a load access fault
@@ -439,12 +439,11 @@ follows:
 
 5. A leaf PTE has been found. If the memory access is by a shadow stack
    instruction and `pte.xwr != 010b` then cause an access-violation exception
-   corresponding to the access type. If the memory acccess is a store or an 
-   instruction fetch and `pte.xwr == 010b` then cause an access-violation
-   exception corresponding to the original access type. If the requested memory
-   access is not allowed by the `pte.r`, `pte.w`, `pte.x`, and `pte.u` bits,
-   given the current privilege mode and the value of the `SUM` and `MXR` fields
-   of the `mstatus` register, stop and raise a page-fault exception
+   corresponding to the access type. If the memory acccess is a store/AMO and
+   `pte.xwr == 010b` then cause an store/AMO access-violation. If the requested
+   memory access is not allowed by the `pte.r`, `pte.w`, `pte.x`, and `pte.u`
+   bits, given the current privilege mode and the value of the `SUM` and `MXR`
+   fields of the `mstatus` register, stop and raise a page-fault exception
    corresponding to the original access type.
 
 The `U` and `SUM` bit enforcement is performed normally for shadow stack
