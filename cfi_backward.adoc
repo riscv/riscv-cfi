@@ -395,14 +395,14 @@ them succeeds.
 
 === Shadow Stack Memory Protection
 
-To protect shadow stack memory the memory is associated with a new attribute -
-Shadow Stack (SS) in the page tables and in the PMP configuration registers.
-When a virtual-memory system is enabled, the SS attribute is obtained from the
-page tables alone. When a virtual-memory system is disabled or not active, the
-SS attribute is obtained from the PMP configuration registers. The rules
-enforced by the SS attribute are specified in this section.
+To protect shadow stack memory the memory is associated with a new page type -
+Shadow Stack (SS) page - in the page tables. 
 
-==== When Virtual-Memory system is enabled
+When the Smepmp extension is supported the PMP configuration registers are
+enhanced to support a shadow stack memory region for use by M-mode.
+
+==== Virtual-Memory system extension for Shadow Stack
+
 The shadow stack memory is protected using page table attributes such that it
 cannot be stored to by instructions other than `sspush` and `amossswap`. The
 `sspop` instruction can only load from shadow stack memory.
@@ -451,8 +451,6 @@ instruction initiated memory accesses.
 
 Svpbmt extension and Svnapot extensions are supported for shadow stack pages. 
 
-When a virtual-memory system is enabled, the SS attribute from a matching PMP
-entry is ignored.
 
 [NOTE]
 ====
@@ -480,27 +478,37 @@ copy of the link register as saved on the regular stack. The ability to read the
 shadow stack is useful for debug, performance profiling, and other use cases.
 ====
 
-==== When Virtual-Memory system is not enabled
+==== PMP extension for shadow stack
 
-When operating in M-mode, the virtual-memory system is not enabled. When
-operating in S-mode or U-mode (including when V=1), if the `satp` has `MODE`
-field set to `Bare`, then the virtual-memory system is not enabled. 
+When privilege mode is U or A, the PMP region accessed by `sspush` and
+`ssamoswap` must provide write permission and the PMP region accessed by `sspop`
+must provide read permission.
 
-A `pmpsscfg` CSR is a M-mode MXLEN wide register that is used to associate a PMP
-entry with shadow stack attributes. The fields of `pmpsscfg` register are WARL
-and bit `i` corresponds to the PMP entry `i`. When the backward-edge CFI
-extension is not supported the register is read-only zero. When bit `i` is set
-in `pmpsscfg`, the R/W/X permission bits in the corresponding `pmp<i>cfg` must
-be set to `010b`. 
+The M-mode memory accesses by `sspush` and `ssamoswap` instructions test for
+write permission in the matching PMP entry when permission checking is required.
 
-A memory access by `sspush`, `sspop`, and `ssamoswap` instructions to PMP `i`
-succeeds only if bit `i` of `pmpsscfg` is 1 and the R=0, W=1, and X=0 in the
-corresponding `pmp<i>cfg`.
+The M-mode memory accesses by `sspop` instruction tests for read permission in
+the matching PMP entry when permission checking is required.
 
-A store to memory by instructions other than `sspush` and `ssamoswap` does not
-succeed if bit `i` of `pmpsscfg` is 1 and the R=0, W=1, and X=0 in the
-corresponding `pmp<i>cfg`. 
+When the `Smepmp` extension is implemented, a new WARL field `sspmp` is defined
+in bits 8:3 of the `mseccfg` CSR to configrue a PMP entry as the shadow stack
+memory region for M-mode accesses.
 
-Execute access that matches PMP entry `i` does not succeed if bit `i` of
-`pmpsscfg` is 1 and the R=0, W=1, and X=0 in the corresponding `pmp<i>cfg`. 
+When `mseccfg.MML` is 1, the `sspmp` field is read-only else it may be written.
 
+When `sspmp` field is implemented and `mseccfg.MML` is 1 the following rules are
+additionally enforcecd for M-mode memory accesses:
+
+* `sspush`, `sspop`, and `ssamoswap` instructions must match PMP entry `sspmp`.
+
+* Write by instructions other than `sspush` and `ssamoswap` that match PMP entry
+  `sspmp` cause an access violation exception.
+
+
+[NOTE]
+====
+The PMP region used for the M-mode shadow stack is expected to be made
+inaccessible for U- and S-mode read and write accesses. Allowing write access
+violates the integrity of the shadow stack and allowing read access may lead to
+disclosure of M-mode return addresses.
+====
