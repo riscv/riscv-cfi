@@ -8,7 +8,7 @@ This chapter specifies the CSR state of the Zisslpcfi extension.
 The `CFI` (bit 60) bit controls if Zisslpcfi extension is available for use in
 modes less privileged than M. 
 
-When `menvcfgCFI` bit is 0, then at privilege modes less privileged than M:
+When `menvcfg.CFI` bit is 0, then at privilege modes less privileged than M:
 
 * Attempts to access `ssp` CSR and `lplr` CSR raise an illegal instruction
   exception.
@@ -102,7 +102,7 @@ instruction exception.
 
 === Shadow stack pointer (`ssp`) 
 
-The `ssp` CSR is an unprivileged read-only (URW) CSR that reads and writes `XLEN`
+The `ssp` CSR is an unprivileged read-write (URW) CSR that reads and writes `XLEN`
 low order bits of the shadow stack pointer (`ssp`). There is no high CSR defined
 as the `ssp` is always as wide as the `XLEN` of the current privilege level.
 
