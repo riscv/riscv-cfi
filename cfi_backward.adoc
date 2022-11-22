@@ -33,6 +33,8 @@ using the `mop.r` and `mop.rr` instructions defined by the Zimops extension.
 |            2+^|`12`                2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
 |===
 
+Encoding `rs1` as `x0` is not supported for `sspush`.
+Encoding `rd`  as `x0` is not supported for `sspop`.
 
 [width=100%]
 [%header, cols="6,<3,>3,<3,>3,<3,>3,<3,>3,<3,>3,<3,>3", grid=rows, frame=none]
@@ -43,6 +45,8 @@ using the `mop.r` and `mop.rr` instructions defined by the Zimops extension.
 |`sschkra`   2+^|`1000101` 2+^|`1`   2+^|`5`     2+^|`100`    2+^|`0`    2+^|`1110011`
 |            2+^|`7`       2+^|`5`   2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
 |===
+
+Encoding `rd` as `x0` is not supported for `ssamoswap`.
 
 If xBCFIEN is 0, the behavior of all backward-edge CFI instructions is as
 defined by the Zimops extension and the instructions just write 0 to [rd].
@@ -90,7 +94,7 @@ using shadow stacks is as follows:
          :
          : 
         sspop x5       # pop from shadow stack into x5
-        sschkra x1, x5 # compare link register x1 to shadow 
+        sschkra x5, x1 # compare link register x1 to shadow 
                        # link register x5; faults if not same
         ret
 
