@@ -420,7 +420,7 @@ The following faults may occur:
 .. Instructions fetch causes a page fault
 . if the accessed page is not a shadow stack page
 .. `ssamoswap` and `sspush` cause a store/AMO access fault
-.. `sspop` cause a load access fault
+.. `sspop` causes a load access fault
 
 To support these rules, the virtual address translation process specified in
 section 4.3.2 of the Privileged Specification cite:[PRIV] is modified as
