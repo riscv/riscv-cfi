@@ -291,7 +291,7 @@ The operation of this instruction is as follows:
 [source, text]
 ----
 If xFCFIACT == 1
-   lplr.ML = inst.MLPL
+   lplr.UL = inst.ULPL
 else
    [rd] = 0;
 endif
@@ -329,12 +329,12 @@ bar:
 A trap may need to be delivered to the same or higher privilege level on
 completion of JALR but before the instruction at the target of JALR was decoded.
 To avoid losing previous ELP state, MPELP and SPELP bits are provided in the
-mcfistatus CSR for M-mode and HS/S-mode respectively. The `SPELP` bits can be
-accessed through the `scfistatus` CSR. To avoid losing `ELP` state on traps to
-VS-mode, `SPELP` bits are provided in `vcfistatus` (VS-modes version of
-`scfistatus`) to hold the `ELP`. When a trap is taken into VS-mode, the `SPELP`
-bits of `vcfistatus` CSR are updated with `ELP`. When `V=1`, `scfistatus`
-aliases to `vcfistatus` CSR. The `xPELP` fields in `mcfistatus` and `vcfistatus`
+mstatus CSR for M-mode and HS/S-mode respectively. The `SPELP` bits can be
+accessed through the `sstatus` CSR. To avoid losing `ELP` state on traps to
+VS-mode, `SPELP` bits are provided in `vsstatus` (VS-modes version of
+`sstatus`) to hold the `ELP`. When a trap is taken into VS-mode, the `SPELP`
+bits of `vsstatus` CSR are updated with `ELP`. When `V=1`, `sstatus`
+aliases to `vsstatus` CSR. The `xPELP` fields in `mstatus` and `vsstatus`
 are WARL fields. The trap handler should preserve the `lplr` CSR.
 
 When a trap is taken into privilege mode `x`, the `xELP` bits are updated with
@@ -342,5 +342,5 @@ current `ELP` and `ELP` is set to `NO_LP_EXPECTED`.
 
 `MRET` or `SRET` instruction is used to return from a trap in M-mode or S-mode
 respectively. When executing an `xRET` instruction, the `ELP` is set to `xPELP`
-and xPELP is set to `NO_LP_EXPECTED`. The trap handler should put back the
+and xPELP is set to `NO_LP_EXPECTED`. The trap handler should restore the
 preserved `lplr` value before invoking `SRET` or `MRET`.
