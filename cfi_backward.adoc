@@ -334,7 +334,7 @@ store the value from address in `src` into register `dst`.
 The `ssamoswap` is always sequentially consistent and cannot be reordered with
 earlier or later memory operations from the same hart. 
 
-The `ssamoswap` requires the virtual address in `ssp` to have a shadow stack
+The `ssamoswap` requires the virtual address in `addr` to have a shadow stack
 attribute (see Shadow Stack Memory Protection).
 
 If the virtual address is not `XLEN` aligned then the instructions cause a
@@ -420,13 +420,13 @@ The following faults may occur:
 .. Instructions fetch causes a page fault
 . if the accessed page is not a shadow stack page
 .. `ssamoswap` and `sspush` cause a store/AMO access fault
-.. `sspop` causes a load access fault
+.. `sspop` and `ssamoswap` cause a load access fault
 
 To support these rules, the virtual address translation process specified in
 section 4.3.2 of the Privileged Specification cite:[PRIV] is modified as
 follows:
 
-3. If `pte.v = 0`, of if any bits of encodings that are reserved for future
+3. If `pte.v = 0` or if any bits of encodings that are reserved for future
    standard use are set within `pte`, stop and raise a page-fault exception
    corresponding to the original access type. The encoding `pte.xwr = 010b`
    is not reserved if `menvcfg.CFI` is 1 or if `V=1` and `henvcfg.CFI` is 1.
