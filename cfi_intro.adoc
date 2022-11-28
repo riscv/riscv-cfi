@@ -194,3 +194,5 @@ Zisslpcfi extension. The Zisslpcfi instructions are encoded as Zimops revert bac
 to their NOP behavior.
 ====
 
+The Zisslpcfi extension depends on the Zicsr extension.
+
