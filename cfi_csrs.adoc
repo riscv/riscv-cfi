@@ -38,7 +38,7 @@ The `SFCFIEN` (bit 24) and `UFCFIEN` (bit 23) are WARL fields that when set to 1
 enable forward-edge CFI S-mode (if supported), and U-mode (if supported)
 respectively.
 
-The `SBCFIEN` (bit 26) and `UBCFIEN` (bit 27) are WARL fields that when set to 1
+The `SBCFIEN` (bit 27) and `UBCFIEN` (bit 26) are WARL fields that when set to 1
 enable backward-edge CFI S-mode (if supported), and U-mode (if supported)
 respectively.
 
