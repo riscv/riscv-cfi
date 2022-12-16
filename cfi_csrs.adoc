@@ -13,7 +13,7 @@ When `menvcfg.CFI` bit is 0, then at privilege modes less privileged than M:
 * Attempts to access `ssp` CSR and `lplr` CSR raise an illegal instruction
   exception.
 * Zisslpcfi extension instructions revert to the Zimops defined behavior.
-* The `SFCFIEN` and `SPELP` fields in `mstatus` are read-only zero.
+* The `SBCFIEN`, `SFCFIEN` and `SPELP` fields in `mstatus` are read-only zero.
 * The `CFI` field in `henvcfg` is read-only zero.
 * The `pte.xwr=010b` encoding in S-stage page tables is reserved.
 
@@ -26,7 +26,7 @@ When `henvcfg.CFI` bit is 0, then at privilege modes VS and VU:
 
 * Attempts to access `ssp` CSR and `lplr` CSR raise an illegal instruction
   exception.
-* The `SFCFIEN` and `SPELP` fields in `vsstatus` are read-only zero.
+* The `SBCFIEN`, `SFCFIEN` and `SPELP` fields in `vsstatus` are read-only zero.
 * The `pte.xwr=010b` encoding in VS-stage page tables remains reserved.
 
 === Machine status registers (`mstatus`)
@@ -79,7 +79,7 @@ When `henvcfg.CFI` is 0, these fields are read-only zero.
 
 === Landing pad label register (`lplr`)
 
-The `lplr` CSR is a user-mode read-write (URW) 32-bit register that holds the
+The `lplr` CSR is a unprivileged read-write (URW) 32-bit register that holds the
 label expected at the target of an indirect call or an indirect jump. The label
 is split into a 8-bit upper label (`UL`), 8-bit middle label (`ML`), and a
 9-bit lower label (`LL`).
