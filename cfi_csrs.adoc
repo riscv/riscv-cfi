@@ -5,8 +5,9 @@ This chapter specifies the CSR state of the Zisslpcfi extension.
 
 === Machine environment configuration registers (`menvcfg and menvcfgh`)
 
-The `CFIE` (bit 60) bit controls if Zisslpcfi extension is available for use in
-modes less privileged than M. 
+The `CFIE` (bit 60) field controls if Zisslpcfi extension is available for use
+in modes less privileged than M. When `CFIE` is 1, the `SFCFIE` (bit 59) field
+enables forward-edge CFI at S-mode.
 
 When `menvcfg.CFIE` bit is 0, then at privilege modes less privileged than M:
 
@@ -16,8 +17,6 @@ When `menvcfg.CFIE` bit is 0, then at privilege modes less privileged than M:
 * The `UBCFIE`, `UFCFIE` and `SPELP` fields in `mstatus` are read-only zero.
 * The `CFIE` field in `henvcfg` is read-only zero.
 * The `pte.xwr=010b` encoding in S-stage page tables is reserved.
-
-When `CFIE` is 1, the `SFCFIE` (bit 59) field enables forward-edge CFI at S-mode.
 
 [NOTE]
 ====
