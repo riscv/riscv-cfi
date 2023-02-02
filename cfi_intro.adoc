@@ -165,10 +165,10 @@ on the program being executed in U-mode.
 
 To support backward compatibility of the programs built with Zisslpcfi support, the
 new instructions to operate on the shadow stack, the landing pad instructions,
-and the instructions to set the lplr are encoded using Zimops encodings. When
+and the instructions to set the lplr are encoded using Zimop encodings. When
 Zisslpcfi is not enabled for a program or the program is executing on a processor
 that does not support the Zisslpcfi extension then the instructions introduced by
-the Zisslpcfi extensions execute as defined by Zimops extension.
+the Zisslpcfi extensions execute as defined by Zimop extension.
 
 [NOTE]
 ====
@@ -178,19 +178,19 @@ extension. Such system libraries however may need to link dynamically to
 programs that are not compiled with the Zisslpcfi extension. When such programs are
 executing, the OS may disable the Zisslpcfi extension in U-mode. When these system
 libraries are invoked in U-mode by such programs, the Zisslpcfi instructions in the
-libraries revert to their Zimops defined behavior. Without such encoding, the OS
+libraries revert to their Zimop defined behavior. Without such encoding, the OS
 distribution may need to carry two versions of such libraries, one with Zisslpcfi
 instructions and one without, and thus need significantly larger cost and
 complexity for supporting the Zisslpcfi extension.
 
 An OS distribution compiled with Zisslpcfi extension may be installed on a machine
 that does not support Zisslpcfi extensions. On such machines, as the Zisslpcfi
-instructions are encoded as Zimops, they revert to their Zimops defined behavior.
+instructions are encoded as Zimop, they revert to their Zimop defined behavior.
 
 A program compiled with the Zisslpcfi extension may be installed on an OS that is
 not compiled for the Zisslpcfi extension or on a machine that does not support the
-Zisslpcfi extension. The Zisslpcfi instructions are encoded as Zimops revert back
-to their Zimops defined behavior.
+Zisslpcfi extension. The Zisslpcfi instructions are encoded as Zimop revert back
+to their Zimop defined behavior.
 ====
 
 The Zisslpcfi extension depends on the Zicsr extension.
