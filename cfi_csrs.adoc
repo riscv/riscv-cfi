@@ -124,7 +124,7 @@ use of forward-edge CFI at S-mode.
 When `menvcfg.CFI` is 1 but `henvcfg.CFI` is 0, an attempt to access `lplr` when
 `V=1` raises a virtual instruction exception. 
 
-When `menvcfg.CFI` and `henvcfg.CFI` are both 1 but `vstatus.UFCFIE` is 0, an
+When `menvcfg.CFI` and `henvcfg.CFI` are both 1 but `vsstatus.UFCFIE` is 0, an
 attempt to access `lplr` in VU-mode raises an illegal instruction exception.
 
 === Shadow stack pointer (`ssp`) 
