@@ -71,7 +71,7 @@ and on a mismatch causes an illegal-instruction exception.
 
 The forward-edge CFI introduces the following instructions for landing
 pad operations. All instructions are encoded using the SYSTEM major opcode and
-using the `mop.rr` instructions defined by the Zimops extension. 
+using the `mop.rr` instructions defined by the Zimop extension.
 
 [width=100%]
 [%header, cols="6,<2,>2,^2,^2,<3,>3,<3,>3,<3,>3,<3,>3", grid=rows, frame=none]
@@ -129,7 +129,7 @@ When forward-edge CFI is not active(`xFCFIE = 0`):
   indirect call or jump to be a landing pad instruction.
 * The implementation does not update expected landing pad (`ELP`) when `lpcll`
   is executed.
-* The instructions defined for forward-edge CFI revert to their Zimops defined
+* The instructions defined for forward-edge CFI revert to their Zimop defined
   behavior and write 0 to [rd].
 
 === Landing pad instruction

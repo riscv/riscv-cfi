@@ -13,7 +13,7 @@ When `menvcfg.CFIE` bit is 0, then at privilege modes less privileged than M:
 
 * Attempts to access `ssp` CSR and `lplr` CSR raise an illegal instruction
   exception.
-* Zisslpcfi extension instructions revert to the Zimops defined behavior.
+* Zisslpcfi extension instructions revert to the Zimop defined behavior.
 * The `UBCFIE`, `UFCFIE` and `SPELP` fields in `mstatus` are read-only zero.
 * The `CFIE` field in `henvcfg` is read-only zero.
 * The `pte.xwr=010b` encoding in S-stage page tables is reserved.

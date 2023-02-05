@@ -21,7 +21,7 @@ unsafe code sequences.
 
 The backward-edge CFI extension introduces the following instructions for shadow
 stack operations. All instructions are encoded using the SYSTEM major opcode and
-using the `mop.r` and `mop.rr` instructions defined by the Zimops extension.
+using the `mop.r` and `mop.rr` instructions defined by the Zimop extension.
 
 [width=100%]
 [%header, cols="6,<6,>6,<3,>3,<3,>3,<3,>3,<3,>3", grid=rows, frame=none]
@@ -84,7 +84,7 @@ else
 
 When backward-edge CFI is not enabled(`xBCFIE = 0`):
 
-* The instructions defined for backward-edge CFI revert to their Zimops defined
+* The instructions defined for backward-edge CFI revert to their Zimop defined
   behavior and write 0 to [rd].
 
 [NOTE]
@@ -93,7 +93,7 @@ The use of shadow stacks at U-mode must be explicitly enabled per application.
 Explicit enable for user mode applications allows such an application to invoke
 shared libraries that may have shadow stack instructions even when the
 application itself has backward-edge CFI not enable. The shadow stack
-instructions invoked in the context of this application revert to their Zimops
+instructions invoked in the context of this application revert to their Zimop
 defined behavior.
 
 When Zisslpcfi is enabled, the use of backward-edge CFI is always enabled for
@@ -111,15 +111,15 @@ compiled with shadow stack instructions.
 ====
 When programs using shadow stack instructions are installed on a machine that
 supports the CFI extensions but the operating system installed does not enable
-the CFI extensions, the program continues to function due to Zimops defined
+the CFI extensions, the program continues to function due to Zimop defined
 behavior of writing 0 to [rd] and not causing an illegal-instruction exception.
 
 When programs using shadow stack instructions are installed on a machine that
-does not support the CFI extensions but support the Zimops extension, the
-program continues to function due to Zimops defined behavior of writing 0 to
+does not support the CFI extensions but support the Zimop extension, the
+program continues to function due to Zimop defined behavior of writing 0 to
 [rd] and not causing an illegal-instruction exception.
 
-On machines that do not support Zimops extension, the instructions cause an
+On machines that do not support Zimop extension, the instructions cause an
 illegal-instruction exception. Installing programs that use the shadow stack
 instructions on such machines is not supported.
 ====
@@ -304,7 +304,7 @@ endif
 
 [NOTE]
 ====
-The property of Zimops writing 0 to the rd when the extension using Zimops is
+The property of Zimop writing 0 to the rd when the extension using Zimop is
 not present or not enabled may be used by such functions to skip over unwind
 actions by dynamically detecting if the backward-edge CFI extension is enabled.
 
