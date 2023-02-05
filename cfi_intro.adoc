@@ -42,8 +42,8 @@ The term call is used to refer to a JAL or JALR instruction (and their
 compressed forms) with x1 or x5 as the rd. A call using JAL is termed a direct
 call and using JALR is termed an indirect call. 
 
-The term return is used to refer to a JAL or JALR instructions (and their
-corresponding compressed forms) with x1 or x5 as the rs1. 
+The term return is used to refer to a JALR instructions (and its
+corresponding compressed form) with x1 or x5 as the rs1. 
 
 The term indirect jump is used to refer to an unconditional jump using
 JALR/C.JALR instruction where the rd i.e. the link register is not x1 or x5
