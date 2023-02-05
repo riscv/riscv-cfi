@@ -430,14 +430,14 @@ enhanced to support a shadow stack memory region for use by M-mode.
 ==== Virtual-Memory system extension for Shadow Stack
 
 The shadow stack memory is protected using page table attributes such that it
-cannot be stored to by instructions other than `sspush` and `amossswap`. The
+cannot be stored to by instructions other than `sspush` and `ssamoswap`. The
 `sspop` instruction can only load from shadow stack memory.
 
 The shadow stack can be read using all instructions that load from memory. 
 
 The encoding `R=0`, `W=1`, and `X=0`, is defined to mean a shadow stack page.
-When `menvcfg.CFI=0`, this encoding continues to be reserved. When `V=1` and 
-`henvcfg.CFI=0`, this encoding continues to be reserved at `VS` and `VU`.
+When `menvcfg.CFIE=0`, this encoding continues to be reserved. When `V=1` and 
+`henvcfg.CFIE=0`, this encoding continues to be reserved at `VS` and `VU`.
 
 The following faults may occur:
 
@@ -455,7 +455,7 @@ follows:
 3. If `pte.v = 0` or if any bits of encodings that are reserved for future
    standard use are set within `pte`, stop and raise a page-fault exception
    corresponding to the original access type. The encoding `pte.xwr = 010b`
-   is not reserved if `menvcfg.CFI` is 1 or if `V=1` and `henvcfg.CFI` is 1.
+   is not reserved if `menvcfg.CFIE` is 1 or if `V=1` and `henvcfg.CFIE` is 1.
    
 4. Otherwise, the PTE is valid. If `pte.r = 1` or `pte.w = 1` or `pte.x = 1`,
    go to step 5. Otherwise, this PTE is a pointer to the next level of the page
@@ -465,7 +465,7 @@ follows:
 
 5. A leaf PTE has been found. If the memory access is by a shadow stack
    instruction and `pte.xwr != 010b` then cause an access-violation exception
-   corresponding to the access type. If the memory acccess is a store/AMO and
+   corresponding to the access type. If the memory access is a store/AMO and
    `pte.xwr == 010b` then cause an store/AMO access-violation. If the requested
    memory access is not allowed by the `pte.r`, `pte.w`, `pte.x`, and `pte.u`
    bits, given the current privilege mode and the value of the `SUM` and `MXR`
@@ -518,13 +518,13 @@ The M-mode memory accesses by `sspop` instruction tests for read permission in
 the matching PMP entry when permission checking is required.
 
 When the `Smepmp` extension is implemented, a new WARL field `sspmp` is defined
-in bits 8:3 of the `mseccfg` CSR to configrue a PMP entry as the shadow stack
+in bits 8:3 of the `mseccfg` CSR to configure a PMP entry as the shadow stack
 memory region for M-mode accesses.
 
 When `mseccfg.MML` is 1, the `sspmp` field is read-only else it may be written.
 
 When `sspmp` field is implemented and `mseccfg.MML` is 1 the following rules are
-additionally enforcecd for M-mode memory accesses:
+additionally enforced for M-mode memory accesses:
 
 * `sspush`, `sspop`, and `ssamoswap` instructions must match PMP entry `sspmp`.
 

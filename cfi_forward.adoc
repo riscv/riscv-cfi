@@ -4,7 +4,7 @@
 The forward-edge CFI introduces landing pad instructions that enable software to
 indicate valid targets for indirect calls and indirect jumps in a program. 
 
-A landing pad (`lpcul`) instruction is defined as the instruction that must be
+A landing pad (`lpcll`) instruction is defined as the instruction that must be
 placed at the program locations that can be valid targets of indirect jumps or
 calls. 
 
@@ -48,7 +48,7 @@ established in the `lplr` is matched with the target's label. If a mismatch is
 detected then the label check instruction causes an illegal instruction
 exception.
 
-Each landing pad may be labeled with a label that may be upto 25-bits wide. The
+Each landing pad may be labeled with a label that may be up to 25-bits wide. The
 `lplr` has three subfields - a 9-bit lower label (`LL`), a 8-bit middle label
 (`ML`), and an 8-bit upper label (`UL`).
 
@@ -224,7 +224,7 @@ endif
 [NOTE]
 ====
 The following instruction sequence may be emitted at indirect call sites by the
-compiler to set up the landing pad label register when labels that are upto
+compiler to set up the landing pad label register when labels that are up to
 9-bit wide are used:
 
 [literal]
@@ -261,7 +261,7 @@ endif
 [NOTE]
 ====
 The following instruction sequence may be emitted at indirect call sites by the
-compiler to set up the landing pad label register when labels that are upto
+compiler to set up the landing pad label register when labels that are up to
 17-bit wide are used:
 
 [literal]
@@ -300,7 +300,7 @@ endif
 [NOTE]
 ====
 The following instruction sequence may be emitted at indirect call sites by the
-compiler to set up the landing pad label register when labels that are upto
+compiler to set up the landing pad label register when labels that are up to
 25-bit wide are used:
 
 [literal]
