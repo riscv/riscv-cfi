@@ -402,7 +402,7 @@ An example sequence to store and restore the shadow stack pointer is as follows:
 save_shadow_stack_pointer:
     ssprr  x5                   # read ssp and push value onto
     sspush x5                   # shadow stack. The [ssp] now
-                                # holds ssp+8. Save away x5
+                                # holds ssp+XLEN/8. Save away x5
                                 # into a context structure to
                                 # restore later.
 restore_shadow_stack_pointer:
