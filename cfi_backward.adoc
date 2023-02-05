@@ -35,7 +35,7 @@ using the `mop.r` and `mop.rr` instructions defined by the Zimop extension.
 |===
 
 Encoding `rs1` as `x0` is not supported for `sspush`.
-Encoding `rd`  as `x0` is not supported for `sspop`.
+Encoding `rd`  as `x0` is not supported for `sspop` and `ssprr`.
 
 [width=100%]
 [%header, cols="6,<3,>3,<3,>3,<3,>3,<3,>3,<3,>3,<3,>3", grid=rows, frame=none]
@@ -74,9 +74,9 @@ else if ( menvcfg.CFIE == 1 && V == 0 && privilege == S-mode )
     xBCFIE = 1
 else if ( menvcfg.CFIE == 1 && V == 0 && privilege == U-mode )
     xBCFIE = mstatus.UBCFIE
-else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 & V == 1 && privilege == S-mode )
+else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 && V == 1 && privilege == S-mode )
     xBCFIE = 1
-else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 & V == 1 && privilege == U-mode )
+else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 && V == 1 && privilege == U-mode )
     xBCFIE = vsstatus.UBCFIE
 else
     xBCFIE = 0

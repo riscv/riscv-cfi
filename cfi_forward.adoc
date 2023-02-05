@@ -114,9 +114,9 @@ else if ( menvcfg.CFIE == 1 && V == 0 && privilege == S-mode )
     xFCFIE = menvcfg.SFCFIE
 else if ( menvcfg.CFIE == 1 && V == 0 && privilege == U-mode )
     xFCFIE = mstatus.UFCFIE
-else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 & V == 1 && privilege == S-mode )
+else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 && V == 1 && privilege == S-mode )
     xFCFIE = henvcfg.SFCFIE
-else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 & V == 1 && privilege == U-mode )
+else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 && V == 1 && privilege == U-mode )
     xFCFIE = vsstatus.UFCFIE
 else
     xFCFIE = 0
