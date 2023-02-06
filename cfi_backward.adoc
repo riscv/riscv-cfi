@@ -210,7 +210,7 @@ If (xBCFIE = 1)
    *[ssp] = [src]              # Store src value to address in ssp
 else
     [dst] = 0
-endif`
+endif
 ----
 
 The operation of the `sspop` instructions is as follows:
