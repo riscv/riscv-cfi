@@ -210,7 +210,7 @@ If (xBCFIE = 1)
    *[ssp] = [src]              # Store src value to address in ssp
 else
     [dst] = 0
-endif`
+endif
 ----
 
 The operation of the `sspop` instructions is as follows:
@@ -255,7 +255,7 @@ setjmp() {
     :
     :
     // read and save top of stack pointer to jmp_buf
-    asm(“ssprr %0” : “=r”(cur_ssp):);
+    asm("ssprr %0" : "=r"(cur_ssp):);
     jmp_buf->saved_ssp = cur_ssp;
     :
     :
@@ -264,9 +264,9 @@ longjmp() {
     :
     // Read current shadow stack pointer and 
     // compute number of call frames to unwind
-    asm(“ssprr %0” : “=r”(cur_ssp):);
+    asm("ssprr %0" : "=r"(cur_ssp):);
     // Skip the unwind if backward-edge CFI not enabled
-    asm(“beqz %0, 1f” : “=r”(cur_ssp):);
+    asm("beqz %0, 1f" : "=r"(cur_ssp):);
     num_unwind = jmp_buf->saved_ssp - cur_ssp;
     // Unwind the frames in a loop
     while ( num_unwind > 0 ) {
@@ -274,10 +274,10 @@ longjmp() {
         cur_ssp += step;
         num_unwind -= step;
         // write the ssp register with unwound value
-        asm(“csrw %0, $ssp_csr_num” : “=r”(cur_ssp):);
+        asm("csrw %0, $ssp_csr_num" : "=r"(cur_ssp):);
         // Test if unwound past the shadow stack bounds
-        asm(“sspush x5”);
-        asm(“sspop  x5”);
+        asm("sspush x5");
+        asm("sspop  x5");
     }
 1f:
     :
