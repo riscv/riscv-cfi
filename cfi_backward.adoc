@@ -402,15 +402,16 @@ An example sequence to store and restore the shadow stack pointer is as follows:
 save_shadow_stack_pointer:
     ssprr  x5                   # read ssp and push value onto
     sspush x5                   # shadow stack. The [ssp] now
-    addi   x5, x5, -(XLEN/8)    # holds ssp+XLEN/8. The [x5] now 
-                                # holds ssp. Save away x5
+    addi   x5, x5, -(XLEN/8)    # holds ptr+XLEN/8. The [x5] now 
+                                # holds ptr. Save away x5
                                 # into a context structure to
                                 # restore later.
 restore_shadow_stack_pointer:
     ssamoswap t0, a0, x0        # t0=*[a0] and *[a0]=0
-                                # The [t0] should hold ssp
+                                # The [a0] should hold ptr'
+                                # The [t0] should hold ptr'+XLEN/8
     addi      a0, a0, (XLEN/8)  # a0+XLEN/8 must match to t0
-    bnez      t0, a0, crash     # if not crash program
+    bne       t0, a0, crash     # if not crash program
     csrw      ssp, t0           # setup new ssp
 
 Further the program may enforce an invariant that a shadow stack can be active
