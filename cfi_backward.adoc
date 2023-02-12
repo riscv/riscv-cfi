@@ -407,7 +407,7 @@ save_shadow_stack_pointer:
                                 # into a context structure to
                                 # restore later.
 restore_shadow_stack_pointer:
-    ssamoswap t0, a0, x0        # t0=*[a0] and *[a0]=0
+    ssamoswap t0, x0, (a0)      # t0=*[a0] and *[a0]=0
                                 # The [a0] should hold ptr'
                                 # The [t0] should hold ptr'+XLEN/8
     addi      a0, a0, (XLEN/8)  # a0+XLEN/8 must match to t0
@@ -415,7 +415,7 @@ restore_shadow_stack_pointer:
     csrw      ssp, t0           # setup new ssp
 
 Further the program may enforce an invariant that a shadow stack can be active
-only on one hart by using the ssamoswap when performing the restore from the
+only on one hart by using the `ssamoswap` when performing the restore from the
 checkpoint such that the checkpointed data is zeroed as part of the restore
 sequence and multiple hart attempt to restore the checkpointed data only one of
 them succeeds.
