@@ -17,7 +17,7 @@ register, e.g. `x1` and/or `x5`, from arbitrary modification by not emitting
 unsafe code sequences.
 ====
 
-== Backward-edge CFI instruction encoding
+=== Backward-edge CFI instruction encoding
 
 The backward-edge CFI extension introduces the following instructions for shadow
 stack operations. All instructions are encoded using the SYSTEM major opcode and
