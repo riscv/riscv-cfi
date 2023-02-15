@@ -337,7 +337,7 @@ bits of `vsstatus` CSR are updated with `ELP`. When `V=1`, `sstatus`
 aliases to `vsstatus` CSR. The `xPELP` fields in `mstatus` and `vsstatus`
 are WARL fields. The trap handler should preserve the `lplr` CSR.
 
-When a trap is taken into privilege mode `x`, the `xELP` bits are updated with
+When a trap is taken into privilege mode `x`, the `xPELP` bits are updated with
 current `ELP` and `ELP` is set to `NO_LP_EXPECTED`. 
 
 `MRET` or `SRET` instruction is used to return from a trap in M-mode or S-mode

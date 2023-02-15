@@ -42,7 +42,7 @@ Encoding `rd`  as `x0` is not supported for `sspop` and `ssprr`.
 |`(mop.rr)`     |`31`  |  `25`|`24`|`20`|`19` | `15`|`14` |  `12`|`11` | `7`|`6` | `0`
 |mnemonic    2+^|`1.00..1` 2+^|`rs2` 2+^|`rs1`   2+^|`func3`  2+^|`rd`   2+^|`opcode` 
 |`ssamoswap` 2+^|`1000001` 2+^|`src` 2+^|`addr`  2+^|`100`    2+^|`dst`  2+^|`1110011`
-|`sschkra`   2+^|`1000101` 2+^|`1`   2+^|`5`     2+^|`100`    2+^|`0`    2+^|`1110011`
+|`sschkra`   2+^|`1000101` 2+^|`1`   2+^|`00101` 2+^|`100`    2+^|`0`    2+^|`1110011`
 |`sspush`    2+^|`1000101` 2+^|`src` 2+^|`0`     2+^|`100`    2+^|`0`    2+^|`1110011`
 |            2+^|`7`       2+^|`5`   2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
 |===
@@ -407,7 +407,7 @@ save_shadow_stack_pointer:
                                 # into a context structure to
                                 # restore later.
 restore_shadow_stack_pointer:
-    ssamoswap t0, a0, x0        # t0=*[a0] and *[a0]=0
+    ssamoswap t0, x0, (a0)      # t0=*[a0] and *[a0]=0
                                 # The [a0] should hold ptr'
                                 # The [t0] should hold ptr'+XLEN/8
     addi      a0, a0, (XLEN/8)  # a0+XLEN/8 must match to t0
@@ -415,7 +415,7 @@ restore_shadow_stack_pointer:
     csrw      ssp, t0           # setup new ssp
 
 Further the program may enforce an invariant that a shadow stack can be active
-only on one hart by using the ssamoswap when performing the restore from the
+only on one hart by using the `ssamoswap` when performing the restore from the
 checkpoint such that the checkpointed data is zeroed as part of the restore
 sequence and multiple hart attempt to restore the checkpointed data only one of
 them succeeds.
