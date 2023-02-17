@@ -11,7 +11,7 @@ enables forward-edge CFI at S-mode.
 
 When `menvcfg.CFIE` bit is 0, then at privilege modes less privileged than M:
 
-* Attempts to access `ssp` CSR and `lplr` CSR raise an illegal instruction
+* Attempts to access `ssp` CSR and `lpl` CSR raise an illegal instruction
   exception.
 * Zisslpcfi extension instructions revert to the Zimop defined behavior.
 * The `UBCFIE`, `UFCFIE` and `SPELP` fields in `mstatus` are read-only zero.
@@ -39,7 +39,7 @@ VS and VU modes. When `menvcfg.CFIE` is 0, `henvcfg.CFIE` is read-only zero.
 
 When `henvcfg.CFIE` bit is 0, then at privilege modes VS and VU:
 
-* Attempts to access `ssp` CSR and `lplr` CSR raise an illegal instruction
+* Attempts to access `ssp` CSR and `lpl` CSR raise an illegal instruction
   exception.
 * The `UBCFIE`, `UFCFIE` and `SPELP` fields in `vsstatus` are read-only zero.
 * The `pte.xwr=010b` encoding in VS-stage page tables remains reserved.
@@ -91,14 +91,14 @@ order. The state of `henvcfg.CFIE` does not prevent access to the bits introduce
 in `vsstatus` when the CSR is accessed in HS-mode.
 ====
 
-=== Landing pad label register (`lplr`)
+=== Landing pad label (`lpl`)
 
-The `lplr` CSR is a unprivileged read-write (URW) 32-bit register that holds the
+The `lpl` CSR is a unprivileged read-write (URW) 32-bit register that holds the
 label expected at the target of an indirect call or an indirect jump. The label
 is split into a 8-bit upper label (`UL`), 8-bit middle label (`ML`), and a
 9-bit lower label (`LL`).
 
-.`lplr` for RV32 and RV64
+.`lpl` for RV32 and RV64
 [wavedrom, , ]
 ....
 {reg: [
@@ -109,23 +109,19 @@ is split into a 8-bit upper label (`UL`), 8-bit middle label (`ML`), and a
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-When `menvcfg.CFIE` is 0, an attempt to access `lplr` in a mode other than M-mode
-raises an illegal instruction exception. When `sstatus.UFCFIE` is 0, an attempt
-to access `lplr` in U-mode raises an illegal instruction exception. 
+When `menvcfg.CFIE` is 0, an attempt to access `lpl` in a mode other than M-mode
+raises an illegal instruction exception.
 
 [NOTE]
 ====
-Access to `lplr` at S-mode is not dependent on `sstatus.UFCFIE` or
+Access to `lpl` at S-mode is not dependent on `sstatus.UFCFIE` or
 `menvcfg.SFCFIE` to allow an operating system to be able to context switch
-U-mode `lplr` state even when the operating system itself does not enable the
+U-mode `lpl` state even when the operating system itself does not enable the
 use of forward-edge CFI at S-mode.
 ====
 
-When `menvcfg.CFIE` is 1 but `henvcfg.CFIE` is 0, an attempt to access `lplr` when
+When `menvcfg.CFIE` is 1 but `henvcfg.CFIE` is 0, an attempt to access `lpl` when
 `V=1` raises a virtual instruction exception. 
-
-When `menvcfg.CFIE` and `henvcfg.CFIE` are both 1 but `vsstatus.UFCFIE` is 0, an
-attempt to access `lplr` in VU-mode raises an illegal instruction exception.
 
 === Shadow stack pointer (`ssp`) 
 

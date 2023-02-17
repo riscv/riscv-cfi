@@ -42,19 +42,19 @@ This significantly reduces the number of valid targets for an indirect call.
 Labeling of the landing pads enables software to achieve greater precision in
 pairing up indirect call sites or indirect jump sites with valid targets. To
 support labeled landing pads, the indirect call/jump sites establish an expected
-landing pad label in the landing pad label register (`lplr`). If the target of
-the indirect call/jump is a valid landing pad instruction, the expected label
-established in the `lplr` is matched with the target's label. If a mismatch is
+landing pad label in the landing pad label (`lpl`). If the target of the
+ indirect call/jump is a valid landing pad instruction, the expected label
+established in the `lpl` is matched with the target's label. If a mismatch is
 detected then the label check instruction causes an illegal instruction
 exception.
 
 Each landing pad may be labeled with a label that may be up to 25-bits wide. The
-`lplr` has three subfields - a 9-bit lower label (`LL`), a 8-bit middle label
+`lpl` has three subfields - a 9-bit lower label (`LL`), a 8-bit middle label
 (`ML`), and an 8-bit upper label (`UL`).
 
 The forward-edge CFI provides a `lpsll` instruction to establish the expected
-`LL` in the `lplr`, a `lpsml` instruction to establish the `ML`, and a `lpsul`
-instruction to establish the `UL` in the `lplr`. 
+`LL` in the `lpl`, a `lpsml` instruction to establish the `ML`, and a `lpsul`
+instruction to establish the `UL` in the `lpl`. 
 
 The `lpcll` instructions embed a 9-bit immediate field. The instruction compares
 this value to the `LL` and on a mismatch causes an illegal-instruction exception.
@@ -139,7 +139,7 @@ indirect calls. When a forward-edge CFI is active, the instructions cause an
 illegal instruction exception if they are not placed at a 4-byte aligned `pc`.
 The `lpcll` has the lower landing pad label embedded in the `LLPL` field.
 `lpcll` causes an illegal instruction exception if the `LLPL` field in the
-instruction does not match the `lplr.LL` field.
+instruction does not match the `lpl.LL` field.
 
 When the instructions cause an illegal-instruction exception, the `ELP` does not
 change.
@@ -154,7 +154,7 @@ If xFCFIE != 0
     if pc[1:0] != 0
         Cause illegal-instruction exception
     // If lower landing pad label not matched -> illegal-instruction
-    else if (inst.LLPL != lplr.LL)
+    else if (inst.LLPL != lpl.LL)
         Cause illegal-instruction exception
     else
         ELP = NO_LP_EXPECTED
@@ -166,11 +166,11 @@ endif
 === Label matching instructions
 
 The `lpcml` instruction matches the 8-bit wide middle label in its `MLPL` field with
-the `lplr.ML` field and causes an illegal instruction exception on a mismatch. The
+the `lpl.ML` field and causes an illegal instruction exception on a mismatch. The
 `lpcml` is not a valid target for an indirect call or jump.
 
 The `lpcul` instruction matches the 8-bit wide upper label in its `ULPL` field with
-the `lplr.UL` field and causes an illegal instruction exception on a mismatch. The
+the `lpl.UL` field and causes an illegal instruction exception on a mismatch. The
 `lpcul` is not a valid target for an indirect call or jump.
 
 The operation of the `lpcml` instruction is as follows:
@@ -179,7 +179,7 @@ The operation of the `lpcml` instruction is as follows:
 [source, text]
 ----
 If xFCFIE != 0
-    if (lplr.ML != inst.MLPL)
+    if (lpl.ML != inst.MLPL)
         cause illegal-instruction exception
 else
     [dst] = 0;
@@ -192,7 +192,7 @@ The operation of the `lpcul` instruction is as follows:
 [source, text]
 ----
 If xFCFIE != 0
-    if (lplr.UL != inst.ULPL)
+    if (lpl.UL != inst.ULPL)
         cause illegal-instruction exception
 else
     [dst] = 0;
@@ -202,11 +202,11 @@ endif
 === Setting up landing pad label register
 
 Before performing an indirect call or indirect jump to a labeled landing pad,
-the `lplr` is loaded with the expected landing pad label - a constant determined
+the `lpl` is loaded with the expected landing pad label - a constant determined
 at compilation time. 
 
 A `lpsll` instruction is provided to set the value of the lower label (`LL`) field
-of the `lplr`.
+of the `lpl`.
 
 The operation of this instruction is as follows:
 
@@ -214,8 +214,8 @@ The operation of this instruction is as follows:
 [source, text]
 ----
 If xFCFIE == 1
-   lplr.LL = inst.LLPL
-   lplr.ML = lplr.UL = 0
+   lpl.LL = inst.LLPL
+   lpl.ML = lpl.UL = 0
 else
    [rd] = 0;
 endif
@@ -231,7 +231,7 @@ compiler to set up the landing pad label register when labels that are up to
 foo:
     :
     # x10 is expected to have address of function bar()
-    lpsll $0x1de    # setup lplr.LL with value 0x1de
+    lpsll $0x1de    # setup lpl.LL with value 0x1de
     jalr %ra, %x10
     :
 
@@ -245,7 +245,7 @@ bar:
 ====
 
 A `lpsml` instruction is provided to set the value of the middle label (`ML`) field
-of the `lplr`. This instruction is used when labels wider than 9-bit are used. 
+of the `lpl`. This instruction is used when labels wider than 9-bit are used. 
 
 The operation of this instruction is as follows:
 
@@ -253,7 +253,7 @@ The operation of this instruction is as follows:
 [source, text]
 ----
 If xFCFIE == 1
-   lplr.ML = inst.MLPL
+   lpl.ML = inst.MLPL
 else
    [rd] = 0;
 endif
@@ -269,8 +269,8 @@ compiler to set up the landing pad label register when labels that are up to
 foo:
     :   
     # x10 is expected to have address of function bar()
-    lpsll $0x1de    # setup lplr.LL with value 0x1de
-    lpsml $0x17     # setup lplr.ML with value 0x17
+    lpsll $0x1de    # setup lpl.LL with value 0x1de
+    lpsml $0x17     # setup lpl.ML with value 0x17
     jalr %ra, %x10
     :
 
@@ -284,7 +284,7 @@ bar:
     :               # continue if landing pad checks succeed
 ====
 
-A `lpsul` instruction is provided to set the value of upper label (`UL`) field `lplr`.
+A `lpsul` instruction is provided to set the value of upper label (`UL`) field `lpl`.
 This instruction is used when labels wider than 17-bit are used.
 
 The operation of this instruction is as follows:
@@ -293,7 +293,7 @@ The operation of this instruction is as follows:
 [source, text]
 ----
 If xFCFIE == 1
-   lplr.UL = inst.ULPL
+   lpl.UL = inst.ULPL
 else
    [rd] = 0;
 endif
@@ -309,9 +309,9 @@ compiler to set up the landing pad label register when labels that are up to
 foo:
     :
     # x10 is expected to have address of function bar()
-    lpsll $0x1de    # setup lplr.LL with value 0x1de
-    lpsml $0x17     # setup lplr.ML with value 0x17
-    lpsul $0x13     # setup lplr.UL with value 0x13
+    lpsll $0x1de    # setup lpl.LL with value 0x1de
+    lpsml $0x17     # setup lpl.ML with value 0x17
+    lpsul $0x13     # setup lpl.UL with value 0x13
     jalr %ra, %x10
     :
 
@@ -337,7 +337,7 @@ VS-mode, `SPELP` bits are provided in `vsstatus` (VS-modes version of
 `sstatus`) to hold the `ELP`. When a trap is taken into VS-mode, the `SPELP`
 bits of `vsstatus` CSR are updated with `ELP`. When `V=1`, `sstatus`
 aliases to `vsstatus` CSR. The `xPELP` fields in `mstatus` and `vsstatus`
-are WARL fields. The trap handler should preserve the `lplr` CSR.
+are WARL fields. The trap handler should preserve the `lpl` CSR.
 
 When a trap is taken into privilege mode `x`, the `xPELP` bits are updated with
 current `ELP` and `ELP` is set to `NO_LP_EXPECTED`. 
@@ -345,4 +345,4 @@ current `ELP` and `ELP` is set to `NO_LP_EXPECTED`.
 `MRET` or `SRET` instruction is used to return from a trap in M-mode or S-mode
 respectively. When executing an `xRET` instruction, the `ELP` is set to `xPELP`
 and xPELP is set to `NO_LP_EXPECTED`. The trap handler should restore the
-preserved `lplr` value before invoking `SRET` or `MRET`.
+preserved `lpl` value before invoking `SRET` or `MRET`.
