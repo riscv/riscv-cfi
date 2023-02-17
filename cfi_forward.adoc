@@ -228,11 +228,12 @@ compiler to set up the landing pad label register when labels that are up to
 9-bit wide are used:
 
 [literal]
-  :
-  # x10 is expected to have address of function bar()
-  lpsll $0x1de   # setup lplr.LL with value 0x1de
-  jalr %ra, %x10
-  :
+foo:
+    :
+    # x10 is expected to have address of function bar()
+    lpsll $0x1de    # setup lplr.LL with value 0x1de
+    jalr %ra, %x10
+    :
 
 The following instruction sequence may be emitted at indirect call sites by the
 compiler to set up the landing pads at entrypoint of function bar():
@@ -240,7 +241,7 @@ compiler to set up the landing pads at entrypoint of function bar():
 [literal]
 bar:
     lpcll $0x1de    # Verifies that LPLR.LL matches 0x1de
-
+    :               # continue if landing pad checks succeed
 ====
 
 A `lpsml` instruction is provided to set the value of the middle label (`ML`) field
@@ -265,12 +266,13 @@ compiler to set up the landing pad label register when labels that are up to
 17-bit wide are used:
 
 [literal]
-  :
-  # x10 is expected to have address of function bar()
-  lpsll $0x1de   # setup lplr.LL with value 0x1de
-  lpsml $0x17   # setup lplr.ML with value 0x17
-  jalr %ra, %x10
-  :
+foo:
+    :   
+    # x10 is expected to have address of function bar()
+    lpsll $0x1de    # setup lplr.LL with value 0x1de
+    lpsml $0x17     # setup lplr.ML with value 0x17
+    jalr %ra, %x10
+    :
 
 The following instruction sequence may be emitted at indirect call sites by the
 compiler to set up the landing pads at entrypoint of function bar():
@@ -279,7 +281,7 @@ compiler to set up the landing pads at entrypoint of function bar():
 bar:
     lpcll $0x1de    # Verifies that LPLR.LL matches 0x1de
     lpcml $0x17     # Verifies that LPLR.ML matches 0x17
-     :              # continue if landing pad checks succeed
+    :               # continue if landing pad checks succeed
 ====
 
 A `lpsul` instruction is provided to set the value of upper label (`UL`) field `lplr`.
@@ -304,13 +306,14 @@ compiler to set up the landing pad label register when labels that are up to
 25-bit wide are used:
 
 [literal]
-  :
-  # x10 is expected to have address of function bar()
-  lpsll $0x1de   # setup lplr.LL with value 0x1de
-  lpsml $0x17    # setup lplr.ML with value 0x17
-  lpsul $0x13    # setup lplr.UL with value 0x13
-  jalr %ra, %x10
-  :
+foo:
+    :
+    # x10 is expected to have address of function bar()
+    lpsll $0x1de    # setup lplr.LL with value 0x1de
+    lpsml $0x17     # setup lplr.ML with value 0x17
+    lpsul $0x13     # setup lplr.UL with value 0x13
+    jalr %ra, %x10
+    :
 
 The following instruction sequence may be emitted at indirect call sites by the
 compiler to set up the landing pads at entrypoint of function bar():
@@ -320,8 +323,7 @@ bar:
     lpcll $0x1de    # Verifies that LPLR.LL matches 0x1de
     lpcml  $0x17    # Verifies that LPLR.ML matches 0x17
     lpcul  $0x13    # Verifies that LPLR.ML matches 0x13
-     :              # continue if landing pad checks succeed
-     :
+    :               # continue if landing pad checks succeed
 ====
 
 === Preserving expected landing pad state on traps
