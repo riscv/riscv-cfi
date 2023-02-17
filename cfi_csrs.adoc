@@ -32,7 +32,7 @@ With these set of controls the backward-edge and forward-edge CFI may be
 separately enforced at S-mode and for each application.
 ====
 
-=== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
+=== Hypervisor environment configuration registers (`menvcfg and henvcfg`)
 
 The `CFIE` (bit 60) bit controls if Zisslpcfi extension is available for use in
 VS and VU modes. When `menvcfg.CFIE` is 0, `henvcfg.CFIE` is read-only zero.

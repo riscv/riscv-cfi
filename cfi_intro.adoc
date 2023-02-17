@@ -147,7 +147,7 @@ only valid targets of an indirect jump (and not an indirect call).
 
 Forward-edge and backward-edge CFI may be enabled for a program that executes in
 U-mode, S-mode, or M-mode by itself to enable a mix of CFI enabled applications,
-operating systems, and machine mode firmware to co-exist.The processor keeps
+operating systems, and machine mode firmware to co-exist. The processor keeps
 track of the CFI enables and CFI state for each mode in the `mstatus` CSR. A subset
 of the fields in the `mstatus` CSR are accessible using the `sstatus` CSR. VS-mode’s
 version of `sstatus` (`vsstatus`) tracks the CFI state for VS-mode and VU-mode.
