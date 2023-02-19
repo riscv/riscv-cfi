@@ -93,7 +93,7 @@ in `vsstatus` when the CSR is accessed in HS-mode.
 
 === Landing pad label (`lpl`)
 
-The `lpl` CSR is a unprivileged read-write (URW) 32-bit register that holds the
+The `lpl` CSR is a supervisor read-write (SRW) 32-bit register that holds the
 label expected at the target of an indirect call or an indirect jump. The label
 is split into a 8-bit upper label (`UL`), 8-bit middle label (`ML`), and a
 9-bit lower label (`LL`).
