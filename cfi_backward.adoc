@@ -166,7 +166,7 @@ stack. The return value may be held in the link register itself for the duration
 of the function execution.
 
 In the RVI psABI, the x1 register is designated as the link register and x5
-register is designated as a temporary register. SInce the shadow link register
+register is designated as a temporary register. Since the shadow link register
 is loaded at the tail of the function, prior to return, the x5 register being
 used as the shadow link register does not impose a burden on the compiler as the
 x5 register, being a temporary register that is not preserved across a call, is
@@ -247,7 +247,7 @@ using guard pages i.e. pages that do not have a shadow stack attribute. To
 detect if the unwind occurs past the bounds of the shadow stack the unwind may
 be done in maximal increments of 4 KiB and testing for the ssp to be still
 pointing to a shadow stack page or has unwound into the guard page. The
-following examples illustrate use of backward-edge CFI instructions to unwind a
+following examples illustrate the use of backward-edge CFI instructions to unwind a
 shadow stack.
 
 [literal]
@@ -279,7 +279,6 @@ longjmp() {
         asm("sspush x5");
         asm("sspop  x5");
     }
-1f:
     :
 }
 ====
@@ -458,21 +457,21 @@ To support these rules, the virtual address translation process specified in
 section 4.3.2 of the Privileged Specification cite:[PRIV] is modified as
 follows:
 
-3. If `pte.v = 0` or if any bits of encodings that are reserved for future
+1. If `pte.v = 0` or if any bits of encodings that are reserved for future
    standard use are set within `pte`, stop and raise a page-fault exception
    corresponding to the original access type. The encoding `pte.xwr = 010b`
    is not reserved if `menvcfg.CFIE` is 1 or if `V=1` and `henvcfg.CFIE` is 1.
    
-4. Otherwise, the PTE is valid. If `pte.r = 1` or `pte.w = 1` or `pte.x = 1`,
+2. Otherwise, the PTE is valid. If `pte.r = 1` or `pte.w = 1` or `pte.x = 1`,
    go to step 5. Otherwise, this PTE is a pointer to the next level of the page
    table. Let `i = i - 1`. If `i < 0`, store and raise a page-fault exception
    corresponding to the original access type. Otherwise, let `a = pte.ppn x
    PAGESIZE` and go to step 2.
 
-5. A leaf PTE has been found. If the memory access is by a shadow stack
+3. A leaf PTE has been found. If the memory access is by a shadow stack
    instruction and `pte.xwr != 010b` then cause an access-violation exception
    corresponding to the access type. If the memory access is a store/AMO and
-   `pte.xwr == 010b` then cause an store/AMO access-violation. If the requested
+   `pte.xwr == 010b` then cause a store/AMO access-violation. If the requested
    memory access is not allowed by the `pte.r`, `pte.w`, `pte.x`, and `pte.u`
    bits, given the current privilege mode and the value of the `SUM` and `MXR`
    fields of the `mstatus` register, stop and raise a page-fault exception
