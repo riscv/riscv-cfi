@@ -59,7 +59,7 @@ to as backward-edge protection.
 The shadow stack is used to spill the link register if required by
 non-leaf functions. A shadow-stack-pointer (`ssp`) register is introduced in the
 architecture to hold the address of the top of the current active shadow stack.
-The shadow stack is  protected from inadvertent corruptions and modifications as
+The shadow stack is protected from inadvertent corruptions and modifications as
 detailed later. The extension provides instructions to store and load the link
 register to the shadow stack. A function in a program compiled to use shadow
 stacks stores the link register to the data stack and a shadow copy of the link
