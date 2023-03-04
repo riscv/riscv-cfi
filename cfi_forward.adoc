@@ -240,7 +240,7 @@ compiler to set up the landing pads at entrypoint of function bar():
 
 [literal]
 bar:
-    lpcll $0x1de    # Verifies that LPLR.LL matches 0x1de
+    lpcll $0x1de    # Verifies that lpl.LL matches 0x1de
     :               # continue if landing pad checks succeed
 ====
 
@@ -279,8 +279,8 @@ compiler to set up the landing pads at entrypoint of function bar():
 
 [literal]
 bar:
-    lpcll $0x1de    # Verifies that LPLR.LL matches 0x1de
-    lpcml $0x17     # Verifies that LPLR.ML matches 0x17
+    lpcll $0x1de    # Verifies that lpl.LL matches 0x1de
+    lpcml $0x17     # Verifies that lpl.ML matches 0x17
     :               # continue if landing pad checks succeed
 ====
 
@@ -320,9 +320,9 @@ compiler to set up the landing pads at entrypoint of function bar():
 
 [literal]
 bar:
-    lpcll $0x1de    # Verifies that LPLR.LL matches 0x1de
-    lpcml  $0x17    # Verifies that LPLR.ML matches 0x17
-    lpcul  $0x13    # Verifies that LPLR.ML matches 0x13
+    lpcll $0x1de    # Verifies that lpl.LL matches 0x1de
+    lpcml  $0x17    # Verifies that lpl.ML matches 0x17
+    lpcul  $0x13    # Verifies that lpl.ML matches 0x13
     :               # continue if landing pad checks succeed
 ====
 
