@@ -21,9 +21,11 @@ A `JALR` with `rd = x1` or `rd = x5` is an indirect call; it updates `ELP` to
 `rs1 != x5` is an indirect jump; it updates the `ELP` to `LP_EXPECTED`.
 
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
-stream is not `lpcll`, then an illegal instruction exception is raised. If the
-next instruction in the instruction stream is `lpcll` then the `ELP` updates to
-`NO_LP_EXPECTED`.
+stream is not 4-byte aligned, or is not a `lpcll`, or if the label encoded in
+the `lpcll` does not match the lower label in `lpl` register then an illegal
+instruction exception is raised. If the next instruction in the instruction
+stream is 4-byte aligned and is a `lpcll` with its label matching the lower
+label in `lpl` register then the `ELP` updates to `NO_LP_EXPECTED`.
 
 [NOTE]
 ====
@@ -142,7 +144,8 @@ The `lpcll` has the lower landing pad label embedded in the `LLPL` field.
 instruction does not match the `lpl.LL` field.
 
 When the instructions cause an illegal-instruction exception, the `ELP` does not
-change.
+change. The behavior of the trap caused by this illegal-instruction exception is
+specified in section <<FORWARD_TRAPS>>.
 
 The operation of the `lpcll` instruction is as follows:
 
@@ -326,20 +329,32 @@ bar:
     :               # continue if landing pad checks succeed
 ====
 
+[[FORWARD_TRAPS]]
 === Preserving expected landing pad state on traps
 
 A trap may need to be delivered to the same or higher privilege level on
-completion of JALR but before the instruction at the target of JALR was decoded.
-To avoid losing previous ELP state, MPELP and SPELP bits are provided in the
-mstatus CSR for M-mode and HS/S-mode respectively. The `SPELP` bits can be
+completion of JALR but before the instruction at the target of JALR was decoded
+due to asynchronous interrupts.
+
+A trap may be caused by synchronous exceptions with priority lower than that
+of an illegal-instruction exception (See Table 3.7 of Privileged Specification
+cite:[PRIV]).
+
+A trap may be caused by the illegal-instruction exception due to the
+instruction at the target of a JALR not being a `lpcll` instruction, or the
+`lpcll` instruction not being 4-byte aligned, or due to the `LLPL` encoded in
+the `lpcll` not matching the `LL` field of `lpl`.
+
+To avoid losing previous `ELP` state, `MPELP` and `SPELP` bit is provided in the
+`mstatus` CSR for M-mode and HS/S-mode respectively. The `SPELP` bit can be
 accessed through the `sstatus` CSR. To avoid losing `ELP` state on traps to
-VS-mode, `SPELP` bits are provided in `vsstatus` (VS-modes version of
+VS-mode, `SPELP` bit is provided in `vsstatus` (VS-modes version of
 `sstatus`) to hold the `ELP`. When a trap is taken into VS-mode, the `SPELP`
-bits of `vsstatus` CSR are updated with `ELP`. When `V=1`, `sstatus`
+bit of `vsstatus` CSR is updated with `ELP`. When `V=1`, `sstatus`
 aliases to `vsstatus` CSR. The `xPELP` fields in `mstatus` and `vsstatus`
 are WARL fields. The trap handler should preserve the `lpl` CSR.
 
-When a trap is taken into privilege mode `x`, the `xPELP` bits are updated with
+When a trap is taken into privilege mode `x`, the `xPELP` bit is updated with
 current `ELP` and `ELP` is set to `NO_LP_EXPECTED`. 
 
 `MRET` or `SRET` instruction is used to return from a trap in M-mode or S-mode
