@@ -166,6 +166,21 @@ else
 endif
 ----
 
+[NOTE]
+====
+Contenation of two instructions `A` and `B` may be consumed as a valid landing
+pad in the program. For example, consider a 32-bit instruction where the bytes
+3 and 2 have a pattern of `4073h` or `c073h` (for example, the immediate fields
+of a `lui`, `auipc`, or a `jal` instruction), followed by a 16-bit or a 32-bit
+instruction with a second byte with pattern of `83` (for example, an
+`addi x6, x0, 1`).
+
+The `lpcll` requires a 4-byte alignment such that when such patterns are
+detected the assembler/linker the instruction `A` may be forced to be aligned
+to a 4-byte boundary to cause the unintended `lpcll` pattern to become
+misaligned and cause an illegal instruction exception.
+====
+
 === Label matching instructions
 
 The `lpcml` instruction matches the 8-bit wide middle label in its `MLPL` field with
