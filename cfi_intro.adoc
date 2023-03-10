@@ -10,7 +10,7 @@ depends on attacker-controlled data either in the return stack or in a
 register/memory for the target address. Attackers stitch these sequences
 together by diverting the control flow instruction (e.g., RET, CALL, JMP) from
 its original target address to a new target via modification in the data stack
-or in the register or memory used by these instructions. 
+or in the register or memory used by these instructions.
 
 This specification describes CFI security objectives, threat model, and various
 architectural design choices to ensure that the design meets the security
@@ -19,36 +19,50 @@ objectives.
 RV32/RV64 provide two types of control transfer instructions - unconditional
 jumps and conditional branches. Conditional branches encode an offset in the
 immediate field of the instruction and are thus direct branches that are not
-susceptible to control flow subversion. 
+susceptible to control flow subversion.
 
-Unconditional direct jumps using JAL transfer control to a target that is in a
-+/- 1 MiB range from the current PC. Unconditional indirect jumps using the JALR
-obtain their branch target by adding the sign extended 12-bit immediate encoded
-in the instruction to the rs1 register. 
+Unconditional direct jumps using `JAL` transfer control to a target that is in a
++/- 1 MiB range from the current `pc`. Unconditional indirect jumps using the
+`JALR` obtain their branch target by adding the sign extended 12-bit immediate
+encoded in the instruction to the `rs1` register.
 
 The RV32I/RV64I does not have a dedicated instruction for calling a procedure or
-returning from a procedure. A JAL or JALR may be used to perform either a
+returning from a procedure. A `JAL` or `JALR` may be used to perform either a
 procedure call or a return from a procedure. The RISC-V ABI however defines the
-convention that a JAL/JALR where rd (i.e. the link register) is x1 or x5 is a
-procedure call, and a JAL/JALR where rs1 is the conventional link register (i.e.
-x1 or x5) is a return from procedure. The architecture allows for using these
-hints and conventions to support return address prediction and the hints are
-specified in Table 2.1 of the Unprivileged ISA specifications cite:[UNPRIV]. 
+convention that a `JAL`/`JALR` where `rd` (i.e. the link register) is `x1` or
+`x5` is a procedure call, and a `JAL`/`JALR` where `rs1` is the conventional
+link register (i.e.  `x1` or `x5`) is a return from procedure. The architecture
+allows for using these hints and conventions to support return address
+prediction and the hints are specified in Table 2.1 of the Unprivileged ISA
+specifications cite:[UNPRIV].
+
+The RVC standard extension for compressed instructions provides unconditional
+jump and conditional branch instructions. The `C.J` and `C.JAL` instructions
+encode an offset in the immediate field of the instruction and thus are not
+susceptible to control flow subversion.
+
+The `C.JR` and `C.JALR` RVC instruction performs a unconditional control
+transfer to the address in register `rs1`. The `C.JALR` additionally writes the
+address of the instruction following the jump (`pc+2`) to the link register `x1`
+and is a procedure call. The `C.JR` where `rs1` is the conventional link
+register (i.e. `x1` or `x5`) is a return from procedure. A `C.JR` where `rs1` is
+not the conventional link register is a indirect jump.
 
 The RISC-V control-flow integrity (CFI) extension (Zisslpcfi) builds on these
 conventions and hints. 
 
-The term call is used to refer to a JAL or JALR instruction (and their
-compressed forms) with x1 or x5 as the rd. A call using JAL is termed a direct
-call and using JALR is termed an indirect call. 
+The term call is used to refer to a `JAL` or `JALR` instruction (and their
+compressed forms `C.JAL` and `C.JALR`) with `x1` or `x5` as the `rd`. A call
+using `JAL` and `C.JAL` is termed a direct call. A call using `JALR` and
+`C.JALR` is termed an indirect call.
 
-The term return is used to refer to a JALR instructions (and its
-corresponding compressed form) with x1 or x5 as the rs1. 
+The term return is used to refer to a `JALR` instructions (and its
+corresponding compressed form `C.JR`) with `x1` or `x5` as the `rs1`.
 
-The term indirect jump is used to refer to an unconditional jump using
-JALR/C.JALR instruction where the rd i.e. the link register is not x1 or x5
-(i.e. not an indirect call) and where the rs1 is not x1 or x5 (i.e. not a
-return).
+The term indirect jump is used to refer to an unconditional indirect jump using
+`JALR`/`C.JALR` instruction where the `rd` i.e. the link register is not `x1`
+or `x5` (i.e. not an indirect call) and where the `rs1` is not `x1` or `x5`
+(i.e. not a return).
 
 To enforce backward edge control flow integrity, the extension introduces a
 shadow stack. The shadow-stack is designed to provide integrity to control
