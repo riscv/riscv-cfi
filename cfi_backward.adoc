@@ -41,8 +41,8 @@ Encoding `rd`  as `x0` is not supported for `sspop` and `ssprr`.
 |`(mop.rr)`     |`31`  |  `25`|`24`|`20`  |`19` | `15`|`14` |  `12`|`11` | `7`|`6` | `0`
 |mnemonic    2+^|`1.00..1` 2+^|`rs2`   2+^|`rs1`   2+^|`func3`  2+^|`rd`   2+^|`opcode` 
 |`ssamoswap` 2+^|`1000001` 2+^|`src`   2+^|`addr`  2+^|`100`    2+^|`dst`  2+^|`1110011`
-|`sspopchkra x1` 2+^|`1000101` 2+^|`00000` 2+^|`00001` 2+^|`100`    2+^|`0`    2+^|`1110011`
-|`sspopchkra x5` 2+^|`1000101` 2+^|`00000` 2+^|`00101` 2+^|`100`    2+^|`0`    2+^|`1110011`
+|`sspopchk x1` 2+^|`1000101` 2+^|`00000` 2+^|`00001` 2+^|`100`    2+^|`0`    2+^|`1110011`
+|`sspopchk x5` 2+^|`1000101` 2+^|`00000` 2+^|`00101` 2+^|`100`    2+^|`0`    2+^|`1110011`
 |`sspush x1`   2+^|`1000101` 2+^|`00001` 2+^|`00000` 2+^|`100`    2+^|`0`    2+^|`1110011`
 |`sspush x5`   2+^|`1000101` 2+^|`00101` 2+^|`00000` 2+^|`100`    2+^|`0`    2+^|`1110011`
 |             2+^|`7`       2+^|`5`     2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
@@ -50,7 +50,7 @@ Encoding `rd`  as `x0` is not supported for `sspop` and `ssprr`.
 
 Encoding `rd` as `x0` is not supported for `ssamoswap`.
 Only `x1` and `x5` encodings are supported as `rd` for `sspop`.
-Only `x1` and `x5` encodings are supported as `rs1` for `sspopchkra`.
+Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
 Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
 
 While any register may be used a link register, conventionally the `x1` or `x5`
@@ -160,7 +160,7 @@ return address variable and the program causes an illegal instruction exception.
 To push a link register on the shadow stack, the CFI extension provides a
 `sspush` instruction. 
 
-A `sspopchkra` instruction is provided to pop the shadow return address value
+A `sspopchk` instruction is provided to pop the shadow return address value
 from the shadow stack and check that the value matches the contents of the
 link register. This instruction is expected to be used by programs operating in
 shadow stack mode.
@@ -195,7 +195,7 @@ is as follows:
          : 
         ld x1,(sp)     # pop link register x1 from data stack
         addi sp,sp,8   
-        sspopchkra x1  # compare link register x1 to shadow 
+        sspopchk x1  # compare link register x1 to shadow 
                        # return address; faults if not same
         ret
 
@@ -224,7 +224,7 @@ be held in the link register itself for the duration of the leaf function
 execution.
 ====
 
-The `sspop` and `sspopchkra` instructions perform a load identically to the
+The `sspop` and `sspopchk` instructions perform a load identically to the
 existing `LOAD` instruction with the difference that the base is implicitly
 `ssp`, the width is implicitly `XLEN`. 
 
@@ -232,18 +232,18 @@ The `sspush` instruction performs a store identically to the existing `STORE`
 instruction with the difference that the base is implicitly `ssp`, the width
 is implicitly `XLEN`.
 
-The `sspush`, `sspopchkra`, and `sspop` require the virtual address in `ssp` to
+The `sspush`, `sspopchk`, and `sspop` require the virtual address in `ssp` to
 have a shadow stack attribute (see <<SSMP>>).
 
-Correct execution of `sspush`, `sspopchkra`, and `sspop` requires that `ssp`
+Correct execution of `sspush`, `sspopchk`, and `sspop` requires that `ssp`
 refers to idempotent memory, because the core must be able to handle traps
 detected by these instruction (e.g., a page fault) and re-execute them after
 returning from the trap handler. If the memory reference by the `ssp` is not
 idempotent then the `sspush` instruction causes a store/AMO access fault and the
-`sspop`/`sspopchkra` instructions cause a load access fault.
+`sspop`/`sspopchk` instructions cause a load access fault.
 
 If the virtual address in `ssp` is not `XLEN` aligned then the `sspop`/
-`sspopchkra` instructions cause a load address-misaligned exception and the
+`sspopchk` instructions cause a load address-misaligned exception and the
 `sspush` instruction causes store/AMO address-misaligned exception.
 
 [NOTE]
@@ -284,9 +284,9 @@ else
 endif
 ----
 
-The operation of the `sspopchkra` instruction is as follows:
+The operation of the `sspopchk` instruction is as follows:
 
-.`sspopchkra` operation
+.`sspopchk` operation
 [source, text]
 ----
 if (xBCFIE = 1)
@@ -502,7 +502,7 @@ The following faults may occur:
 . if the accessed page is not a shadow stack page or if the page is in
   non-idempotent memory
 .. `ssamoswap` and `sspush` cause a store/AMO access fault
-.. `sspop` and `sspopchkra` causes a load access fault
+.. `sspop` and `sspopchk` causes a load access fault
 
 To support these rules, the virtual address translation process specified in
 section 4.3.2 of the Privileged Specification cite:[PRIV] is modified as
@@ -529,7 +529,7 @@ follows:
    corresponding to the original access type.
 
 The PMA checks are extended to require memory referenced by `sspush`, `sspop`,
-`ssamoswap`, and `sspopchkra` to be idempotent.
+`ssamoswap`, and `sspopchk` to be idempotent.
 
 The `U` and `SUM` bit enforcement is performed normally for shadow stack
 instruction initiated memory accesses. The state of the `MXR` bit does not
@@ -587,7 +587,7 @@ When `mseccfg.MML` is 1, the `sspmp` field is read-only else it may be written.
 When `sspmp` field is implemented and `mseccfg.MML` is 1 the following rules are
 additionally enforced for M-mode memory accesses:
 
-* `sspush`, `sspop`, `sspopchkra`, and `ssamoswap` instructions must match PMP
+* `sspush`, `sspop`, `sspopchk`, and `ssamoswap` instructions must match PMP
    entry `sspmp`.
 
 * Write by instructions other than `sspush` and `ssamoswap` that match PMP entry
