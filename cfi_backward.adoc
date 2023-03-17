@@ -66,6 +66,10 @@ procedure calls and returns to be effective. For RISC-V, hints as to the
 instructions` usage are encoded implicitly via the register numbers used. The
 return-address stack (RAS) actions to pop and/or push onto the RAS are specified
 in Table 2.1 of the Privileged specification.
+
+Use of `x1` or `x5` as the link register allows a program to benefit from the
+return-address prediction stacks and avoid additional register movements to use
+the shadow stack instructions.
 ====
 
 When `menvcfg.CFIE` is 0, then Zisslpcfi is not enabled for privilege modes less
