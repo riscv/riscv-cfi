@@ -255,9 +255,15 @@ If the virtual address in `ssp` is not `XLEN` aligned then the `sspop`/
 Misaligned accesses to shadow stack are not required and enforcing alignment is
 more secure to detect errors in the program.
 
-Locating shadow stacks in non-idempotent memory (e.g., device memory) is not
-required and requiring memory referenced by `ssp` to be idempotent does not pose
-a significant restriction.
+The `sspopchk` instruction performs a load followed by a check of the loaded
+data value with the link register source. If the check against the link register
+faults and the instruction is restarted by the trap handler then the instruction
+will perform a load again. If the memory from which the load is performed is
+non-idempotent then the second load may cause unexpected side effects. Shadow
+stack instructions require the memory referenced by `ssp` to be idempotent to
+avoid such concerns. Locating shadow stacks in non-idempotent memory (e.g.,
+non-idempotent device memory) is not an expected usage and requiring memory
+referenced by `ssp` to be idempotent does not pose a significant restriction.
 ====
 
 The operation of the `sspush` instruction is as follows:
