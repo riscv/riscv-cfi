@@ -49,10 +49,10 @@ When `CFIE` is 1, the `SFCFIE` (bit 59) field enables forward-edge CFI at VS-mod
 === Machine status registers (`mstatus`)
 
 The `UFCFIE` (bit 23) and `UBCFIE` (bit 24) are WARL fields that when set to 1
-enable backward-edge and forward-edge CFI respectively at U-mode.
+enable forward-edge and backward-edge CFI respectively at U-mode.
 
 The `SPELP` (bit 25) and `MPELP` (bit 26) WARL fields are updated when a trap is
-taken into M-mode or S-mode respectively. When a trap is taken into privilege
+taken into S-mode or M-mode respectively. When a trap is taken into privilege
 mode `x`, the `xPELP` fields are updated to indicate that a landing pad was
 expected at the privilege level `xPP` at the time of taking the trap. 
 
