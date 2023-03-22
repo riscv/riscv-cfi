@@ -69,8 +69,8 @@ shadow stack. The shadow-stack is designed to provide integrity to control
 transfers performed using return instruction (where the return may be from a
 procedure invoked using an indirect call or a direct call) and this is referred
 to as backward-edge protection. A program using backward control flow integrity
-has two stack - a regular stack and a shadow stack - with the shadow stack used
-exclusively to store a shadow copy of return adddresses.
+has two stack - a regular stack and a shadow stack - and the shadow stack is
+used exclusively to store the shadow copies of return adddresses.
 
 The shadow stack is used to spill the link register if required by
 non-leaf functions. A shadow-stack-pointer (`ssp`) register is introduced in the
