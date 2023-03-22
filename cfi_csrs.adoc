@@ -148,7 +148,7 @@ attempt to access `ssp` in VU-mode raises an illegal instruction exception.
 === Machine Security Configuration (`mseccfg`)
 
 When the `Smepmp` extension is implemented, a new WARL field `sspmp` is defined
-in bits 15:10 of the `mseccfg` CSR to configure a PMP entry as the shadow stack
+in bits 15:10 of the `mseccfg` CSR to identify a PMP entry as the shadow stack
 memory region for M-mode accesses. The rules enforced by PMP for M-mode shadow
 stack memory accesses are outlined in <<PMP_SS>>.
 

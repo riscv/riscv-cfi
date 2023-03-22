@@ -426,7 +426,7 @@ them succeeds.
 To protect shadow stack memory the memory is associated with a new page type -
 Shadow Stack (SS) page - in the page tables. 
 
-When the Smepmp extension is supported the PMP configuration registers are
+When the `Smepmp` extension is supported the PMP configuration registers are
 enhanced to support a shadow stack memory region for use by M-mode.
 
 ==== Virtual-Memory system extension for Shadow Stack
