@@ -5,6 +5,24 @@ This chapter specifies the CSR state of the Zisslpcfi extension.
 
 === Machine environment configuration registers (`menvcfg and menvcfgh`)
 
+.Machine environment configuration register (`menvcfg`) for MXLEN=64
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  1, name: 'FIOM'},
+  {bits:  3, name: 'WPRI'},
+  {bits:  2, name: 'CBIE'},
+  {bits:  1, name: 'CBCFE'},
+  {bits:  1, name: 'CBZE'},
+  {bits: 51, name: 'WPRI'},
+  {bits:  1, name: 'SFCFIE'},
+  {bits:  1, name: 'CFIE'},
+  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'PBMTE'},
+  {bits:  1, name: 'STCE'},
+], config:{lanes: 8, hspace:1024}}
+....
+
 The `CFIE` (bit 60) field controls if Zisslpcfi extension is available for use
 in modes less privileged than M. When `CFIE` is 1, the `SFCFIE` (bit 59) field
 enables forward-edge CFI at S-mode.
@@ -33,6 +51,24 @@ separately enforced at S-mode and for each application.
 
 === Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
 
+.Hypervisor environment configuration register (`henvcfg`) for MXLEN=64
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  1, name: 'FIOM'},
+  {bits:  3, name: 'WPRI'},
+  {bits:  2, name: 'CBIE'},
+  {bits:  1, name: 'CBCFE'},
+  {bits:  1, name: 'CBZE'},
+  {bits: 51, name: 'WPRI'},
+  {bits:  1, name: 'SFCFIE'},
+  {bits:  1, name: 'CFIE'},
+  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'PBMTE'},
+  {bits:  1, name: 'STCE'},
+], config:{lanes: 8, hspace:1024}}
+....
+
 The `CFIE` (bit 60) bit controls if Zisslpcfi extension is available for use in
 VS and VU modes. When `menvcfg.CFIE` is 0, `henvcfg.CFIE` is read-only zero.
 
@@ -49,6 +85,43 @@ forward-edge CFI at VS-mode.
 
 === Machine status registers (`mstatus`)
 
+.Machine-mode status register (`mstatus`) for RV64
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SIE'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'MIE'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SPIE'},
+  {bits:  1, name: 'UBE'},
+  {bits:  1, name: 'MPIE'},
+  {bits:  1, name: 'SPP'},
+  {bits:  2, name: 'VS[1:0]'},
+  {bits:  2, name: 'MPP[1:0]'},
+  {bits:  2, name: 'FS[1:0]'},
+  {bits:  2, name: 'XS[1:0]'},
+  {bits:  1, name: 'MPRV'},
+  {bits:  1, name: 'SUM'},
+  {bits:  1, name: 'MXR'},
+  {bits:  1, name: 'TVM'},
+  {bits:  1, name: 'TW'},
+  {bits:  1, name: 'TSR'},
+  {bits:  1, name: 'UFCFIE'},
+  {bits:  1, name: 'UBCFIE'},
+  {bits:  1, name: 'SPELP'},
+  {bits:  1, name: 'MPELP'},
+  {bits:  5, name: 'WPRI'},
+  {bits:  2, name: 'UXL[1:0]'},
+  {bits:  2, name: 'SXL[1:0]'},
+  {bits:  1, name: 'SBE'},
+  {bits:  1, name: 'MBE'},
+  {bits: 25, name: 'WPRI'},
+  {bits:  1, name: 'SD'},
+], config:{lanes: 8, hspace:1024}}
+....
+
 The `UFCFIE` (bit 23) and `UBCFIE` (bit 24) are WARL fields that when set to 1
 enable forward-edge and backward-edge CFI respectively at U-mode.
 
@@ -64,6 +137,35 @@ The `xPELP` fields are encoded as follows:
 
 === Supervisor status registers (`sstatus`)
 
+.Supervisor-mode status register (`sstatus`) when `SXLEN=64`
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SIE'},
+  {bits:  3, name: 'WPRI'},
+  {bits:  1, name: 'SPIE'},
+  {bits:  1, name: 'UBE'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SPP'},
+  {bits:  2, name: 'VS[1:0]'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  2, name: 'FS[1:0]'},
+  {bits:  2, name: 'XS[1:0]'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SUM'},
+  {bits:  1, name: 'MXR'},
+  {bits:  3, name: 'WPRI'},
+  {bits:  1, name: 'UFCFIE'},
+  {bits:  1, name: 'UBCFIE'},
+  {bits:  1, name: 'SPELP'},
+  {bits:  6, name: 'WPRI'},
+  {bits:  2, name: 'UXL[1:0]'},
+  {bits: 29, name: 'WPRI'},
+  {bits:  1, name: 'SD'},
+], config:{lanes: 8, hspace:1024}}
+....
+
 When `menvcfg.CFIE` is 1, access to the following fields accesses the homonymous
 field of `mstatus` register. When `menvcfg.CFIE` is 0, these fields are read-only
 zero.
@@ -73,6 +175,35 @@ zero.
 * `SPELP` (bit 25)
 
 === Virtual supervisor status registers (`vsstatus`)
+
+.Virtual supervisor status register (`vsstatus`) when `VSXLEN=64`
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SIE'},
+  {bits:  3, name: 'WPRI'},
+  {bits:  1, name: 'SPIE'},
+  {bits:  1, name: 'UBE'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SPP'},
+  {bits:  2, name: 'VS[1:0]'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  2, name: 'FS[1:0]'},
+  {bits:  2, name: 'XS[1:0]'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SUM'},
+  {bits:  1, name: 'MXR'},
+  {bits:  3, name: 'WPRI'},
+  {bits:  1, name: 'UFCFIE'},
+  {bits:  1, name: 'UBCFIE'},
+  {bits:  1, name: 'SPELP'},
+  {bits:  6, name: 'WPRI'},
+  {bits:  2, name: 'UXL[1:0]'},
+  {bits: 29, name: 'WPRI'},
+  {bits:  1, name: 'SD'},
+], config:{lanes: 8, hspace:1024}}
+....
 
 The `vsstatus` register is VS-mode's version of `sstatus` and the Zisslpcfi
 extension introduces the following fields.
@@ -147,6 +278,22 @@ When `menvcfg.CFIE` and `henvcfg.CFIE` are both 1 but `vsstatus.UBCFIE` is 0, an
 attempt to access `ssp` in VU-mode raises an illegal instruction exception.
 
 === Machine Security Configuration (`mseccfg`)
+
+.Machine security configuration register (`mseccfg`) when `MXLEN=64`
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  1, name: 'MML'},
+  {bits:  1, name: 'MMWP'},
+  {bits:  1, name: 'RLB'},
+  {bits:  5, name: 'WPRI'},
+  {bits:  1, name: 'USEED'},
+  {bits:  1, name: 'SSEED'},
+  {bits:  1, name: 'MFCFIE'},
+  {bits:  6, name: 'SSPMP'},
+  {bits: 47, name: 'WPRI'},
+], config:{lanes: 8, hspace:1024}}
+....
 
 When the `Smepmp` extension is implemented, a new WARL field `sspmp` is defined
 in bits 16:11 of the `mseccfg` CSR to identify a PMP entry as the shadow stack
