@@ -426,7 +426,7 @@ them succeeds.
 To protect shadow stack memory the memory is associated with a new page type -
 Shadow Stack (SS) page - in the page tables. 
 
-When the Smepmp extension is supported the PMP configuration registers are
+When the `Smepmp` extension is supported the PMP configuration registers are
 enhanced to support a shadow stack memory region for use by M-mode.
 
 ==== Virtual-Memory system extension for Shadow Stack
@@ -525,8 +525,8 @@ The M-mode memory accesses by `sspop` instruction tests for read permission in
 the matching PMP entry when permission checking is required.
 
 When the `Smepmp` extension is implemented, a new WARL field `sspmp` is defined
-in bits 8:3 of the `mseccfg` CSR to configure a PMP entry as the shadow stack
-memory region for M-mode accesses.
+in the `mseccfg` CSR to configure a PMP entry as the shadow stack memory region
+for M-mode accesses.
 
 When `mseccfg.MML` is 1, the `sspmp` field is read-only else it may be written.
 
@@ -541,7 +541,7 @@ additionally enforced for M-mode memory accesses:
 [NOTE]
 ====
 The PMP region used for the M-mode shadow stack is expected to be made
-inaccessible for U- and S-mode read and write accesses. Allowing write access
-violates the integrity of the shadow stack and allowing read access may lead to
-disclosure of M-mode return addresses.
+inaccessible for U-mode and S-mode read and write accesses. Allowing write
+access violates the integrity of the shadow stack and allowing read access may
+lead to disclosure of M-mode return addresses.
 ====
