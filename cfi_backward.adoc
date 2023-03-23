@@ -314,6 +314,10 @@ else
 endif
 ----
 
+The `ssp` is incremented by `sspopchk` only if the load from shadow stack
+completes successfully and the value loaded is equal to the value held in the
+`src` register.
+
 [NOTE]
 ====
 Store to load forwarding is a common technique employed by high performance
