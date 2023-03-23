@@ -48,6 +48,9 @@ Encoding `rd`  as `x0` is not supported for `sspop` and `ssprr`.
 
 Encoding `rd` as `x0` is not supported for `ssamoswap`.
 
+When a Zimop encoding is not supported by the Zisslpcfi extension then the
+instruction follows to its Zimop defined behavior.
+
 When `menvcfg.CFIE` is 0, then Zisslpcfi is not enabled for privilege modes less
 than M and backward-edge CFI is not enabled at privilege levels less than M.
 
