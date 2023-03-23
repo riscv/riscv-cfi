@@ -208,8 +208,8 @@ The operation of the `sspush` instructions is as follows:
 [source, text]
 ----
 If (xBCFIE = 1)
+   *[ssp] = [src - (XLEN/8)]   # Store src value to ssp - XLEN/8
     [ssp] = [ssp] - (XLEN/8)   # decrement ssp by XLEN/8
-   *[ssp] = [src]              # Store src value to address in ssp
 else
     [dst] = 0
 endif
@@ -227,6 +227,10 @@ else
     [dst] = 0;
 endif
 ----
+
+The `ssp` is incremented by `sspop` only if the load from shadow stack completes
+successfully. The `ssp` is decremented by `sspush` only if the store to the
+shadow stack completes successfuly.
 
 [NOTE]
 ====
