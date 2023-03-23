@@ -11,10 +11,9 @@ enables forward-edge CFI at S-mode.
 
 When `menvcfg.CFIE` bit is 0, then at privilege modes less privileged than M:
 
-* Attempts to access `ssp` CSR and `lpl` CSR raise an illegal instruction
-  exception.
+* Attempts to access `ssp` or `lpl` CSR raise an illegal instruction exception.
 * Zisslpcfi extension instructions revert to the Zimop defined behavior.
-* The `UBCFIE`, `UFCFIE` and `SPELP` fields in `mstatus` are read-only zero.
+* The `UBCFIE`, `UFCFIE` and `SPELP` fields in `sstatus` are read-only zero.
 * The `CFIE` field in `henvcfg` is read-only zero.
 * The `pte.xwr=010b` encoding in S-stage page tables is reserved.
 
@@ -39,12 +38,14 @@ VS and VU modes. When `menvcfg.CFIE` is 0, `henvcfg.CFIE` is read-only zero.
 
 When `henvcfg.CFIE` bit is 0, then at privilege modes VS and VU:
 
-* Attempts to access `ssp` CSR and `lpl` CSR raise an illegal instruction
-  exception.
-* The `UBCFIE`, `UFCFIE` and `SPELP` fields in `vsstatus` are read-only zero.
+* Attempts to access `ssp` or `lpl` CSR raise an illegal instruction exception.
+* Zisslpcfi extension instructions revert to the Zimop defined behavior.
+* The `UBCFIE`, `UFCFIE` and `SPELP` fields in `sstatus` (really `vsstatus`) are
+  read-only zero.
 * The `pte.xwr=010b` encoding in VS-stage page tables remains reserved.
 
-When `CFIE` is 1, the `SFCFIE` (bit 59) field enables forward-edge CFI at VS-mode.
+When `henvcfg.CFIE` is 1, the `henvcfg.SFCFIE` (bit 59) field enables
+forward-edge CFI at VS-mode.
 
 === Machine status registers (`mstatus`)
 
