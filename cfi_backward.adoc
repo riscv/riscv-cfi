@@ -511,12 +511,34 @@ When `menvcfg.CFIE=0`, this encoding continues to be reserved. When `V=1` and
 The following faults may occur:
 
 . If the accessed page is a shadow stack page
-.. Stores other than `sspush` and `ssamoswap` cause write/AMO access faults.
+.. Stores other than `sspush` and `ssamoswap` cause store/AMO access faults.
 .. Instructions fetch causes a page fault
 . if the accessed page is not a shadow stack page or if the page is in
   non-idempotent memory
 .. `ssamoswap` and `sspush` cause a store/AMO access fault
 .. `sspop` and `sspopchk` causes a load access fault
+
+[NOTE]
+====
+Stores other than `sspush` and `ssamoswap` cause an access fault and not a page
+fault to indicate fatality. A page fault in such cases would suggest that the
+operating system should service that fault and correct the condition; which is
+not possible in this case. If a page fault were caused in this case then to
+determine this fatal condition the page fault handler would have to resort to
+decoding the opcode of the instruction that caused the store/AMO page fault to
+caused by non-shadow-stack-stores to shadow stack pages vs. a page fault caused
+by an `sspush` or `ssamoswap` to a non-resident page (which is a recoverable
+condition). Usually the operating page fault handler is performance critical. By
+causing an access fault instead of a page fault, the operating system can easily
+distinguish the fatal/non-recoverable condition from the recoverable page fault.
+
+Shadow stack instructions cause an access fault if the accessed page is not a
+shadow stack page or if the page is in non-idempotent memory to similarly
+indicate fatality.
+
+Instruction fetch from a shadow stack page causes a page fault as this condition
+is clearly distinguished by a unique cause code and is non recoverable.
+====
 
 To support these rules, the virtual address translation process specified in
 section 4.3.2 of the Privileged Specification cite:[PRIV] is modified as
