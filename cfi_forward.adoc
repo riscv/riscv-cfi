@@ -377,6 +377,6 @@ current `ELP` and `ELP` is set to `NO_LP_EXPECTED`.
 
 `MRET` or `SRET` instruction is used to return from a trap in M-mode or S-mode
 respectively. When executing an `xRET` instruction, the `ELP` is set to `xPELP`
-if `xFCFIE` is 1 at privilege level. The `xPELP` is set to `NO_LP_EXPECTED`.
-Trap handlers should restore the preserved `lpl` value before executing the
-`SRET` or `MRET`.
+if `xFCFIE` is 1 at the targeted privilege level. The `xPELP` is set to
+`NO_LP_EXPECTED`. Trap handlers should restore the preserved `lpl` value before
+executing the `SRET` or `MRET`.
