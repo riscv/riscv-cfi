@@ -532,6 +532,10 @@ condition). Usually the operating page fault handler is performance critical. By
 causing an access fault instead of a page fault, the operating system can easily
 distinguish the fatal/non-recoverable condition from the recoverable page fault.
 
+Shadow stack instructions cause an access fault if the accessed page is not a
+shadow stack page or if the page is in non-idempotent memory to similarly
+indicate fatality.
+
 Instruction fetch from a shadow stack page causes a page fault as this condition
 is clearly distinguished by a unique cause code and is non recoverable.
 ====
