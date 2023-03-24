@@ -53,8 +53,9 @@ conventions and hints.
 
 The term call is used to refer to a `JAL` or `JALR` instruction with a link
 register as destination i.e., `rd != x0`. Conventionally the link register is
-`x1` or `x5`. A call using `JAL` or `C.JAL` is termed a direct call. A call
-using `JALR` or `C.JALR` is termed an indirect call.
+`x1` or `x5`. A call using `JAL` or `C.JAL` is termed a direct call. A `C.JALR`
+expands to `JALR x1, 0(rs1)` and is a call. A call using `JALR` or `C.JALR` is
+termed an indirect call.
 
 The term return is used to refer to a `JALR` instruction with `rs1 == x1` or
 `rs1 == x5` and `rd == x0`. A `C.JR` instruction expands to `JALR x0, 0(rs1)`
