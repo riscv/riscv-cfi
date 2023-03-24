@@ -51,39 +51,20 @@ not the conventional link register is a indirect jump.
 The RISC-V control-flow integrity (CFI) extension (Zisslpcfi) builds on these
 conventions and hints. 
 
-The term call is used to refer to a `JAL` or `JALR` instruction (and their
-compressed forms `C.JAL` and `C.JALR`) with `x1` or `x5` as the `rd`. A call
-using `JAL` and `C.JAL` is termed a direct call. A call using `JALR` and
-`C.JALR` is termed an indirect call.
+The term call is used to refer to a `JAL` or `JALR` instruction with a link
+register as destination i.e., `rd != x0`. Conventionally the link register is
+`x1` or `x5`. A call using `JAL` or `C.JAL` is termed a direct call. A `C.JALR`
+expands to `JALR x1, 0(rs1)` and is a call. A call using `JALR` or `C.JALR` is
+termed an indirect call.
 
-The term return is used to refer to a `JALR` instructions (and its
-corresponding compressed form `C.JR`) with `x1` or `x5` as the `rs1`.
+The term return is used to refer to a `JALR` instruction with `rs1 == x1` or
+`rs1 == x5` and `rd == x0`. A `C.JR` instruction expands to `JALR x0, 0(rs1)`
+and is a return if `rs1 == x1` or `rs1 == x5`.
 
-The term indirect jump is used to refer to an unconditional indirect jump using
-`JALR`/`C.JALR` instruction where the `rd` i.e. the link register is not `x1`
-or `x5` (i.e. not an indirect call) and where the `rs1` is not `x1` or `x5`
-(i.e. not a return).
-
-[NOTE]
-====
-The definition of `Indirect Jump or Call` is needed to determine if the control flow 
-is doing an indirect forward edge as they need to be protected:
-
-.`Indirect Forward Edge` determination
-[source, text]
-----
-if ( ( JALR && ( JALR.rd == x0 ) ) || C.JR )
-    indirect_forward_edge =  ( instr.rs1 != x1 ) || ( instr.rs1 != x5 ) 
-    //these are indirect jump
-else if ( JALR || C.JALR )
-    indirect_forward_edge =  ( ( instr.rs1 != x1 ) || ( instr.rs1 != x5 ) ) || 
-    //these are indirect jump
-                             ( ( instr.rd == x1 ) || ( instr.rd = x5 ) ) 
-    //these are indirect call
-else
-    indirect_forward_edge = 0
-----
-====
+The term indirect jump is used to refer to a `JALR` instruction with `rd == x0`
+and where the `rs1` is not `x1` or `x5` (i.e. not a return). The `C.JR`
+instruction where `rs1` is not `x1` or `x5` (i.e. not a return) is an indirect
+jump.
 
 To enforce backward edge control flow integrity, the extension introduces a
 shadow stack. The shadow-stack is designed to provide integrity to control
@@ -127,6 +108,26 @@ landing pad instructions (`lpcll`) that enable software to indicate valid target
 for indirect calls and jumps in a program. Compiler is expected to emit a `lpcll`
 as the first instruction of address-taken functions. Compiler is expected to
 emit a `lpcll` at an indirect jump target.
+
+The Zisslpcfi extension identifies an indirect call or an indirect jump as
+follows:
+
+[[IND_CALL_JMP]]
+.Indirect call/jump determination
+[source, text]
+----
+    if ( ((JALR && rd == x0) || (C.JR)) && (rs1 != x1) && (rs1 != x5) )
+        is_indirect_jump = 1;
+    else
+        is_indirect_jump = 0;
+
+    if ( (JALR && rd != x0) || (C.JALR) )
+        is_indirect_call = 1;
+    else
+        is_indirect_call = 0;
+
+    is_indirect_call_jump = is_indirect_call | is_indirect_jump;
+----
 
 The landing-pads are designed to provide integrity to control transfers
 performed using indirect call and indirect jump and this is referred to as

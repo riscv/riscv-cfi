@@ -16,12 +16,9 @@ instruction. The `ELP` state can be one of:
 * 0 - `NO_LP_EXPECTED`
 * 1 - `LP_EXPECTED`
 
-A `JALR` with `rd = x1` or `rd = x5` is an indirect call; it updates `ELP` to
-`LP_EXPECTED`. A `JALR` with `rd != x1` and `rd != x5` and where `rs1 != x1` and
-`rs1 != x5` is an indirect jump; it updates the `ELP` to `LP_EXPECTED`. A
-`C.JALR` is an indirect call; it updates `ELP` to `LP_EXPECTED`. A `C.JR` where
-`rs1 != x1` and `rs1 != x5` is an indirect jump; it updates `ELP` to
-`LP_EXPECTED`.
+The Zisslpcfi extension identifies an unconditional control transfer as an
+indirect call or an indirect jump as specified in <<IND_CALL_JMP>>. An indirect
+call or an indirect jump updates the `ELP` to `LP_EXPECTED`.
 
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
 stream is not 4-byte aligned, or is not a `lpcll`, or if the label encoded in
