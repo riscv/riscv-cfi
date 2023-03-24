@@ -64,6 +64,27 @@ The term indirect jump is used to refer to an unconditional indirect jump using
 or `x5` (i.e. not an indirect call) and where the `rs1` is not `x1` or `x5`
 (i.e. not a return).
 
+[NOTE]
+====
+The definition of `Indirect Jump or Call` is needed to determine if the control flow 
+is doing an indirect forward edge as they need to be protected:
+
+.`Indirect Forward Edge` determination
+[source, text]
+----
+if ( ( JALR && ( JALR.rd == x0 ) ) || C.JR )
+    indirect_forward_edge =  ( instr.rs1 != x1 ) || ( instr.rs1 != x5 ) 
+    //these are indirect jump
+else if ( JALR || C.JALR )
+    indirect_forward_edge =  ( ( instr.rs1 != x1 ) || ( instr.rs1 != x5 ) ) || 
+    //these are indirect jump
+                             ( ( instr.rd == x1 ) || ( instr.rd = x5 ) ) 
+    //these are indirect call
+else
+    indirect_forward_edge = 0
+----
+====
+
 To enforce backward edge control flow integrity, the extension introduces a
 shadow stack. The shadow-stack is designed to provide integrity to control
 transfers performed using return instruction (where the return may be from a
