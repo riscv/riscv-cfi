@@ -3,4 +3,4 @@
 This RISC-V specification has been contributed to directly or indirectly by (in alphabetical order):
 
 [%hardbreaks]
-Andrew Waterman, Antoine Linarès, Dean Liberty, Deepak Gupta, George Christou, Greg McGary, Henry Hsieh, Johan Klockars, Liu Zhiwei, Mark Hill, Nick Kossifidis, Tsukasa OI, Vedvyas Shanbhogue
+Andrew Waterman, Antoine Linarès, Dean Liberty, Deepak Gupta, George Christou, Greg McGary, Henry Hsieh, Johan Klockars, Kip Walker, Liu Zhiwei, Mark Hill, Nick Kossifidis, Tsukasa OI, Vedvyas Shanbhogue
