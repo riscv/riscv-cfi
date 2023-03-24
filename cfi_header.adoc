@@ -1,7 +1,7 @@
 [[header]]
 :description: RISC-V Shadow Stacks and Landing Pads (Zisslpcfi)
 :company: RISC-V.org
-:revdate: 11/2022
+:revdate: 03/2023
 :revnumber: 0.1
 :revremark: This document is in development. Assume everything can change. See http://riscv.org/spec-state for details.
 :url-riscv: http://riscv.org
