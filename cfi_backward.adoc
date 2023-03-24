@@ -511,7 +511,7 @@ When `menvcfg.CFIE=0`, this encoding continues to be reserved. When `V=1` and
 The following faults may occur:
 
 . If the accessed page is a shadow stack page
-.. Stores other than `sspush` and `ssamoswap` cause write/AMO access faults.
+.. Stores other than `sspush` and `ssamoswap` cause store/AMO access faults.
 .. Instructions fetch causes a page fault
 . if the accessed page is not a shadow stack page or if the page is in
   non-idempotent memory
