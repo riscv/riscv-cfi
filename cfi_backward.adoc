@@ -53,7 +53,7 @@ Only `x1` and `x5` encodings are supported as `rd` for `sspop`.
 Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
 Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
 
-While any register may be used a link register, conventionally the `x1` or `x5`
+While any register may be used as link register, conventionally the `x1` or `x5`
 register is expected to be as link register. The Zisslpcfi shadow stack
 instructions are designed to be most efficient for use of the `x1` and `x5`
 registers as the link register.
