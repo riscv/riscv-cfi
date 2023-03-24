@@ -2,8 +2,7 @@
 == Backward-edge control-flow integrity
 
 A shadow stack is a second stack used to push the link register if it needs to
-be spilled to make a new procedure call. Leaf functions do not need to spill the
-link register.
+be spilled to make a new procedure call.
 
 The shadow stack, similar to the regular stack, grows downwards, i.e. from higher
 addresses to lower addresses. Each entry on the shadow stack is `XLEN` wide and
@@ -21,16 +20,18 @@ unsafe code sequences.
 
 The backward-edge CFI extension introduces the following instructions for shadow
 stack operations. All instructions are encoded using the SYSTEM major opcode and
-using the `mop.r` and `mop.rr` instructions defined by the Zimop extension.
+using the `mop.r` and `mop.rr` encodings defined by the Zimop extension.
 
 [width=100%]
 [%header, cols="6,<6,>6,<3,>3,<3,>3,<3,>3,<3,>3", grid=rows, frame=none]
 |===
-|   `(mop.r)`   |`31`    |      `20`      |`19` | `15`|`14` | `12` |`11` | `7`|`6` | `0`
-|  mnemonic  2+^|`1.00..0111..`        2+^|`rs1`   2+^|`func3`  2+^|`rd`   2+^|`opcode`
-|`sspop`     2+^|`100000011100`        2+^|`00000` 2+^|`100`    2+^|`dst`  2+^|`1110011`
-|`ssprr`     2+^|`100000011101`        2+^|`00000` 2+^|`100`    2+^|`dst`  2+^|`1110011`
-|            2+^|`12`                  2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
+|   `(mop.r)`     |`31`    |      `20`      |`19` | `15`|`14` | `12` |`11` | `7`|`6` | `0`
+|  mnemonic    2+^|`1.00..0111..`        2+^|`rs1`   2+^|`func3`  2+^|`rd`   2+^|`opcode`
+|`sspop x1`    2+^|`100000011100`        2+^|`00000` 2+^|`100`    2+^|`00001`  2+^|`1110011`
+|`sspop x5`    2+^|`100000011100`        2+^|`00000` 2+^|`100`    2+^|`00101`  2+^|`1110011`
+|`sspopchk x1` 2+^|`100000011100`        2+^|`00001` 2+^|`100`    2+^|`00000`  2+^|`1110011`
+|`sspopchk x5` 2+^|`100000011100`        2+^|`00101` 2+^|`100`    2+^|`00000`  2+^|`1110011`
+|              2+^|`12`                  2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
 |===
 
 Encoding `rd`  as `x0` is not supported for `sspop` and `ssprr`.
@@ -41,18 +42,41 @@ Encoding `rd`  as `x0` is not supported for `sspop` and `ssprr`.
 |`(mop.rr)`     |`31`  |  `25`|`24`|`20`  |`19` | `15`|`14` |  `12`|`11` | `7`|`6` | `0`
 |mnemonic    2+^|`1.00..1` 2+^|`rs2`   2+^|`rs1`   2+^|`func3`  2+^|`rd`   2+^|`opcode` 
 |`ssamoswap` 2+^|`1000001` 2+^|`src`   2+^|`addr`  2+^|`100`    2+^|`dst`  2+^|`1110011`
-|`sschkra`   2+^|`1000101` 2+^|`00001` 2+^|`00101` 2+^|`100`    2+^|`0`    2+^|`1110011`
-|`sspush`    2+^|`1000101` 2+^|`src`   2+^|`00000` 2+^|`100`    2+^|`0`    2+^|`1110011`
+|`ssprr`     2+^|`1000011` 2+^|`00000` 2+^|`00000` 2+^|`100`    2+^|`dst`  2+^|`1110011`
+|`sspush x1` 2+^|`1000101` 2+^|`00001` 2+^|`00000` 2+^|`100`    2+^|`0`    2+^|`1110011`
+|`sspush x5` 2+^|`1000101` 2+^|`00101` 2+^|`00000` 2+^|`100`    2+^|`0`    2+^|`1110011`
 |            2+^|`7`       2+^|`5`     2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
 |===
 
-Encoding `rd` as `x0` is not supported for `ssamoswap`.
+Encoding `rd` as `x0` is not supported for `ssamoswap` and `ssprr`.
+Only `x1` and `x5` encodings are supported as `rd` for `sspop`.
+Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
+Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
+
+While any register may be used as link register, conventionally the `x1` or `x5`
+register is expected to be as link register. The Zisslpcfi shadow stack
+instructions are designed to be most efficient for use of the `x1` and `x5`
+registers as the link register.
+
+[NOTE]
+====
+Return-address prediction stacks are a common feature of high-performance
+instruction-fetch units, but require accurate detection of instructions used for
+procedure calls and returns to be effective. For RISC-V, hints as to the
+instructions` usage are encoded implicitly via the register numbers used. The
+return-address stack (RAS) actions to pop and/or push onto the RAS are specified
+in Table 2.1 of the Privileged specification.
+
+Use of `x1` or `x5` as the link register allows a program to benefit from the
+return-address prediction stacks and avoid additional register movements to use
+the shadow stack instructions.
+====
 
 When a Zimop encoding is not supported by the Zisslpcfi extension then the
 instruction follows to its Zimop defined behavior.
 
 When `menvcfg.CFIE` is 0, then Zisslpcfi is not enabled for privilege modes less
-than M and backward-edge CFI is not enabled at privilege levels less than M.
+than M.
 
 When `V=0` and `menvcfg.CFIE` is 1, then backward-edge CFI is enabled at S-mode.
 When `V=0` and `menvcfg.CFIE` is 1, then backward-edge CFI is enabled at U-mode if
@@ -131,78 +155,119 @@ instructions on such machines is not supported.
 A push operation is defined as decrement of the `ssp` by `XLEN` followed by a
 write of the link register at the new top of the shadow stack. A pop operation
 is defined as a `XLEN` wide read from the current top of the shadow stack
-followed by an increment of the `ssp`.
+followed by an increment of the `ssp` by `XLEN`.
 
-To push a link register on the shadow stack, the CFI extension provides
-`sspush` instruction. To pop a link register from the shadow stack, the CFI
-extension provides `sspop` instruction.
+Usually programs with a shadow stack push the return address onto the regular
+stack as well as the shadow stack in the function prologue. Such programs when
+returning from the function pop the link register from the data stack and pop a
+shadow copy of the link register from the shadow stack. The two values are then
+compared. If the values do not match it is indicative of a corruption of the
+return address variable and the program causes an illegal instruction exception.
+
+To push a link register on the shadow stack, the CFI extension provides a
+`sspush` instruction. 
+
+A `sspopchk` instruction is provided to pop the shadow return address value
+from the shadow stack and check that the value matches the contents of the
+link register. This instruction is expected to be used by programs operating in
+shadow stack mode.
+
+The CFI extension additionally provides a `sspop` instruction to pop a return
+address from the shadow stack into a link register. This instruction is expected
+to be used by programs operating in control stack mode.
 
 [NOTE]
 ====
-Programs operating in shadow stack mode store the return address to the data
-stack as well as the shadow stack in the function prologue. Such programs when
-returning from the function load the link register from the data stack and load
-a shadow copy of the link register from the shadow stack. The two values are
-then compared (using the sschkra instruction that is discussed later). If the
-values do not match it is indicative of a shadow stack violation and causes an
-illegal-instruction exception. The function prologue and epilog of a function
-using shadow stacks is as follows:
+Programs may operate in shadow stack mode or in control stack mode. 
 
+When operating in shadow stack mode, the program uses the shadow stack to store
+a shadow copy of the link register. Such programs push the link register on
+the regular stack as well as the shadow stack in the prologue of the function.
+In the epilog, the link register value from the regular stack is compared to the
+shadow copy on the shadow stack. Programs operating in shadow stack mode are
+portable to implementations that do not support the Zisslpcfi extension. On
+implementations where the extension is not supported, the shadow stack
+instructions revert to their Zimop defined behavior but the program continues to
+function as the link register is also pushed and popped from the regular stack.
+Pushing and popping the link register to regular stack allows such programs to
+comply with the ABI. The prologue and epilog of a function in shadow stack mode
+is as follows:
+
+[literal]
+    function_entry:
+        addi sp,sp,-8  # push link register x1
+        sd x1,(sp)     # on data stack
+        sspush x1      # push link register x1 on shadow stack
+         :
+         : 
+        ld x1,(sp)     # pop link register x1 from data stack
+        addi sp,sp,8   
+        sspopchk x1  # compare link register x1 to shadow 
+                       # return address; faults if not same
+        ret
+
+Programs operating in the control stack mode store the return address only
+on the shadow stack. Such programs are not portable to implementations that do
+not support the Zisslpcfi extension. As these programs do not push a return
+address on the regular stack they may not be compliant with the ABI. The
+prologue and epilog of a function when operating in control stack mode
+is as follows:
+
+[literal]
     function_entry:
         sspush x1      # push link register x1 on shadow stack
          :
          : 
-        sspop x5       # pop from shadow stack into x5
-        sschkra x5, x1 # compare link register x1 to shadow 
-                       # link register x5; faults if not same
+        sspop  x1      # pop return address from shadow stack
         ret
 
-When x1 is used by the ABI as the link register, the x5 may be used to load the
-shadow link register value from the shadow stack. Alternatively, if the ABI uses
-x5 as the link register, then the x1 register may be used as the shadow link
-register. 
+These examples illustrate the use of `x1` register by the ABI as the link
+register. Alternatively, the ABI may use `x5` as the link register.
 
 A leaf function i.e. a function that does not itself make function calls does
 not need to push the link register to the shadow stack or pop it from the shadow
-stack. The return value may be held in the link register itself for the duration
-of the function execution.
-
-In the RVI psABI, the x1 register is designated as the link register and x5
-register is designated as a temporary register. Since the shadow link register
-is loaded at the tail of the function, prior to return, the x5 register being
-used as the shadow link register does not impose a burden on the compiler as the
-x5 register, being a temporary register that is not preserved across a call, is
-usually free for use at the tail of the function.
-
-Programs operating in the control stack mode may store the return address only
-to the shadow stack in the function prologue. Such functions when returning from
-the function load the link register value from the shadow stack. Such programs
-may either use the x1 or x5 register, depending on their ABI, as the link
-register. The hardware return-address prediction stacks detect the use of x1/x5
-as the rd and x1/x5 as the source for a JALR instruction to infer if the JALR is
-used for a call or a return semantic for the purposes of prediction. To support
-both options the CFI extension provides the x1 and x5 variants of the shadow
-stack load and store.
+stack in either shadow stack mode or in control stack mode. The return value may
+be held in the link register itself for the duration of the leaf function
+execution.
 ====
 
-`sspop` performs a load identically to the existing `LOAD` instruction with the
-difference that the base is implicitly `ssp`, the width is implicitly `XLEN`.
-`sspush` performs a store identically to the existing `STORE` instruction with
-the difference that the base is implicitly `ssp`, the width is implicitly `XLEN`.
+The `sspop` and `sspopchk` instructions perform a load identically to the
+existing `LOAD` instruction with the difference that the base is implicitly
+`ssp`, the width is implicitly `XLEN`. 
 
-The `sspush` and `sspop` require the virtual address in `ssp` to have a shadow stack
-attribute (see Shadow Stack Memory Protection). 
+The `sspush` instruction performs a store identically to the existing `STORE`
+instruction with the difference that the base is implicitly `ssp`, the width
+is implicitly `XLEN`.
 
-If the virtual address in `ssp` is not `XLEN` aligned then the instructions cause a
-load or store/AMO address-misaligned exception.
+The `sspush`, `sspopchk`, and `sspop` require the virtual address in `ssp` to
+have a shadow stack attribute (see <<SSMP>>).
+
+Correct execution of `sspush`, `sspopchk`, and `sspop` requires that `ssp`
+refers to idempotent memory. If the memory reference by the `ssp` is not
+idempotent then the `sspush` instruction causes a store/AMO access fault and the
+`sspop`/`sspopchk` instructions cause a load access fault.
+
+If the virtual address in `ssp` is not `XLEN` aligned then the `sspop`/
+`sspopchk` instructions cause a load address-misaligned exception and the
+`sspush` instruction causes store/AMO address-misaligned exception.
 
 [NOTE]
 ====
 Misaligned accesses to shadow stack are not required and enforcing alignment is
 more secure to detect errors in the program.
+
+The `sspopchk` instruction performs a load followed by a check of the loaded
+data value with the link register source. If the check against the link register
+faults and the instruction is restarted by the trap handler then the instruction
+will perform a load again. If the memory from which the load is performed is
+non-idempotent then the second load may cause unexpected side effects. Shadow
+stack instructions require the memory referenced by `ssp` to be idempotent to
+avoid such concerns. Locating shadow stacks in non-idempotent memory (e.g.,
+non-idempotent device memory) is not an expected usage and requiring memory
+referenced by `ssp` to be idempotent does not pose a significant restriction.
 ====
 
-The operation of the `sspush` instructions is as follows:
+The operation of the `sspush` instruction is as follows:
 
 .`sspush` operation
 [source, text]
@@ -215,22 +280,43 @@ else
 endif
 ----
 
-The operation of the `sspop` instructions is as follows:
+The operation of the `sspop` instruction is as follows:
 
 .`sspop` operation
 [source, text]
 ----
-If (xBCFIE = 1)
+if (xBCFIE = 1)
     dst   = *[ssp]             # Load dst from address in ssp
-    [ssp] = [ssp] + (XLEN/8)   # increment ssp by XLEN/8
+                               # Only x1 and x5 may be used as dst
+    [ssp] = [ssp] + (XLEN/8)   # Increment ssp by XLEN/8.
 else
     [dst] = 0;
 endif
 ----
 
-The `ssp` is incremented by `sspop` only if the load from shadow stack completes
-successfully. The `ssp` is decremented by `sspush` only if the store to the
-shadow stack completes successfuly.
+The operation of the `sspopchk` instruction is as follows:
+
+.`sspopchk` operation
+[source, text]
+----
+if (xBCFIE = 1)
+    temp  = *[ssp]             # Load temp from address in ssp and
+    if temp != [src]           # Compare temp to value in src and
+                               # cause an illegal-instruction exception
+                               # if they are not bitwise equal.
+                               # Only x1 and x5 may be used as src
+       Raise illegal-instruction exception
+    else
+       [ssp] = [ssp] + (XLEN/8)# increment ssp by XLEN/8.
+    endif
+else
+    [dst] = 0;
+endif
+----
+
+The `ssp` is incremented by `sspop` and `sspopchk` only if the load from
+shadow stack completes successfully. The `ssp` is decremented by `sspush` only
+if the store to the shadow stack completes successfuly.
 
 [NOTE]
 ====
@@ -283,13 +369,12 @@ longjmp() {
         asm("csrw %0, $ssp_csr_num" : "=r"(cur_ssp):);
         // Test if unwound past the shadow stack bounds
         asm("sspush x5");
-        asm("sspop  x5");
+        asm("sspop x5");
     }
 back_cfi_not_enabled:
     :
 }
 ====
-
 
 === Read `ssp` into a register
 
@@ -326,37 +411,6 @@ An example sequence such as the following may be used:
 bcfi_not_enabled:
 ====
 
-
-=== Verifying return address
-
-Programs operating with a shadow stack push the return address onto the data
-stack as well as the shadow stack in the function prologue. Such programs when
-returning from the function pop the link register from the data stack and pop a
-shadow copy of the link register from the shadow stack. The two values are then
-compared. If the values do not match it is indicative of a corruption of the
-return address variable and the program causes an illegal instruction exception.
-
-When x1 is used by the ABI as the link register, the x5 may be used to hold the
-shadow link register value from the shadow stack. Alternatively, if the ABI uses
-x5 as the link register, then the x1 register may be used as the shadow link
-register. 
-
-A `sschkra` instruction is provided to perform the comparison.
-
-The operation of the `sschkra` instruction is as follows:
-
-.`sschkra` operation
-[source, text]
-----
-If (xBCFIE = 1)
-   if [x1] != [x5]
-       Raise illegal-instruction exception
-   endif
-else
-    [dst] = 0;
-endif
-----
-
 === Atomic Swap from a shadow stack location
 
 The CFI extension defines an `ssamoswap` instruction to atomically swap the `XLEN`
@@ -367,10 +421,13 @@ The `ssamoswap` is always sequentially consistent and cannot be reordered with
 earlier or later memory operations from the same hart. 
 
 The `ssamoswap` requires the virtual address in `addr` to have a shadow stack
-attribute (see Shadow Stack Memory Protection).
+attribute (see <<SSMP>>).
 
-If the virtual address is not `XLEN` aligned then the instructions cause a
-store/AMO address-misaligned exception.
+If the virtual address is not `XLEN` aligned then `ssamoswap` causes a store/AMO
+address-misaligned exception.
+
+If the memory reference by the `ssp` is not idempotent then `ssamoswap` causes a
+store/AMO access fault.
 
 The operation of the `ssamoswap` instructions is as follows:
 
@@ -427,7 +484,7 @@ sequence and multiple hart attempt to restore the checkpointed data only one of
 them succeeds.
 ====
 
-
+[[SSMP]]
 === Shadow Stack Memory Protection
 
 To protect shadow stack memory the memory is associated with a new page type -
@@ -456,9 +513,10 @@ The following faults may occur:
 . If the accessed page is a shadow stack page
 .. Stores other than `sspush` and `ssamoswap` cause write/AMO access faults.
 .. Instructions fetch causes a page fault
-. if the accessed page is not a shadow stack page
+. if the accessed page is not a shadow stack page or if the page is in
+  non-idempotent memory
 .. `ssamoswap` and `sspush` cause a store/AMO access fault
-.. `sspop` causes a load access fault
+.. `sspop` and `sspopchk` causes a load access fault
 
 To support these rules, the virtual address translation process specified in
 section 4.3.2 of the Privileged Specification cite:[PRIV] is modified as
@@ -483,6 +541,9 @@ follows:
    bits, given the current privilege mode and the value of the `SUM` and `MXR`
    fields of the `mstatus` register, stop and raise a page-fault exception
    corresponding to the original access type.
+
+The PMA checks are extended to require memory referenced by `sspush`, `sspop`,
+`ssamoswap`, and `sspopchk` to be idempotent.
 
 The `U` and `SUM` bit enforcement is performed normally for shadow stack
 instruction initiated memory accesses. The state of the `MXR` bit does not
@@ -540,7 +601,8 @@ When `mseccfg.MML` is 1, the `sspmp` field is read-only else it may be written.
 When `sspmp` field is implemented and `mseccfg.MML` is 1 the following rules are
 additionally enforced for M-mode memory accesses:
 
-* `sspush`, `sspop`, and `ssamoswap` instructions must match PMP entry `sspmp`.
+* `sspush`, `sspop`, `sspopchk`, and `ssamoswap` instructions must match PMP
+   entry `sspmp`.
 
 * Write by instructions other than `sspush` and `ssamoswap` that match PMP entry
   `sspmp` cause an access violation exception.
