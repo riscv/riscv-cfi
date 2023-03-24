@@ -240,9 +240,7 @@ The `sspush`, `sspopchk`, and `sspop` require the virtual address in `ssp` to
 have a shadow stack attribute (see <<SSMP>>).
 
 Correct execution of `sspush`, `sspopchk`, and `sspop` requires that `ssp`
-refers to idempotent memory, because the core must be able to handle traps
-detected by these instruction (e.g., a page fault) and re-execute them after
-returning from the trap handler. If the memory reference by the `ssp` is not
+refers to idempotent memory. If the memory reference by the `ssp` is not
 idempotent then the `sspush` instruction causes a store/AMO access fault and the
 `sspop`/`sspopchk` instructions cause a load access fault.
 
