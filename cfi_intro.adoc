@@ -128,7 +128,6 @@ follows:
 
     is_indirect_call_jump = is_indirect_call | is_indirect_jump;
 ----
-====
 
 The landing-pads are designed to provide integrity to control transfers
 performed using indirect call and indirect jump and this is referred to as
