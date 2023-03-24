@@ -208,7 +208,7 @@ The operation of the `sspush` instructions is as follows:
 [source, text]
 ----
 If (xBCFIE = 1)
-   *[ssp] = [src - (XLEN/8)]   # Store src value to ssp - XLEN/8
+   *[ssp - (XLEN/8)] = [src]   # Store src value to ssp - XLEN/8
     [ssp] = [ssp] - (XLEN/8)   # decrement ssp by XLEN/8
 else
     [dst] = 0
