@@ -72,6 +72,9 @@ return-address prediction stacks and avoid additional register movements to use
 the shadow stack instructions.
 ====
 
+When a Zimop encoding is not supported by the Zisslpcfi extension then the
+instruction follows to its Zimop defined behavior.
+
 When `menvcfg.CFIE` is 0, then Zisslpcfi is not enabled for privilege modes less
 than M.
 
@@ -269,10 +272,9 @@ The operation of the `sspush` instruction is as follows:
 .`sspush` operation
 [source, text]
 ----
-if (xBCFIE = 1)
-    [ssp] = [ssp] - (XLEN/8)   # decrement ssp by XLEN/8 and
-   *[ssp] = [src]              # store src value to address in ssp.
-                               # Only x1 or x5 may be used as src
+If (xBCFIE = 1)
+   *[ssp - (XLEN/8)] = [src]   # Store src value to ssp - XLEN/8
+    [ssp] = [ssp] - (XLEN/8)   # decrement ssp by XLEN/8
 else
     [dst] = 0
 endif
@@ -312,9 +314,9 @@ else
 endif
 ----
 
-The `ssp` is incremented by `sspopchk` only if the load from shadow stack
-completes successfully and the value loaded is equal to the value held in the
-`src` register.
+The `ssp` is incremented by `sspop` and `sspopchk` only if the load from
+shadow stack completes successfully. The `ssp` is decremented by `sspush` only
+if the store to the shadow stack completes successfuly.
 
 [NOTE]
 ====
