@@ -218,7 +218,7 @@ is as follows:
         sspop  x1      # pop return address from shadow stack
         ret
 
-These examples illustrates the use of `x1` register by the ABI as the link
+These examples illustrate the use of `x1` register by the ABI as the link
 register. Alternatively, the ABI may use `x5` as the link register.
 
 A leaf function i.e. a function that does not itself make function calls does
