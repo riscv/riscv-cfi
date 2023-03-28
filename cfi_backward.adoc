@@ -248,13 +248,15 @@ idempotent then the `sspush` instruction causes a store/AMO access fault and the
 `sspop`/`sspopchk` instructions cause a load access fault.
 
 If the virtual address in `ssp` is not `XLEN` aligned then the `sspop`/
-`sspopchk` instructions cause a load address-misaligned exception and the
-`sspush` instruction causes store/AMO address-misaligned exception.
+`sspopchk` instructions cause a load access fault and the `sspush` instruction
+causes store/AMO access fault.
 
 [NOTE]
 ====
 Misaligned accesses to shadow stack are not required and enforcing alignment is
-more secure to detect errors in the program.
+more secure to detect errors in the program. An access-fault exception is raised
+instead of address-misaligned exception in such cases to indicate fatality and
+that the instruction must not be emulated by a trap handler.
 
 The `sspopchk` instruction performs a load followed by a check of the loaded
 data value with the link register source. If the check against the link register
