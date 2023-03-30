@@ -426,7 +426,7 @@ The `ssamoswap` requires the virtual address in `addr` to have a shadow stack
 attribute (see <<SSMP>>).
 
 If the virtual address is not `XLEN` aligned then `ssamoswap` causes a store/AMO
-address-misaligned exception.
+access-fault exception.
 
 If the memory reference by the `ssp` is not idempotent then `ssamoswap` causes a
 store/AMO access fault.
@@ -536,7 +536,7 @@ distinguish the fatal/non-recoverable condition from the recoverable page fault.
 
 On implementations where address-misaligned exception is prioritized higher than
 access-fault exception, a trap handler handler that emulates misaligned stores
-must cause an access-fault exception if the store is not `sspush` or `ssamoswap
+must cause an access-fault exception if the store is not `sspush` or `ssamoswap`
 and the store is to a shadow stack page.
 
 Shadow stack instructions cause an access fault if the accessed page is not a
