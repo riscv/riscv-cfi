@@ -65,5 +65,4 @@ include::cfi_csrs.adoc[]
 include::cfi_backward.adoc[]
 include::cfi_forward.adoc[]
 //the index must precede the bibliography
-include::cfi_index.adoc[]
 include::cfi_biblio.adoc[]
