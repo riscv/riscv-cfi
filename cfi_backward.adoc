@@ -323,7 +323,7 @@ if the store to the shadow stack completes successfuly.
 [NOTE]
 ====
 Store to load forwarding is a common technique employed by high performance
-processor implementations. CFI implementations may restrict forwarding from a
+processor implementations. CFI implementations may prevent forwarding from a
 non-shadow-stack store to a `sspop` instruction. A non-shadow-stack store causes a
 fault if done to a page mapped as a shadow stack. However such determination may
 be delayed till the PTE has been examined and thus may be used to transiently
