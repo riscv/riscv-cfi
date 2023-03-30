@@ -93,7 +93,7 @@ an illegal-instruction trap.
 ====
 Operating in shadow stack mode, i.e., where the call stack layout is preserved
 and the shadow stack is used to store a shadow copy of the link register,
-allowing preserving the ABI.
+preserves the ABI.
 
 A program may alternatively operate in control stack mode where the link
 register is only stored on the shadow stack. Such programs break the ABI but
