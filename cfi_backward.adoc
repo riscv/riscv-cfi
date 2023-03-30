@@ -323,7 +323,7 @@ if the store to the shadow stack completes successfuly.
 [NOTE]
 ====
 Store to load forwarding is a common technique employed by high performance
-processor implementations. CFI implementations may restrict forwarding from a
+processor implementations. CFI implementations may prevent forwarding from a
 non-shadow-stack store to a `sspop` instruction. A non-shadow-stack store causes a
 fault if done to a page mapped as a shadow stack. However such determination may
 be delayed till the PTE has been examined and thus may be used to transiently
@@ -622,7 +622,7 @@ The M-mode memory accesses by `sspop` instruction tests for read permission in
 the matching PMP entry when permission checking is required.
 
 When the `Smepmp` extension is implemented, a new WARL field `sspmp` is defined
-in the `mseccfg` CSR to configure a PMP entry as the shadow stack memory region
+in the `mseccfg` CSR to identify a PMP entry as the shadow stack memory region
 for M-mode accesses.
 
 When `mseccfg.MML` is 1, the `sspmp` field is read-only else it may be written.

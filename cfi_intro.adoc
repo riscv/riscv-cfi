@@ -93,10 +93,10 @@ an illegal-instruction trap.
 ====
 Operating in shadow stack mode, i.e., where the call stack layout is preserved
 and the shadow stack is used to store a shadow copy of the link register,
-allowing preserving the ABI.
+preserves the ABI.
 
 A program may alternatively operate in control stack mode where the link
-register is only stored on the shadow stack. Such programs break the ABI but
+register is stored only on the shadow stack. Such programs break the ABI but
 benefit from avoiding the additional instructions to store and load the link
 register to the data stack and to compare the two before returning from a
 function. Control stack mode may also allow the program to have a smaller data
@@ -183,13 +183,25 @@ only valid targets of an indirect jump (and not an indirect call).
 
 ====
 
-Forward-edge and backward-edge CFI may be enabled for a program that executes in
-U-mode, S-mode, or M-mode by itself to enable a mix of CFI enabled applications,
-operating systems, and machine mode firmware to co-exist. The processor keeps
-track of the CFI enables and CFI state for each mode in the `mstatus` CSR. A
-subset of the fields in the `mstatus` CSR are accessible using the `sstatus`
-CSR. VS-mode’s version of `sstatus` (`vsstatus`) tracks the CFI state for
-VS-mode and VU-mode.
+Forward-edge and backward-edge CFI may be enabled independently for software
+that execute in U-mode, S-mode, or M-mode. The processor keeps track of the CFI
+enables and CFI state for each mode in the `mstatus` CSR. A subset of the fields
+in the `mstatus` CSR are accessible using the `sstatus` CSR. VS-mode’s version
+of `sstatus` (`vsstatus`) tracks the CFI state for VS-mode and VU-mode.
+
+[NOTE]
+====
+Tracking CFI state and enables individually for each privilege level enables
+applications that use CFI to co-exist with applications do not use CFI; with the
+operating system context switching the CFI enables and CFI state of the
+application. Operating system may enable the use of CFI by U-mode applications
+with or without CFI being used by the operating system itself. Hypervisors may
+enable the use of CFI in a virtual machine with or without CFI being used by the
+hypervisor itself. Virtual machines that use CFI may to co-exist with virtual
+machines that do not use CFI; with the hypervisor context switching the CFI
+enables and state of the virtual machine. Machine mode firmware may enable use
+of CFI independent of the use of CFI lower privilege modes.
+====
 
 [NOTE]
 ====
