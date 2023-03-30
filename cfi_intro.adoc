@@ -96,7 +96,7 @@ and the shadow stack is used to store a shadow copy of the link register,
 preserves the ABI.
 
 A program may alternatively operate in control stack mode where the link
-register is only stored on the shadow stack. Such programs break the ABI but
+register is stored only on the shadow stack. Such programs break the ABI but
 benefit from avoiding the additional instructions to store and load the link
 register to the data stack and to compare the two before returning from a
 function. Control stack mode may also allow the program to have a smaller data
