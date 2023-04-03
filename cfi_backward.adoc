@@ -198,9 +198,10 @@ is as follows:
         addi sp,sp,-8  # push link register x1
         sd x1,(sp)     # on data stack
         #
-        # Let the contents of ssp register be 0x0000000121679F8 and XLEN be 64
-        # ssp register holds the address of the top of shadow stack
-        # Let the contents of the link register x1 be 0x0000000010252000
+        # Let the contents of ssp register be 0x0000000121679F8 and
+        # XLEN be 64 ssp register holds the address of the top of
+        # shadow stack. Let the contents of the link register x1
+        # be 0x0000000010252000
         #
         # 0x00000000121679E8:[                  ]
         # 0x00000000121679F0:[                  ]
@@ -208,11 +209,11 @@ is as follows:
         #
         sspush x1      # push link register x1 on shadow stack
         #
-        # sspush store the source register value to address (ssp - XLEN/8)
-        # and updates ssp to (ssp - XLEN/8) - does a push. Following
-        # completion of # sspush the ssp value is the new top of stack 
-        # i.e. 0x0000000121679F0 and the value in x1 is stored at this
-        # location
+        # sspush store the source register value to address
+        # (ssp - XLEN/8) and updates ssp to (ssp - XLEN/8) - does
+        # a push. Following completion of # sspush the ssp value is
+        # the new top of stack i.e. 0x0000000121679F0 and the value
+        # in x1 is stored at this location
         #
         # 0x00000000121679E8:[                  ]
         # 0x00000000121679F0:[0x0000000010252000] <- ssp
@@ -225,11 +226,12 @@ is as follows:
         sspopchk x1    # compare link register x1 to shadow
                        # return address; faults if not same
         #
-        # sspop loads the value from location addressed by ssp and compares
-        # the # loaded value to the value held in the register source and if
-        # the two are identical updates ssp to (ssp + XLEN/8) - does a pop
-        # and a check. Following completion of sspopchk the ssp value is the
-        # new top of stack i.e. 0x00000000121679F8
+        # sspop loads the value from location addressed by ssp and
+        # compares the loaded value to the value held in the register
+        # source and if the two are identical updates ssp to
+        # (ssp + XLEN/8) - does a pop and a check. Following
+        # completion of sspopchk the ssp value is the # new top of
+        # stack i.e. 0x00000000121679F8
         #
         # 0x00000000121679E8:[                  ]
         # 0x00000000121679F0:[0x0000000010252000]
@@ -244,8 +246,8 @@ address on the regular stack they may not be compliant with the ABI. The
 prologue and epilog of a function when operating in control stack mode
 is as follows:
 
-[literal]
-   +function_entry:
+----
+    function_entry:
         #
         # Let the contents of ssp register be 0x19740428 and XLEN be 32
         # ssp register holds the address of the top of shadow stack
@@ -276,7 +278,8 @@ is as follows:
         # 0x19740420:[0x19791216]
         # 0x19740428:[0xrrrrrrrr] <- ssp
         #
-        ret+
+        ret
+----
 
 These examples illustrate the use of `x1` register by the ABI as the link
 register. Alternatively, the ABI may use `x5` as the link register.
