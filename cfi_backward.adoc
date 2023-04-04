@@ -403,7 +403,7 @@ pointing to a shadow stack page or has unwound into the guard page. The
 following examples illustrate the use of backward-edge CFI instructions to unwind a
 shadow stack.
 
-[source, text]
+[source, ruby]
 setjmp() {
     :
     :
