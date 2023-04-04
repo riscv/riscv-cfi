@@ -246,7 +246,7 @@ address on the regular stack they may not be compliant with the ABI. The
 prologue and epilog of a function when operating in control stack mode
 is as follows:
 
-----
+[source, ruby]
     function_entry:
         #
         # Let the contents of ssp register be 0x19740428 and XLEN be 32
@@ -279,7 +279,6 @@ is as follows:
         # 0x19740428:[0xrrrrrrrr] <- ssp
         #
         ret
-----
 
 These examples illustrate the use of `x1` register by the ABI as the link
 register. Alternatively, the ABI may use `x5` as the link register.
@@ -332,7 +331,7 @@ referenced by `ssp` to be idempotent does not pose a significant restriction.
 The operation of the `sspush` instruction is as follows:
 
 .`sspush` operation
-[source, text]
+[source, ruby]
 ----
 If (xBCFIE = 1)
    *[ssp - (XLEN/8)] = [src]   # Store src value to ssp - XLEN/8
@@ -345,7 +344,7 @@ endif
 The operation of the `sspop` instruction is as follows:
 
 .`sspop` operation
-[source, text]
+[source, ruby]
 ----
 if (xBCFIE = 1)
     dst   = *[ssp]             # Load dst from address in ssp
@@ -359,7 +358,7 @@ endif
 The operation of the `sspopchk` instruction is as follows:
 
 .`sspopchk` operation
-[source, text]
+[source, ruby]
 ----
 if (xBCFIE = 1)
     temp  = *[ssp]             # Load temp from address in ssp and
@@ -404,7 +403,7 @@ pointing to a shadow stack page or has unwound into the guard page. The
 following examples illustrate the use of backward-edge CFI instructions to unwind a
 shadow stack.
 
-[literal]
+[source, text]
 setjmp() {
     :
     :
@@ -446,7 +445,7 @@ register.
 The operation of the `ssprr` instructions is as follows:
 
 .`ssprr` operation
-[source, text]
+[source, ruby]
 ----
 If (xBCFIE = 1)
     [dst] = [ssp]
@@ -463,7 +462,7 @@ actions by dynamically detecting if the backward-edge CFI extension is enabled.
 
 An example sequence such as the following may be used:
 
-[literal]
+[source, ruby]
     ssprr t0                  # mv ssp to t0
     beqz bcfi_not_enabled     # zero is not a valid shadow stack
                               # pointer by convention
@@ -494,7 +493,7 @@ store/AMO access fault.
 The operation of the `ssamoswap` instructions is as follows:
 
 .`ssamoswap` operation
-[source, text]
+[source, ruby]
 ----
 If (xBCFIE = 1)
     Perform the following atomically with sequential consistency
@@ -520,7 +519,7 @@ store it at the top of the shadow stack itself and thus create a checkpoint.
 
 An example sequence to store and restore the shadow stack pointer is as follows:
 
-[literal]
+[source, ruby]
 # The a0 register holds the pointer to top of new shadow
 # to switch to. The current ssp is first pushed on the current
 # shadow stack and the ssp is restored from new shadow stack

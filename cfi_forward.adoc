@@ -108,7 +108,7 @@ The term `xFCFIE` is used to determine if forward-edge CFI is active at
 privilege level `x` and is defined as follows:
 
 .`xFCFIE` determination
-[source, text]
+[source, ruby]
 ----
 if ( privilege == M-mode ) 
     xFCFIE = mseccfg.MFCFIE
@@ -150,7 +150,7 @@ specified in section <<FORWARD_TRAPS>>.
 The operation of the `lpcll` instruction is as follows:
 
 .`lpcll` operation
-[source, text]
+[source, ruby]
 ----
 If xFCFIE != 0
     // If PC not 4-byte aligned then illegal-instruction
@@ -194,7 +194,7 @@ the `lpl.UL` field and causes an illegal instruction exception on a mismatch. Th
 The operation of the `lpcml` instruction is as follows:
 
 .`lpcml` operation
-[source, text]
+[source, ruby]
 ----
 If xFCFIE != 0
     if (lpl.ML != inst.MLPL)
@@ -207,7 +207,7 @@ endif
 The operation of the `lpcul` instruction is as follows:
 
 .`lpcul` operation
-[source, text]
+[source, ruby]
 ----
 If xFCFIE != 0
     if (lpl.UL != inst.ULPL)
@@ -229,7 +229,7 @@ of the `lpl`.
 The operation of this instruction is as follows:
 
 .`lpsll` operation
-[source, text]
+[source, ruby]
 ----
 If xFCFIE == 1
    lpl.LL = inst.LLPL
@@ -245,7 +245,7 @@ The following instruction sequence may be emitted at indirect call sites by the
 compiler to set up the landing pad label register when labels that are up to
 9-bit wide are used:
 
-[literal]
+[source, ruby]
 foo:
     :
     # x10 is expected to have address of function bar()
@@ -256,7 +256,7 @@ foo:
 The following instruction sequence may be emitted at indirect call sites by the
 compiler to set up the landing pads at entrypoint of function bar():
 
-[literal]
+[source, ruby]
 bar:
     lpcll $0x1de    # Verifies that lpl.LL matches 0x1de
     :               # continue if landing pad checks succeed
@@ -268,7 +268,7 @@ of the `lpl`. This instruction is used when labels wider than 9-bit are used.
 The operation of this instruction is as follows:
 
 .`lpsml` operation
-[source, text]
+[source, ruby]
 ----
 If xFCFIE == 1
    lpl.ML = inst.MLPL
@@ -283,7 +283,7 @@ The following instruction sequence may be emitted at indirect call sites by the
 compiler to set up the landing pad label register when labels that are up to
 17-bit wide are used:
 
-[literal]
+[source, ruby]
 foo:
     :   
     # x10 is expected to have address of function bar()
@@ -295,7 +295,7 @@ foo:
 The following instruction sequence may be emitted at indirect call sites by the
 compiler to set up the landing pads at entrypoint of function bar():
 
-[literal]
+[source, ruby]
 bar:
     lpcll $0x1de    # Verifies that lpl.LL matches 0x1de
     lpcml $0x17     # Verifies that lpl.ML matches 0x17
@@ -308,7 +308,7 @@ This instruction is used when labels wider than 17-bit are used.
 The operation of this instruction is as follows:
 
 .`lpsul` operation
-[source, text]
+[source, ruby]
 ----
 If xFCFIE == 1
    lpl.UL = inst.ULPL
@@ -323,7 +323,7 @@ The following instruction sequence may be emitted at indirect call sites by the
 compiler to set up the landing pad label register when labels that are up to
 25-bit wide are used:
 
-[literal]
+[source, ruby]
 foo:
     :
     # x10 is expected to have address of function bar()
@@ -336,7 +336,7 @@ foo:
 The following instruction sequence may be emitted at indirect call sites by the
 compiler to set up the landing pads at entrypoint of function bar():
 
-[literal]
+[source, ruby]
 bar:
     lpcll $0x1de    # Verifies that lpl.LL matches 0x1de
     lpcml  $0x17    # Verifies that lpl.ML matches 0x17
