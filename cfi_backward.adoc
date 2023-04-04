@@ -92,7 +92,7 @@ The term `xBCFIE` is used to determine if backward-edge CFI is enabled at a
 privilege level `x` and is defined as follows:
 
 .`xBCFIE` determination
-[source, text]
+[source, sh]
 ----
 if ( privilege == M-mode ) 
     xBCFIE = 1
