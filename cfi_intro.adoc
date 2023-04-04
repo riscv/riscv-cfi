@@ -12,14 +12,18 @@ together by diverting the control flow instruction (e.g., RET, CALL, JMP) from
 its original target address to a new target via modification in the data stack
 or in the register or memory used by these instructions.
 
-This specification describes CFI security objectives, threat model, and various
-architectural design choices to ensure that the design meets the security
-objectives.
+//This specification describes CFI security objectives, threat model, and various
+//architectural design choices to ensure that the design meets the security
+//objectives.
+
+This specification describes CFI threat model, security objectives and
+the architectural design choices to ensure that control-flow subversion
+attacks are effectively thwarted. 
 
 RV32/RV64 provide two types of control transfer instructions - unconditional
 jumps and conditional branches. Conditional branches encode an offset in the
 immediate field of the instruction and are thus direct branches that are not
-susceptible to control flow subversion.
+susceptible to control-flow subversion.
 
 Unconditional direct jumps using `JAL` transfer control to a target that is in a
 +/- 1 MiB range from the current `pc`. Unconditional indirect jumps using the
@@ -33,20 +37,20 @@ convention that a `JAL`/`JALR` where `rd` (i.e. the link register) is `x1` or
 `x5` is a procedure call, and a `JAL`/`JALR` where `rs1` is the conventional
 link register (i.e.  `x1` or `x5`) is a return from procedure. The architecture
 allows for using these hints and conventions to support return address
-prediction and the hints are specified in Table 2.1 of the Unprivileged ISA
+prediction. The hints are specified in Table 2.1 of the Unprivileged ISA
 specifications cite:[UNPRIV].
 
 The RVC standard extension for compressed instructions provides unconditional
 jump and conditional branch instructions. The `C.J` and `C.JAL` instructions
 encode an offset in the immediate field of the instruction and thus are not
-susceptible to control flow subversion.
+susceptible to control-flow subversion.
 
-The `C.JR` and `C.JALR` RVC instruction performs a unconditional control
+The `C.JR` and `C.JALR` RVC instruction performs an unconditional control
 transfer to the address in register `rs1`. The `C.JALR` additionally writes the
 address of the instruction following the jump (`pc+2`) to the link register `x1`
 and is a procedure call. The `C.JR` where `rs1` is the conventional link
 register (i.e. `x1` or `x5`) is a return from procedure. A `C.JR` where `rs1` is
-not the conventional link register is a indirect jump.
+not the conventional link register is an indirect jump.
 
 The RISC-V control-flow integrity (CFI) extension (Zisslpcfi) builds on these
 conventions and hints. 
@@ -62,24 +66,24 @@ The term return is used to refer to a `JALR` instruction with `rs1 == x1` or
 and is a return if `rs1 == x1` or `rs1 == x5`.
 
 The term indirect jump is used to refer to a `JALR` instruction with `rd == x0`
-and where the `rs1` is not `x1` or `x5` (i.e. not a return). The `C.JR`
+and where the `rs1` is not `x1` or `x5` (i.e. not a return). A `C.JR`
 instruction where `rs1` is not `x1` or `x5` (i.e. not a return) is an indirect
 jump.
 
-To enforce backward edge control flow integrity, the extension introduces a
-shadow stack. The shadow-stack is designed to provide integrity to control
+To enforce backward-edge control-flow integrity, the extension introduces a
+shadow stack. The shadow stack is designed to provide integrity to control
 transfers performed using return instruction (where the return may be from a
 procedure invoked using an indirect call or a direct call) and this is referred
-to as backward-edge protection. A program using backward control flow integrity
-has two stack - a regular stack and a shadow stack - and the shadow stack is
-used exclusively to store the shadow copies of return adddresses.
+to as backward-edge protection. A program using backward-edge control-flow integrity
+has two stacks - a regular stack and a shadow stack. The shadow stack is
+used exclusively to store shadow copies of return addresses.
 
 The shadow stack is used to spill the link register if required by
 non-leaf functions. A shadow-stack-pointer (`ssp`) register is introduced in the
 architecture to hold the address of the top of the current active shadow stack.
-The shadow stack is protected from inadvertent corruptions and modifications as
+The shadow stack is architecturally protected from inadvertent corruptions and modifications as
 detailed later. The extension provides instructions to store and load the link
-register to the shadow stack. A function in a program compiled to use shadow
+register to the shadow stack. Each function in a program compiled to use shadow
 stacks stores the link register to the data stack and a shadow copy of the link
 register to the shadow stack when the function is entered (the prologue). When
 the function needs to return (the epilogue), the function loads the link
@@ -87,7 +91,7 @@ register from the data stack and the shadow copy of the link register from the
 shadow stack. The link register value from the data stack and the shadow link
 register value from the shadow stack are compared. A mismatch of the two values
 is indicative of a subversion of the return address control variable and causes
-an illegal-instruction trap.
+an illegal instruction exception.
 
 [NOTE]
 ====
@@ -103,7 +107,7 @@ function. Control stack mode may also allow the program to have a smaller data
 stack as the space to save the link register is no longer needed.
 ====
 
-To enforce forward edge control flow integrity, the extension introduces new
+To enforce forward edge control-flow integrity, the extension introduces new
 landing pad instructions (`lpcll`) that enable software to indicate valid targets
 for indirect calls and jumps in a program. Compiler is expected to emit a `lpcll`
 as the first instruction of address-taken functions. Compiler is expected to
@@ -135,24 +139,23 @@ forward-edge protection.
 
 When the landing pad feature is active, the hart tracks an expected landing pad
 (`ELP`) state that is updated with the expected landing pad instruction on
-indirect calls and jumps to . An indirect call or jump updates the `ELP` to
+indirect calls and jumps. An indirect call or jump updates the `ELP` to
 require a `lpcll` instruction at the target. If the instruction at the target is
 not `lpcll` then an illegal instruction exception is raised. 
 
 The landing pads may be labeled. With labeling enabled, the number of landing
 pads that can be reached from an indirect call or indirect jump site can be
-constrained using programming language based policies. A landing pad label
+defined using programming language based policies. A landing pad label
 (`lpl`) is set up prior to initiating an indirect call or indirect jump with the
  expected landing pad label using an instruction to set the `lpl`. If the label
 of the landing pad does not match that in `lpl` then an illegal instruction
-exception is raised.
+exception is raised. This extension supports up to 25-bit width labels
 
-Up to 25-bit labels are supported by this extension. 
 
 [NOTE]
 ====
 In the simplest form the program may be built with a single label value to
-implement a coarse-grain version of forward-edge CFI. Such a program would
+implement a coarse grained version of forward-edge CFI. A program would
 significantly reduce the gadget space by constraining gadgets to be preceded by
 a landing pad instruction i.e., to the start of indirect callable functions. 
 
@@ -163,8 +166,8 @@ expected prototype of functions called by that call site.
 
 A third form of label generation may generate labels by analyzing the
 control-flow-graph (CFG) of the program and lead to even further constraining of
-the gadgets reachable. Such programs may further use the multi-label capability
-such that when a function is called from two or more call sites, then such
+reachable gadgets. Such programs may further use the multi-label capability
+i.e. when a function is called from two or more call sites, the
 common functions may be labeled as reachable from each of the call sites. For
 example, consider two call sites A and B. A invokes functions X and Y. B invokes
 functions Y and Z. With a single label scheme the functions X, Y, and Z would
@@ -172,45 +175,45 @@ need to be assigned the same label such that both call site A and B can invoke
 the common function Y. This allows call site A to additionally call function Z
 and call site B to additionally call function X. However, if function Y was
 labeled with two labels - one corresponding to call site A and other to call
-site B then Y can be invoked by both but the X can only be invoked by call site
+site B then Y can be invoked by both, but the X can only be invoked by call site
 A and Z only by call site B. To support multiple labels, the compiler may create
-a call site specific entrypoint to such shared functions with each entrypoint
+a call site specific entry-point to such shared functions with each entry-point
 containing the call site specific landing pad instruction followed by a direct
 branch to the start of the function.
 
-A portion of the label space may be dedicated to label landing pads that are
+A portion of the label space may be dedicated to labeled landing pads that are
 only valid targets of an indirect jump (and not an indirect call).
 
 ====
 
 Forward-edge and backward-edge CFI may be enabled independently for software
 that execute in U-mode, S-mode, or M-mode. The processor keeps track of the CFI
-enables and CFI state for each mode in the `mstatus` CSR. A subset of the fields
+enabled and CFI state for each mode in the `mstatus` CSR. A subset of the fields
 in the `mstatus` CSR are accessible using the `sstatus` CSR. VS-mode’s version
 of `sstatus` (`vsstatus`) tracks the CFI state for VS-mode and VU-mode.
 
 [NOTE]
 ====
-Tracking CFI state and enables individually for each privilege level enables
-applications that use CFI to co-exist with applications do not use CFI; with the
-operating system context switching the CFI enables and CFI state of the
+Tracking CFI state and setting individually for each privilege level enables
+applications that use CFI to co-exist with applications that do not use CFI; with the
+operating system context switching the CFI enabling and CFI state of the
 application. Operating system may enable the use of CFI by U-mode applications
 with or without CFI being used by the operating system itself. Hypervisors may
 enable the use of CFI in a virtual machine with or without CFI being used by the
-hypervisor itself. Virtual machines that use CFI may to co-exist with virtual
+hypervisor itself. Virtual machines that use CFI may co-exist with virtual
 machines that do not use CFI; with the hypervisor context switching the CFI
-enables and state of the virtual machine. Machine mode firmware may enable use
-of CFI independent of the use of CFI lower privilege modes.
+enables and state of the virtual machine. Machine mode firmware may enable the use
+of CFI independently of the use of CFI in lower privilege modes.
 ====
 
 [NOTE]
 ====
 To use Zisslpcfi, the operating system has to be modified to enable Zisslpcfi
-capabilities, including the context switching of additional CFI extension state.
-The set of programs installed in such an OS may however be a mix where some
-programs are compiled with Zisslpcfi capabilities and others are not. Allowing the
-U-mode CFI be individually enabled from S-mode allows an operating system to keep
-CFI enabled when operating in S-mode but enable or disable it for U-mode depending
+capabilities, including the context switching of the CFI extension state.
+The set of programs installed in such OS may however be a mix where some
+programs are compiled with Zisslpcfi capabilities and others that are not. Allowing the
+U-mode CFI to be individually enabled from S-mode, allows an operating system to keep
+CFI enabled when operating in S-mode and enable or disable it for U-mode depending
 on the program being executed in U-mode.
 ====
 
@@ -218,7 +221,7 @@ To support backward compatibility of the programs built with Zisslpcfi support, 
 new instructions to operate on the shadow stack, the landing pad instructions,
 and the instructions to set the `lpl` are encoded using Zimop encodings. When
 Zisslpcfi is not enabled for a program or the program is executing on a processor
-that does not support the Zisslpcfi extension then the instructions introduced by
+that does not support the Zisslpcfi extension, the instructions introduced by
 the Zisslpcfi extensions execute as defined by Zimop extension.
 
 [NOTE]
@@ -229,13 +232,13 @@ extension. Such system libraries however may need to link dynamically to
 programs that are not compiled with the Zisslpcfi extension. When such programs are
 executing, the OS may disable the Zisslpcfi extension in U-mode. When these system
 libraries are invoked in U-mode by such programs, the Zisslpcfi instructions in the
-libraries revert to their Zimop defined behavior. Without such encoding, the OS
+libraries revert to their Zimop defined behavior. Without Zimop encoding, the OS
 distribution may need to carry two versions of such libraries, one with Zisslpcfi
-instructions and one without, and thus need significantly larger cost and
+instructions and one without, and thus require significantly larger cost and
 complexity for supporting the Zisslpcfi extension.
 
 An OS distribution compiled with Zisslpcfi extension may be installed on a machine
-that does not support Zisslpcfi extensions. On such machines, as the Zisslpcfi
+that does not support Zisslpcfi extensions. On such machines, since Zisslpcfi
 instructions are encoded as Zimop, they revert to their Zimop defined behavior.
 
 A program compiled with the Zisslpcfi extension may be installed on an OS that is
@@ -246,4 +249,3 @@ to their Zimop defined behavior.
 
 The Zisslpcfi extension depends on the Zicsr extension, the A extension, and the
 Zimop extension.
-
