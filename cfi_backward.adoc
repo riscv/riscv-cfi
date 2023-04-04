@@ -193,7 +193,7 @@ Pushing and popping the link register to regular stack allows such programs to
 comply with the ABI. The prologue and epilog of a function in shadow stack mode
 is as follows:
 
-[literal]
+[source, ruby]
     function_entry:
         addi sp,sp,-8  # push link register x1
         sd x1,(sp)     # on data stack
