@@ -6,8 +6,8 @@ Integrity (CFI) provides CPU instruction set architecture (ISA) capabilities to 
 Return-Oriented Programming (ROP) and Call/Jump-Oriented Programming (COP/JOP) style
 control-flow subversion attacks.
 
-To enforce backward edge control flow integrity, the extension introduces a shadow stack. To
-enforce forward edge control flow integrity, the extension introduces labeled landing pad
+To enforce backward edge control-flow integrity, the extension introduces a shadow stack. To
+enforce forward edge control-flow integrity, the extension introduces labeled landing pad
 instructions.
 
 = License
