@@ -271,7 +271,7 @@ is as follows:
         #
         # sspop loads the value from location addressed by ssp into
         # destination register and updates ssp to (ssp + XLEN/8)
-        # - does a pop. Following completion of sspopchk the ssp value
+        # - does a pop. Following completion of sspop the ssp value
         # is the new top of stack i.e. 0x19740428
         #
         # 0x19740418:[          ]
