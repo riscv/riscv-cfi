@@ -271,7 +271,7 @@ is as follows:
         #
         # sspop loads the value from location addressed by ssp into
         # destination register and updates ssp to (ssp + XLEN/8)
-        # - does a pop. Following completion of sspopchk the ssp value
+        # - does a pop. Following completion of sspop the ssp value
         # is the new top of stack i.e. 0x19740428
         #
         # 0x19740418:[          ]
@@ -383,10 +383,11 @@ if the store to the shadow stack completes successfuly.
 ====
 Store to load forwarding is a common technique employed by high performance
 processor implementations. CFI implementations may prevent forwarding from a
-non-shadow-stack store to a `sspop` instruction. A non-shadow-stack store causes a
-fault if done to a page mapped as a shadow stack. However such determination may
-be delayed till the PTE has been examined and thus may be used to transiently
-forward the data from such stores to a `sspop`.
+non-shadow-stack store to a `sspop` or to a `sspopchk` instruction. A
+non-shadow-stack store causes a fault if done to a page mapped as a shadow
+stack. However such determination may be delayed till the PTE has been examined
+and thus may be used to transiently forward the data from such stores to a
+`sspop` or to a `sspopchk`.
 ====
 
 [NOTE]
@@ -559,7 +560,7 @@ enhanced to support a shadow stack memory region for use by M-mode.
 
 The shadow stack memory is protected using page table attributes such that it
 cannot be stored to by instructions other than `sspush` and `ssamoswap`. The
-`sspop` instruction can only load from shadow stack memory.
+`sspop` and `sspopchk` instructions can only load from shadow stack memory.
 
 The shadow stack can be read using all instructions that load from memory. 
 
@@ -660,10 +661,11 @@ stores to non-shadow-stack pages lead to an exception.
 ====
 
 The G-stage address translation and protections are not affected by the shadow
-stack extension. When G-stage page tables are active, the `ssamoswap`, and
-`sspop` instructions require the G-stage page table mapping the accessed memory to
-have read permission and the `ssamoswap` and `sspush` instructions require write
-permission. The `xwr == 010b` encoding in the G-stage PTE remains reserved.
+stack extension. When G-stage page tables are active, the `ssamoswap`, `sspop`
+and `sspopchk` instructions require the G-stage page table mapping the accessed
+memory to have read permission and the `ssamoswap` and `sspush` instructions
+require write permission. The `xwr == 010b` encoding in the G-stage PTE remains
+reserved.
 
 [NOTE]
 ====
@@ -685,13 +687,13 @@ profiling, and other use cases.
 
 When privilege mode is less than M, the PMP region accessed by `sspush` and
 `ssamoswap` must provide write permission and the PMP region accessed by `sspop`
-must provide read permission.
+and `sspopchk` must provide read permission.
 
 The M-mode memory accesses by `sspush` and `ssamoswap` instructions test for
 write permission in the matching PMP entry when permission checking is required.
 
-The M-mode memory accesses by `sspop` instruction tests for read permission in
-the matching PMP entry when permission checking is required.
+The M-mode memory accesses by `sspop` and `sspopchk` instructions test for read
+permission in the matching PMP entry when permission checking is required.
 
 When the `Smepmp` extension is implemented, a new WARL field `sspmp` is defined
 in the `mseccfg` CSR to identify a PMP entry as the shadow stack memory region
