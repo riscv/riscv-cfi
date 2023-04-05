@@ -653,7 +653,7 @@ virtual-addresses mappings being created to the shadow stack physical memory.
 Shadow stacks are expected to bounded on each end using guard pages such that
 there are no two adjacent shadow stacks. Not locating two shadow stacks adjacent
 to each other guards against accidentally underflowing or overflowing from one
-shadow stack to another. Traditionally a gaurd page for a stack is a page that
+shadow stack to another. Traditionally a guard page for a stack is a page that
 is inaccessible to the process owning the stack. For shadow stacks, the guard
 page may also be a non-shadow-stack page that is otherwise accessible to the
 process owning the shadow stack due to the property that shadows stack load and
