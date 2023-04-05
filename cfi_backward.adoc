@@ -226,7 +226,7 @@ is as follows:
         sspopchk x1    # compare link register x1 to shadow
                        # return address; faults if not same
         #
-        # sspop loads the value from location addressed by ssp and
+        # sspopchk loads the value from location addressed by ssp and
         # compares the loaded value to the value held in the register
         # source and if the two are identical updates ssp to
         # (ssp + XLEN/8) - does a pop and a check. Following
@@ -270,7 +270,7 @@ is as follows:
         sspop  x1      # pop return address from shadow stack
         #
         # sspop loads the value from location addressed by ssp into
-        # destination # register and updates ssp to (ssp + XLEN/8)
+        # destination register and updates ssp to (ssp + XLEN/8)
         # - does a pop. Following completion of sspopchk the ssp value
         # is the new top of stack i.e. 0x19740428
         #
