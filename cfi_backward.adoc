@@ -409,7 +409,7 @@ not push on to the shadow stack (being a leaf function it is not required to).
 setjmp() {
     :
     :
-    // read and save top of stack pointer to jmp_buf
+    // read and save the shadow stack pointer to jmp_buf
     asm("ssprr %0" : "=r"(cur_ssp):);
     jmp_buf->saved_ssp = cur_ssp;
     :
