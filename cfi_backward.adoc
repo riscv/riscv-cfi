@@ -226,7 +226,7 @@ is as follows:
         sspopchk x1    # compare link register x1 to shadow
                        # return address; faults if not same
         #
-        # sspop loads the value from location addressed by ssp and
+        # sspopchk loads the value from location addressed by ssp and
         # compares the loaded value to the value held in the register
         # source and if the two are identical updates ssp to
         # (ssp + XLEN/8) - does a pop and a check. Following
@@ -270,7 +270,7 @@ is as follows:
         sspop  x1      # pop return address from shadow stack
         #
         # sspop loads the value from location addressed by ssp into
-        # destination # register and updates ssp to (ssp + XLEN/8)
+        # destination register and updates ssp to (ssp + XLEN/8)
         # - does a pop. Following completion of sspopchk the ssp value
         # is the new top of stack i.e. 0x19740428
         #
@@ -400,14 +400,15 @@ using guard pages i.e. pages that do not have a shadow stack attribute. To
 detect if the unwind occurs past the bounds of the shadow stack the unwind may
 be done in maximal increments of 4 KiB and testing for the ssp to be still
 pointing to a shadow stack page or has unwound into the guard page. The
-following examples illustrate the use of backward-edge CFI instructions to unwind a
-shadow stack.
+following examples illustrate the use of backward-edge CFI instructions to
+unwind a shadow stack. This example assumes that the setjmp function itself does
+not push on to the shadow stack (being a leaf function it is not required to).
 
 [source, ruby]
 setjmp() {
     :
     :
-    // read and save top of stack pointer to jmp_buf
+    // read and save the shadow stack pointer to jmp_buf
     asm("ssprr %0" : "=r"(cur_ssp):);
     jmp_buf->saved_ssp = cur_ssp;
     :
@@ -644,6 +645,18 @@ Svpbmt extension and Svnapot extensions are supported for shadow stack pages.
 ====
 Operating systems should protect against writeable non-shadow-stack alias
 virtual-addresses mappings being created to the shadow stack physical memory. 
+====
+
+[NOTE]
+====
+Shadow stacks are expected to bounded on each end using guard pages such that
+there are no two adjacent shadow stacks. Not locating two shadow stacks adjacent
+to each other guards against accidentally underflowing or overflowing from one
+shadow stack to another. Traditionally a guard page for a stack is a page that
+is inaccessible to the process owning the stack. For shadow stacks, the guard
+page may also be a non-shadow-stack page that is otherwise accessible to the
+process owning the shadow stack due to the property that shadows stack load and
+stores to non-shadow-stack pages lead to an exception.
 ====
 
 The G-stage address translation and protections are not affected by the shadow
