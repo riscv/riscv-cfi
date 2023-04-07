@@ -364,6 +364,12 @@ bar:
     lpcml $mdl_label
     :
 
+A `lpsll` sets the `LL` as specified in the instruction and also initializes the
+`ML` and `UL` to zero. If the label to be assigned has a value of 0 for these
+fields then explicitly setting them to zero using a `lpsml` and/or `lpsul` is
+not required. The `lpsml` and `lpsul` need not occur together or in that order.
+Use of a `lpsul` does not require a preceeding or following `lpsml`.
+
 ====
 
 [[FORWARD_TRAPS]]
