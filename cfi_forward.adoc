@@ -344,6 +344,34 @@ bar:
     :               # continue if landing pad checks succeed
 ====
 
+[NOTE]
+====
+
+The `lpcml` and `lpcul` need not occur together or in that order. Use of a
+`lpcul` does not require a preceeding or a following `lpcml`. The following
+sequences are also a valid label check sequence:
+
+[source, ruby]
+bar:
+    lpcll $lwr_label
+    lpcul $upr_label
+    :
+
+[source, ruby]
+bar:
+    lpcll $lwr_label
+    lpcul $upr_label
+    lpcml $mdl_label
+    :
+
+A `lpsll` sets the `LL` as specified in the instruction and also initializes the
+`ML` and `UL` to zero. If the label to be assigned has a value of 0 for these
+fields then explicitly setting them to zero using a `lpsml` and/or `lpsul` is
+not required. The `lpsml` and `lpsul` need not occur together or in that order.
+Use of a `lpsul` does not require a preceeding or following `lpsml`.
+
+====
+
 [[FORWARD_TRAPS]]
 === Preserving expected landing pad state on traps
 
