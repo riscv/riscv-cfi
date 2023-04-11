@@ -59,9 +59,8 @@ instruction follows to its Zimop defined behavior.
 The extension includes 16-bit versions of the `sspush x1` and `sspopchk x5`
 instructions using the compressed Zimop encodings. The `c.sspush x1` and the
 `c.sspopchk x5` instructions are encoded using the `C.LUI` major opcode and
-using the `c.mop.0` and `c.mop.2` encodings defined by the Zimop extension.
-Unlike the uncompressed Zimop, the compressed Zimop are defined to not write
-`rd`.
+using the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
+Unlike the uncompressed Zimop, the Zcmop are defined to not write `rd`.
 
 [width=100%]
 [%header, cols="6,<3,>3,<3,>3,<3,>3,1,1", grid=rows, frame=none]
@@ -131,7 +130,7 @@ When backward-edge CFI is not enabled(`xBCFIE = 0`):
 
 * The 32-bit instructions defined for backward-edge CFI revert to their Zimop
   defined behavior and write 0 to [rd].
-* The 16-bit instructions defined for backward-edge CFI revert to their Zimop
+* The 16-bit instructions defined for backward-edge CFI revert to their Zcmop
   defined behavior of not performing any operation.
 
 [NOTE]
