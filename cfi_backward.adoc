@@ -57,7 +57,7 @@ When a Zimop encoding is not supported by the Zisslpcfi extension then the
 instruction follows to its Zimop defined behavior.
 
 The extension includes 16-bit versions of the `sspush x1` and `sspopchk x5`
-instructions using the compressed Zimop encodings. The `c.sspush x1` and the
+instructions using the Zcmop encodings. The `c.sspush x1` and the
 `c.sspopchk x5` instructions are encoded using the `C.LUI` major opcode and
 using the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
 Unlike the Zimop, the Zcmop are defined to not write `rd`.
