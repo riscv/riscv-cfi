@@ -53,6 +53,9 @@ Only `x1` and `x5` encodings are supported as `rd` for `sspop`.
 Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
 Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
 
+When a Zimop encoding is not supported by the Zisslpcfi extension then the
+instruction follows to its Zimop defined behavior.
+
 While any register may be used as link register, conventionally the `x1` or `x5`
 register is expected to be as link register. The Zisslpcfi shadow stack
 instructions are designed to be most efficient for use of the `x1` and `x5`
@@ -71,9 +74,6 @@ Use of `x1` or `x5` as the link register allows a program to benefit from the
 return-address prediction stacks and avoid additional register movements to use
 the shadow stack instructions.
 ====
-
-When a Zimop encoding is not supported by the Zisslpcfi extension then the
-instruction follows to its Zimop defined behavior.
 
 When `menvcfg.CFIE` is 0, then Zisslpcfi is not enabled for privilege modes less
 than M.
