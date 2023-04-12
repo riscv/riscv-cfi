@@ -695,14 +695,13 @@ write permission in the matching PMP entry when permission checking is required.
 The M-mode memory accesses by `sspop` and `sspopchk` instructions test for read
 permission in the matching PMP entry when permission checking is required.
 
-When the `Smepmp` extension is implemented, a new WARL field `sspmp` is defined
-in the `mseccfg` CSR to identify a PMP entry as the shadow stack memory region
-for M-mode accesses.
+A new WARL field `sspmp` is defined in the `mseccfg` CSR to identify a PMP entry
+as the shadow stack memory region for M-mode accesses.
 
 When `mseccfg.MML` is 1, the `sspmp` field is read-only else it may be written.
 
-When `sspmp` field is implemented and `mseccfg.MML` is 1 the following rules are
-additionally enforced for M-mode memory accesses:
+When `sspmp` field is implemented, the following rules are additionally enforced
+for M-mode memory accesses:
 
 * `sspush`, `sspop`, `sspopchk`, and `ssamoswap` instructions must match PMP
    entry `sspmp`.
