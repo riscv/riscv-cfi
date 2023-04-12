@@ -120,12 +120,12 @@ follows:
 .Indirect call/jump determination
 [source, ruby]
 ----
-    if ( ((JALR && rd == x0) || (C.JR)) && (rs1 != x1) && (rs1 != x5) )
+    if ( ((JALR && rd == x0) || C.JR) && (rs1 != x1) && (rs1 != x5) )
         is_indirect_jump = 1;
     else
         is_indirect_jump = 0;
 
-    if ( (JALR && rd != x0) || (C.JALR) )
+    if ( ((JALR && rd != x0) || C.JALR ) && (rs1 != x1) && (rs1 != x5) )
         is_indirect_call = 1;
     else
         is_indirect_call = 0;
