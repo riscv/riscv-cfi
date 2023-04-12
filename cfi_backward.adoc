@@ -63,11 +63,11 @@ using the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
 Unlike the Zimop, the Zcmop are defined to not write `rd`.
 
 [width=100%]
-[%header, cols="6,<3,>3,<3,>3,<3,>3,1,1", grid=rows, frame=none]
+[%header, cols="4,<2,>2,<2,>2,<2,>2,1,1", grid=rows, frame=none]
 |===
-|                      |`15` | `12`|`11`  |  `7`|`6` | `2`  |`1` | `0`
+|mnemonic              |`15` | `12`|`11`  |  `7`|`6` | `2`  |`1` | `0`
 |  `c.sspush   x1`  2+^|`0110`  2+^|`00001`  2+^|`00000` 2+^|`01`
-|  `c.sspopchk x5`  2+^|`0110`  2+^|`00010`  2+^|`00000` 2+^|`01`
+|  `c.sspopchk x5`  2+^|`0110`  2+^|`00101`  2+^|`00000` 2+^|`01`
 |                   2+^|4       2+^|5        2+^|5       2+^|2
 |===
 
