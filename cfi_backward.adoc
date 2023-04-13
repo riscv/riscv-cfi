@@ -22,18 +22,6 @@ The backward-edge CFI extension introduces the following instructions for shadow
 stack operations. All instructions are encoded using the SYSTEM major opcode and
 using the `mop.r` and `mop.rr` encodings defined by the Zimop extension.
 
-[width=100%]
-[%header, cols="6,<6,>6,<3,>3,<3,>3,<3,>3,<3,>3", grid=rows, frame=none]
-|===
-|   `(mop.r)`     |`31`    |      `20`      |`19` | `15`|`14` | `12` |`11` | `7`|`6` | `0`
-|  mnemonic    2+^|`1.00..0111..`        2+^|`rs1`   2+^|`func3`  2+^|`rd`   2+^|`opcode`
-|`sspop x1`    2+^|`100000011100`        2+^|`00000` 2+^|`100`    2+^|`00001`  2+^|`1110011`
-|`sspop x5`    2+^|`100000011100`        2+^|`00000` 2+^|`100`    2+^|`00101`  2+^|`1110011`
-|`sspopchk x1` 2+^|`100000011100`        2+^|`00001` 2+^|`100`    2+^|`00000`  2+^|`1110011`
-|`sspopchk x5` 2+^|`100000011100`        2+^|`00101` 2+^|`100`    2+^|`00000`  2+^|`1110011`
-|              2+^|`12`                  2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
-|===
-
 [wavedrom, , ]
 .... 
 {reg: [
@@ -44,20 +32,6 @@ using the `mop.r` and `mop.rr` encodings defined by the Zimop extension.
   {bits:  7, name: '100000011100', attr:['sspop  x1','sspop  x5','sspopchk x1','sspopchk x5']},
 ], config:{lanes: 1, hspace:1024}}
 ....
-
-
-[width=100%]
-[%header, cols="6,<3,>3,<3,>3,<3,>3,<3,>3,<3,>3,<3,>3", grid=rows, frame=none]
-|===
-|`(mop.rr)`     |`31`  |  `25`|`24`|`20`  |`19` | `15`|`14` |  `12`|`11` | `7`|`6` | `0`
-|mnemonic    2+^|`1.00..1` 2+^|`rs2`   2+^|`rs1`   2+^|`func3`  2+^|`rd`   2+^|`opcode` 
-|`ssamoswap` 2+^|`1000001` 2+^|`src`   2+^|`addr`  2+^|`100`    2+^|`dst`  2+^|`1110011`
-|`ssprr`     2+^|`1000011` 2+^|`00000` 2+^|`00000` 2+^|`100`    2+^|`dst`  2+^|`1110011`
-|`sspush x1` 2+^|`1000101` 2+^|`00001` 2+^|`00000` 2+^|`100`    2+^|`0`    2+^|`1110011`
-|`sspush x5` 2+^|`1000101` 2+^|`00101` 2+^|`00000` 2+^|`100`    2+^|`0`    2+^|`1110011`
-|            2+^|`7`       2+^|`5`     2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
-|===
-
 [wavedrom, , ]
 .... 
 {reg: [
