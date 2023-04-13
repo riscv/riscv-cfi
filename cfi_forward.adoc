@@ -90,6 +90,7 @@ using the `mop.rr` instructions defined by the Zimop extension.
 |===
 
 .`lpsll/lpcll` encoding
+
 [wavedrom, , ]
 ....
 {reg: [
@@ -103,6 +104,7 @@ using the `mop.rr` instructions defined by the Zimop extension.
 ....
 
 .`lpsml/lpcml/lpsul/lpcul` encoding
+
 [wavedrom, , ]
 ....
 {reg: [
@@ -110,7 +112,7 @@ using the `mop.rr` instructions defined by the Zimop extension.
   {bits:  5, name: 'rd', attr:'0'},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  8, name: 'imm8', attr:['MLPL','MLPL','ULPL','ULPL'},
-  {bits:  1, name: 'typ', attr:['00', '01','10','11']},
+  {bits:  2, name: 'typ', attr:['00','01','10','11']},
   {bits:  7, name: '1000011', attr:['lpsml','lpcml','lpsul','lpcul']},
 ], config:{lanes: 1, hspace:1024}}
 ....
