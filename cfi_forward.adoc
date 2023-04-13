@@ -89,6 +89,32 @@ using the `mop.rr` instructions defined by the Zimop extension.
 |            2+^|`7`         ^|`1`    |`1` 2+^|  `8`           2+^|`3`      2+^|`5`    2+^|`7` 
 |===
 
+.`lpsll/lpcll` encoding
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:'0'},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  9, name: 'imm9', attr:['LLPL','LLPL']},
+  {bits:  1, name: 'typ', attr:['0', '1']},
+  {bits:  7, name: '1000001', attr:['lpsll','lpcll']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+.`lpsml/lpcml/lpsul/lpcul` encoding
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:'0'},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  8, name: 'imm8', attr:['MLPL','MLPL','ULPL','ULPL'},
+  {bits:  1, name: 'typ', attr:['00', '01','10','11']},
+  {bits:  7, name: '1000011', attr:['lpsml','lpcml','lpsul','lpcul']},
+], config:{lanes: 1, hspace:1024}}
+....
+
 When privilege level is M, the forward-edge CFI is active when `MFCFIE` is 1 in
 `mseccfg` register. 
 
