@@ -34,7 +34,17 @@ using the `mop.r` and `mop.rr` encodings defined by the Zimop extension.
 |              2+^|`12`                  2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
 |===
 
-Encoding `rd`  as `x0` is not supported for `sspop` and `ssprr`.
+[wavedrom, , ]
+.... 
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['00001','00101','00000','00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['00000','00000', '00001', '00101']},
+  {bits:  7, name: '100000011100', attr:['sspop  x1','sspop  x5','sspopchk x1','sspopchk x5']},
+], config:{lanes: 1, hspace:1024}}
+....
+
 
 [width=100%]
 [%header, cols="6,<3,>3,<3,>3,<3,>3,<3,>3,<3,>3,<3,>3", grid=rows, frame=none]
@@ -47,6 +57,40 @@ Encoding `rd`  as `x0` is not supported for `sspop` and `ssprr`.
 |`sspush x5` 2+^|`1000101` 2+^|`00101` 2+^|`00000` 2+^|`100`    2+^|`0`    2+^|`1110011`
 |            2+^|`7`       2+^|`5`     2+^|`5`     2+^|`3`      2+^|`5`    2+^|`7`      
 |===
+
+[wavedrom, , ]
+.... 
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['dst']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['addr']},
+  {bits:  5, name: 'rs2', attr:['src']},
+  {bits:  7, name: '1000001', attr:['ssamoswap']},
+], config:{lanes: 1, hspace:1024}}
+....
+[wavedrom, , ]
+.... 
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['dst']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['00000']},
+  {bits:  5, name: 'rs2', attr:['00000']},
+  {bits:  7, name: '1000011', attr:['ssprr']},
+], config:{lanes: 1, hspace:1024}}
+....
+[wavedrom, , ]
+.... 
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['00000']},
+  {bits:  5, name: 'rs2', attr:['00001', '00101']},
+  {bits:  7, name: '1000101', attr:['sspush x1','sspush x5']},
+], config:{lanes: 1, hspace:1024}}
+....
 
 Encoding `rd` as `x0` is not supported for `ssamoswap` and `ssprr`.
 Only `x1` and `x5` encodings are supported as `rd` for `sspop`.
