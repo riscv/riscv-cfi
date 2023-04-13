@@ -79,7 +79,7 @@ using the `mop.rr` instructions defined by the Zimop extension.
 .... 
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:'0'},
+  {bits:  5, name: 'rd', attr:'00000'},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  9, name: 'imm9', attr:['LLPL','LLPL']},
   {bits:  1, name: 'typ', attr:['0', '1']},
@@ -91,7 +91,7 @@ using the `mop.rr` instructions defined by the Zimop extension.
 .... 
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:'0'},
+  {bits:  5, name: 'rd', attr:'00000'},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  8, name: 'imm8', attr:['MLPL','MLPL','ULPL','ULPL']},
   {bits:  2, name: 'typ', attr:['00','01','10','11']},
