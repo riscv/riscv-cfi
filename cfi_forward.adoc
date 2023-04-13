@@ -89,10 +89,8 @@ using the `mop.rr` instructions defined by the Zimop extension.
 |            2+^|`7`         ^|`1`    |`1` 2+^|  `8`           2+^|`3`      2+^|`5`    2+^|`7` 
 |===
 
-.`lpsll/lpcll` encoding
-
 [wavedrom, , ]
-....
+.... 
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
   {bits:  5, name: 'rd', attr:'0'},
@@ -103,10 +101,8 @@ using the `mop.rr` instructions defined by the Zimop extension.
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-.`lpsml/lpcml/lpsul/lpcul` encoding
-
 [wavedrom, , ]
-....
+.... 
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
   {bits:  5, name: 'rd', attr:'0'},
