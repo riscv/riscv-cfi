@@ -48,6 +48,28 @@ as Spectre variant 2, that use speculative execution to leak data through side
 channels.
 ====
 
+When the indirect branch using `JALR` encodes both `rd` and `rs1` as `x7`, the
+branch is termed a software guarded branch. Such branches do not need to land on
+a landing pad and thus do not update `ELP`. Such branches must be used by a
+program only when the compiler or the program has emitted code to explicitly
+verify that the target held in `x7` is a valid target for that branch.
+
+[NOTE]
+====
+Software guarded branches are expected to be used by compilers for generating
+code for constructs like switch-cases. When using the software guarded branches,
+the compiler is required to ensure it has full control on the possible jump
+targets (e.g., the targets are obtained from a read-only table in memory and the
+index into the table is bounds checked, etc.).
+
+While software guarded branches may be secured using such compiler generated
+checks, in some cases they may be susceptible. For example, where software can
+be interrupted, the `x7` register may be spilled to mutable memory by the
+interrupt or signal handler. The memory location where the register is spilled
+may be susceptible to modifications. Software should opt to use the software
+gaurded branches only where such threats are not applicable or are mitigated.
+====
+
 The forward-edge CFI also supports labeling of landing pads. By itself a landing
 pad allows, for example, an indirect call to land on any `lpcll` in the program.
 This significantly reduces the number of valid targets for an indirect call.
