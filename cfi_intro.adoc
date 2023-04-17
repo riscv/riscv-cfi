@@ -113,26 +113,6 @@ for indirect calls and jumps in a program. Compiler is expected to emit a `lpcll
 as the first instruction of address-taken functions. Compiler is expected to
 emit a `lpcll` at an indirect jump target.
 
-The Zisslpcfi extension identifies an indirect call or an indirect jump as
-follows:
-
-[[IND_CALL_JMP]]
-.Indirect call/jump determination
-[source, ruby]
-----
-    if ( ((JALR && rd == x0) || (C.JR)) && (rs1 != x1) && (rs1 != x5) )
-        is_indirect_jump = 1;
-    else
-        is_indirect_jump = 0;
-
-    if ( (JALR && rd != x0) || (C.JALR) )
-        is_indirect_call = 1;
-    else
-        is_indirect_call = 0;
-
-    is_indirect_call_jump = is_indirect_call | is_indirect_jump;
-----
-
 The landing-pads are designed to provide integrity to control transfers
 performed using indirect call and indirect jump and this is referred to as
 forward-edge protection.
@@ -150,7 +130,6 @@ defined using programming language based policies. A landing pad label
  expected landing pad label using an instruction to set the `lpl`. If the label
 of the landing pad does not match that in `lpl` then an illegal instruction
 exception is raised. This extension supports up to 25-bit width labels
-
 
 [NOTE]
 ====
