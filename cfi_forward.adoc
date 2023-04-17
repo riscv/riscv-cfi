@@ -16,7 +16,7 @@ instruction. The `ELP` state can be one of:
 * 0 - `NO_LP_EXPECTED`
 * 1 - `LP_EXPECTED`
 
-The Zisslpcfi extension dedtermines if an indirect call or an indirect jump must
+The Zisslpcfi extension determines if an indirect call or an indirect jump must
 land on landing pad as specified in <<IND_CALL_JMP>>. An indirect call or an
 indirect jump updates the `ELP` to `LP_EXPECTED` if `is_lp_expected` is 1.
 
