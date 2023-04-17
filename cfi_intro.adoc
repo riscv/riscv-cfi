@@ -226,5 +226,5 @@ Zisslpcfi extension. The Zisslpcfi instructions are encoded as Zimop revert back
 to their Zimop defined behavior.
 ====
 
-The Zisslpcfi extension depends on the Zicsr extension, the A extension, and the
-Zimop extension.
+The Zisslpcfi extension depends on the Zicsr, A, Zimop, Zcmop, and page-based
+virtual memory system (Sv39/Sv48/Sv57) extensions.

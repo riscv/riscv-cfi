@@ -295,10 +295,9 @@ attempt to access `ssp` in VU-mode raises an illegal instruction exception.
 ], config:{lanes: 8, hspace:1024}}
 ....
 
-When the `Smepmp` extension is implemented, a new WARL field `sspmp` is defined
-in bits 16:11 of the `mseccfg` CSR to identify a PMP entry as the shadow stack
-memory region for M-mode accesses. The rules enforced by PMP for M-mode shadow
-stack memory accesses are outlined in <<PMP_SS>>.
+A new WARL field `sspmp` is defined the `mseccfg` CSR to identify a PMP entry
+as the shadow stack memory region for M-mode accesses. The rules enforced by
+PMP for M-mode shadow stack memory accesses are outlined in <<PMP_SS>>.
 
 The `MFCFIE` (bit 10) is a WARL field that when set to 1 enables forward-edge
 CFI at M-mode.
