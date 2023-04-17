@@ -74,24 +74,24 @@ To enforce backward-edge control-flow integrity, the extension introduces a
 shadow stack. The shadow stack is designed to provide integrity to control
 transfers performed using return instruction (where the return may be from a
 procedure invoked using an indirect call or a direct call) and this is referred
-to as backward-edge protection. A program using backward-edge control-flow integrity
-has two stacks - a regular stack and a shadow stack. The shadow stack is
-used exclusively to store shadow copies of return addresses.
+to as backward-edge protection. A program using backward-edge control-flow
+integrity has two stacks - a regular stack and a shadow stack. The shadow stack
+is used exclusively to store shadow copies of return addresses.
 
 The shadow stack is used to spill the link register if required by
 non-leaf functions. A shadow-stack-pointer (`ssp`) register is introduced in the
 architecture to hold the address of the top of the current active shadow stack.
-The shadow stack is architecturally protected from inadvertent corruptions and modifications as
-detailed later. The extension provides instructions to store and load the link
-register to the shadow stack. Each function in a program compiled to use shadow
-stacks stores the link register to the data stack and a shadow copy of the link
-register to the shadow stack when the function is entered (the prologue). When
-the function needs to return (the epilogue), the function loads the link
-register from the data stack and the shadow copy of the link register from the
-shadow stack. The link register value from the data stack and the shadow link
-register value from the shadow stack are compared. A mismatch of the two values
-is indicative of a subversion of the return address control variable and causes
-an illegal instruction exception.
+The shadow stack is architecturally protected from inadvertent corruptions and
+modifications as detailed later. The extension provides instructions to store
+and load the link register to the shadow stack. Each function in a program
+compiled to use shadow stacks stores the link register to the data stack and a
+shadow copy of the link register to the shadow stack when the function is
+entered (the prologue). When the function needs to return (the epilogue), the
+function loads the link register from the data stack and the shadow copy of the
+link register from the shadow stack. The link register value from the data stack
+and the shadow link register value from the shadow stack are compared. A
+mismatch of the two values is indicative of a subversion of the return address
+control variable and causes an illegal instruction exception.
 
 [NOTE]
 ====
