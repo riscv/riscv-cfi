@@ -20,6 +20,26 @@ The Zisslpcfi extension identifies an unconditional control transfer as an
 indirect call or an indirect jump as specified in <<IND_CALL_JMP>>. An indirect
 call or an indirect jump updates the `ELP` to `LP_EXPECTED`.
 
+The Zisslpcfi extension identifies an indirect call or an indirect jump as
+follows:
+
+[[IND_CALL_JMP]]
+.Indirect call/jump determination
+[source, ruby]
+----
+    if ( ((JALR && rd == x0) || (C.JR)) && (rs1 != x1) && (rs1 != x5) )
+        is_indirect_jump = 1;
+    else
+        is_indirect_jump = 0;
+
+    if ( (JALR && rd != x0) || (C.JALR) )
+        is_indirect_call = 1;
+    else
+        is_indirect_call = 0;
+
+    is_indirect_call_jump = is_indirect_call | is_indirect_jump;
+----
+
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
 stream is not 4-byte aligned, or is not a `lpcll`, or if the label encoded in
 the `lpcll` does not match the lower label in `lpl` register then an illegal
