@@ -16,28 +16,18 @@ instruction. The `ELP` state can be one of:
 * 0 - `NO_LP_EXPECTED`
 * 1 - `LP_EXPECTED`
 
-The Zisslpcfi extension identifies an unconditional control transfer as an
-indirect call or an indirect jump as specified in <<IND_CALL_JMP>>. An indirect
-call or an indirect jump updates the `ELP` to `LP_EXPECTED`.
-
-The Zisslpcfi extension identifies an indirect call or an indirect jump as
-follows:
+The Zisslpcfi extension dedtermines if an indirect call or an indirect jump must
+land on landing pad as specified in <<IND_CALL_JMP>>. An indirect call or an
+indirect jump updates the `ELP` to `LP_EXPECTED` if `is_lp_expected` is 1.
 
 [[IND_CALL_JMP]]
-.Indirect call/jump determination
+.Landing pad expected determination
 [source, ruby]
 ----
-    if ( ((JALR && rd == x0) || (C.JR)) && (rs1 != x1) && (rs1 != x5) )
-        is_indirect_jump = 1;
-    else
-        is_indirect_jump = 0;
-
-    if ( (JALR && rd != x0) || (C.JALR) ) && (rs1 != x1) && (rs1 != x5) )
-        is_indirect_call = 1;
-    else
-        is_indirect_call = 0;
-
-    is_indirect_call_jump = is_indirect_call | is_indirect_jump;
+    is_indirect_call_jump = ( (JALR || C.JR || C.JALR) &&
+                              (rs1 != x1) && (rs1 != x5) ) ? 1 : 0;
+    is_sw_guarded_jump = ( JALR && rd == x7 && rs1 == x7 ) ? 1 : 0;
+    is_lp_expected = is_indirect_call_jump & ~is_sw_guarded_jump;
 ----
 
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
