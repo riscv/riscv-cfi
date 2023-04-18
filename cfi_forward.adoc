@@ -67,7 +67,7 @@ checks, in some cases they may be susceptible. For example, where software can
 be interrupted, the `x7` register may be spilled to mutable memory by the
 interrupt or signal handler. The memory location where the register is spilled
 may be susceptible to modifications. Software should opt to use the software
-gaurded branches only where such threats are not applicable or are mitigated.
+guarded branches only where such threats are not applicable or are mitigated.
 ====
 
 The forward-edge CFI also supports labeling of landing pads. By itself a landing
