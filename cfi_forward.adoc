@@ -16,9 +16,19 @@ instruction. The `ELP` state can be one of:
 * 0 - `NO_LP_EXPECTED`
 * 1 - `LP_EXPECTED`
 
-The Zisslpcfi extension identifies an unconditional control transfer as an
-indirect call or an indirect jump as specified in <<IND_CALL_JMP>>. An indirect
-call or an indirect jump updates the `ELP` to `LP_EXPECTED`.
+The Zisslpcfi extension determines if an indirect call or an indirect jump must
+land on landing pad as specified in <<IND_CALL_JMP>>. An indirect call or an
+indirect jump updates the `ELP` to `LP_EXPECTED` if `is_lp_expected` is 1.
+
+[[IND_CALL_JMP]]
+.Landing pad expected determination
+[source, ruby]
+----
+    is_indirect_call_jump = ( (JALR || C.JR || C.JALR) &&
+                              (rs1 != x1) && (rs1 != x5) ) ? 1 : 0;
+    is_sw_guarded_jump = ( JALR && rd == x7 && rs1 == x7 ) ? 1 : 0;
+    is_lp_expected = is_indirect_call_jump & ~is_sw_guarded_jump;
+----
 
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
 stream is not 4-byte aligned, or is not a `lpcll`, or if the label encoded in
@@ -36,6 +46,28 @@ speculation using this technique greatly reduces the gadget space and increases
 the difficulty of using techniques such as branch-target-injection, also known
 as Spectre variant 2, that use speculative execution to leak data through side
 channels.
+====
+
+When the indirect branch using `JALR` encodes both `rd` and `rs1` as `x7`, the
+branch is termed a software guarded branch. Such branches do not need to land on
+a landing pad and thus do not update `ELP`. Such branches must be used by a
+program only when the compiler or the program has emitted code to explicitly
+verify that the target held in `x7` is a valid target for that branch.
+
+[NOTE]
+====
+Software guarded branches are expected to be used by compilers for generating
+code for constructs like switch-cases. When using the software guarded branches,
+the compiler is required to ensure it has full control on the possible jump
+targets (e.g., the targets are obtained from a read-only table in memory and the
+index into the table is bounds checked, etc.).
+
+While software guarded branches may be secured using such compiler generated
+checks, in some cases they may be susceptible. For example, where software can
+be interrupted, the `x7` register may be spilled to mutable memory by the
+interrupt or signal handler. The memory location where the register is spilled
+may be susceptible to modifications. Software should opt to use the software
+guarded branches only where such threats are not applicable or are mitigated.
 ====
 
 The forward-edge CFI also supports labeling of landing pads. By itself a landing
