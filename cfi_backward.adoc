@@ -29,7 +29,7 @@ using the `mop.r` and `mop.rr` encodings defined by the Zimop extension.
   {bits:  5, name: 'rd', attr:['00001','00101','00000','00000']},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: 'rs1', attr:['00000','00000', '00001', '00101']},
-  {bits:  7, name: '100000011100', attr:['sspop  x1','sspop  x5','sspopchk x1','sspopchk x5']},
+  {bits: 12, name: '100000011100', attr:['sspop  x1','sspop  x5','sspopchk x1','sspopchk x5']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 [wavedrom, , ]
