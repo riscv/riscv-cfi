@@ -225,14 +225,14 @@ Programs may operate in shadow stack mode or in control stack mode.
 When operating in shadow stack mode, the program uses the shadow stack to store
 a shadow copy of the link register. Such programs push the link register on
 the regular stack as well as the shadow stack in the prologue of the function.
-In the epilog, the link register value from the regular stack is compared to the
+In the epilogue, the link register value from the regular stack is compared to the
 shadow copy on the shadow stack. Programs operating in shadow stack mode are
 portable to implementations that do not support the Zisslpcfi extension. On
 implementations where the extension is not supported, the shadow stack
 instructions revert to their Zimop defined behavior but the program continues to
 function as the link register is also pushed and popped from the regular stack.
 Pushing and popping the link register to regular stack allows such programs to
-comply with the ABI. The prologue and epilog of a function in shadow stack mode
+comply with the ABI. The prologue and epilogue of a function in shadow stack mode
 is as follows:
 
 [source, ruby]
@@ -285,7 +285,7 @@ Programs operating in the control stack mode store the return address only
 on the shadow stack. Such programs are not portable to implementations that do
 not support the Zisslpcfi extension. As these programs do not push a return
 address on the regular stack they may not be compliant with the ABI. The
-prologue and epilog of a function when operating in control stack mode
+prologue and epilogue of a function when operating in control stack mode
 is as follows:
 
 [source, ruby]
@@ -426,7 +426,7 @@ endif
 The `ssp` is incremented by `sspop`, `sspopchk`, and `c.sspopchk` only if the
 load from the shadow stack completes successfully. The `ssp` is decremented by
 `sspush` and `c.sspush` only if the store to the shadow stack completes
-successfuly.
+successfully.
 
 [NOTE]
 ====
@@ -621,8 +621,8 @@ restore_shadow_stack_pointer:
 
 Further, the program may enforce an invariant that a shadow stack can be active
 only on one hart by using the `ssamoswap` when performing the restore from the
-checkpoint such that the checkpointed data is zeroed as part of the restore
-sequence and if multiple hart attempt to restore the checkpointed data, only one
+checkpoint such that the checkpoint data is zeroed as part of the restore
+sequence and if multiple hart attempt to restore the checkpoint data, only one
 of them succeeds.
 ====
 
@@ -728,7 +728,7 @@ Svpbmt extension and Svnapot extensions are supported for shadow stack pages.
 
 [NOTE]
 ====
-Operating systems should protect against writeable non-shadow-stack alias
+Operating systems should protect against writable non-shadow-stack alias
 virtual-addresses mappings being created to the physical memory of the
 shadow stack.
 ====
