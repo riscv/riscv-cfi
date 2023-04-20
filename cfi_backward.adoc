@@ -128,7 +128,7 @@ enabled when `V=1`, `menvcfg.CFIE` and `henvcfg.CFIE` are both set to 1, and
 `vsstatus.UBCFIE` is 1.
 
 The term `xBCFIE` is used to determine if backward-edge CFI is enabled at a
-privilege level `x` and is defined as follows:
+privilege mode `x` and is defined as follows:
 
 .`xBCFIE` determination
 [source, ruby]
@@ -179,7 +179,7 @@ enabled.
 ====
 When programs that use shadow stack instructions are installed on a processor
 that supports the Zisslpcfi extension but the extension has not been enabled at
-the privilege level where the program executes, the program continues to function
+the privilege mode where the program executes, the program continues to function
 correctly. However, the shadow stack instructions will revert to their
 Zimop/Zcmop-defined behavior.
 
