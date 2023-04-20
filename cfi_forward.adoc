@@ -2,23 +2,23 @@
 == Forward-edge control-flow integrity
 
 The forward-edge CFI introduces landing pad instructions that enable software to
-indicate valid targets for indirect calls and indirect jumps in a program. 
+indicate valid targets for indirect calls and indirect jumps in a program.
 
-A landing pad (`lpcll`) instruction is defined as the instruction that must be
+A landing pad instruction (`lpcll`) is defined as the instruction that must be
 placed at the program locations that can be valid targets of indirect jumps or
-calls. 
+calls.
 
 To enforce that the target of an indirect call or indirect jump must be a valid
 landing pad instruction, the hart maintains an expected landing pad (`ELP`) state
-to determine if a landing pad instruction is required at the target of a `JALR`
-instruction. The `ELP` state can be one of:
+to determine if a landing pad instruction is required at the target of an
+indirect call or jump. The `ELP` state can be one of:
 
 * 0 - `NO_LP_EXPECTED`
 * 1 - `LP_EXPECTED`
 
 The Zisslpcfi extension determines if an indirect call or an indirect jump must
-land on landing pad as specified in <<IND_CALL_JMP>>. An indirect call or an
-indirect jump updates the `ELP` to `LP_EXPECTED` if `is_lp_expected` is 1.
+land on landing pad, as specified in <<IND_CALL_JMP>>. If `is_lp_expected` is 1,
+an indirect call or jump updates the `ELP` to `LP_EXPECTED`.
 
 [[IND_CALL_JMP]]
 .Landing pad expected determination
@@ -32,20 +32,20 @@ indirect jump updates the `ELP` to `LP_EXPECTED` if `is_lp_expected` is 1.
 
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
 stream is not 4-byte aligned, or is not a `lpcll`, or if the label encoded in
-the `lpcll` does not match the lower label in `lpl` register then an illegal
+the `lpcll` does not match the lower label in `lpl` register, then an illegal-
 instruction exception is raised. If the next instruction in the instruction
 stream is 4-byte aligned and is a `lpcll` with its label matching the lower
-label in `lpl` register then the `ELP` updates to `NO_LP_EXPECTED`.
+label in `lpl` register, then the `ELP` updates to `NO_LP_EXPECTED`.
 
 [NOTE]
 ====
-Tracking of `ELP` and requiring valid landing pad instructions at the target of
-indirect call and jump enables a processor implementation to significantly
-reduce or to prevent speculation to non-landing-pad instructions. Constraining
-speculation using this technique greatly reduces the gadget space and increases
-the difficulty of using techniques such as branch-target-injection, also known
-as Spectre variant 2, that use speculative execution to leak data through side
-channels.
+The tracking of `ELP` and the requirement for valid landing pad instructions
+at the target of indirect call and jump enables a processor implementation to
+significantly reduce or to prevent speculation to non-landing-pad instructions.
+Constraining speculation using this technique, greatly reduces the gadget space
+and increases the difficulty of using techniques such as branch-target-injection,
+also known as Spectre variant 2, which use speculative execution to leak data
+through side channels.
 ====
 
 When the indirect branch using `JALR` encodes both `rd` and `rs1` as `x7`, the
@@ -59,56 +59,60 @@ verify that the target held in `x7` is a valid target for that branch.
 Software guarded branches are expected to be used by compilers for generating
 code for constructs like switch-cases. When using the software guarded branches,
 the compiler is required to ensure it has full control on the possible jump
-targets (e.g., the targets are obtained from a read-only table in memory and the
-index into the table is bounds checked, etc.).
+targets (e.g., by obtaining the targets from a read-only table in memory and
+performing bounds checking on the index into the table, etc.).
 
 While software guarded branches may be secured using such compiler generated
 checks, in some cases they may be susceptible. For example, where software can
 be interrupted, the `x7` register may be spilled to mutable memory by the
 interrupt or signal handler. The memory location where the register is spilled
-may be susceptible to modifications. Software should opt to use the software
-guarded branches only where such threats are not applicable or are mitigated.
+may be susceptible to modifications. Therefore, software should opt to use the
+software guarded branches only where such threats are not applicable or are
+mitigated.
 ====
 
-The forward-edge CFI also supports labeling of landing pads. By itself a landing
-pad allows, for example, an indirect call to land on any `lpcll` in the program.
-This significantly reduces the number of valid targets for an indirect call.
-Labeling of the landing pads enables software to achieve greater precision in
-pairing up indirect call sites or indirect jump sites with valid targets. To
-support labeled landing pads, the indirect call/jump sites establish an expected
-landing pad label in the landing pad label (`lpl`). If the target of the
- indirect call/jump is a valid landing pad instruction, the expected label
-established in the `lpl` is matched with the target's label. If a mismatch is
-detected then the label check instruction causes an illegal instruction
+By default a landing pad allows an indirect call/jump to land on any `lpcll` in
+the program, which significantly reduces the number of valid targets for an
+indirect call/jump. Labeling of the landing pads enables software to achieve
+greater precision in pairing up indirect call/jump sites sites with valid
+targets. To support labeled landing pads, the indirect call/jump sites establish
+an expected landing pad label in the landing pad label (`lpl`) register. If the
+target of the indirect call/jump is a valid landing pad instruction, the expected
+label established in the `lpl` is matched with the target's label. If a mismatch
+is detected then the label check instruction causes an illegal-instruction
 exception.
 
-Each landing pad may be labeled with a label that may be up to 25-bits wide. The
-`lpl` has three subfields - a 9-bit lower label (`LL`), a 8-bit middle label
+Each landing pad may be labeled with a label that can be up to 25-bits wide. The
+`lpl` has three subfields - a 9-bit lower label (`LL`), an 8-bit middle label
 (`ML`), and an 8-bit upper label (`UL`).
 
-The forward-edge CFI provides a `lpsll` instruction to establish the expected
-`LL` in the `lpl`, a `lpsml` instruction to establish the `ML`, and a `lpsul`
-instruction to establish the `UL` in the `lpl`. 
+The `lpsll` instruction is used to set the expected `LL` in the `lpl` and to
+set the `ML` and `UL` fields of `lpl` to 0. The `lpsml` instruction is used to
+set the expected `ML` in `lpl` while keeping the `UL` and `LL` fields
+unchanged. The `lpsul` instruction is used to set the expected `UL` in `lpl`
+while keeping the `LL` and `ML` fields unchanged. The values to be set are
+embedded as immediate fields in these instructions.
 
-The `lpcll` instructions embed a 9-bit immediate field. The instruction compares
-this value to the `LL` and on a mismatch causes an illegal-instruction exception.
+The `lpcll` instruction embeds a 9-bit immediate field. The instruction compares
+this value to the `LL` in `lpl` and on a mismatch causes an illegal-instruction
+exception.
 
-For label widths up to 17-bit a companion instruction `lpcml` is provided. The
+For label widths up to 17-bits, a companion instruction `lpcml` is provided. The
 `lpcml` embeds a 8-bit immediate value that is compared to the `ML` and on a
 mismatch causes an illegal-instruction exception.
 
-For label widths greater than 17-bit a second companion instruction `lpcul` is
+For label widths greater than 17-bits, a second companion instruction `lpcul` is
 provided. The `lpcul` embeds a 8-bit immediate value that is compared to the `UL`
-and on a mismatch causes an illegal-instruction exception. 
+and on a mismatch causes an illegal-instruction exception.
 
 === Forward-edge CFI Instruction encoding
 
 The forward-edge CFI introduces the following instructions for landing
 pad operations. All instructions are encoded using the SYSTEM major opcode and
-using the `mop.rr` instructions defined by the Zimop extension.
+the `mop.rr` instructions defined by the Zimop extension.
 
 [wavedrom, , ]
-.... 
+....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
   {bits:  5, name: 'rd', attr:'00000'},
@@ -120,7 +124,7 @@ using the `mop.rr` instructions defined by the Zimop extension.
 ....
 
 [wavedrom, , ]
-.... 
+....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
   {bits:  5, name: 'rd', attr:'00000'},
@@ -131,28 +135,28 @@ using the `mop.rr` instructions defined by the Zimop extension.
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-When privilege level is M, the forward-edge CFI is active when `MFCFIE` is 1 in
-`mseccfg` register. 
+When privilege mode is M, the forward-edge CFI is active when `MFCFIE` is 1 in
+`mseccfg` register.
 
-When `menvcfg.CFIE` is 0, then Zisslpcfi is not enabled for privilege modes less than
-M and forward-edge CFI is not active at privilege levels less than M.
+When `menvcfg.CFIE` is 0, Zisslpcfi is not enabled for privilege modes less than
+M, and forward-edge CFI is not active at privilege levels less than M.
 
-When `V=0` and `menvcfg.CFIE` is 1, then forward-edge CFI is active at S-mode if
-`menvcfg.SFCFIE` is 1 and is active at U-mode if `mstatus.UFCFIE` is 1.
+When `V=0` and `menvcfg.CFIE` is 1, then forward-edge CFI is active in S-mode if
+`menvcfg.SFCFIE` is 1 and is active in U-mode if `mstatus.UFCFIE` is 1.
 
-When `henvcfg.CFIE` is 0, then Zisslpcfi is not enabled for use when `V=1`.
+When `henvcfg.CFIE` is 0, Zisslpcfi is not enabled for use when `V=1`.
 
-When `V=1` and `menvcfg.CFIE` and `henvcfg.CFIE` are both 1, then forward-edge CFI
-is active at S-mode if `henvcfg.SFCFIE` is 1 and is active at U-mode if
+When `V=1` and both `menvcfg.CFIE` and `henvcfg.CFIE` are 1, then forward-edge CFI
+is active at VS-mode if `henvcfg.SFCFIE` is 1 and is active at VU-mode if
 `vsstatus.UFCFIE` is 1.
 
 The term `xFCFIE` is used to determine if forward-edge CFI is active at
-privilege level `x` and is defined as follows:
+privilege mode `x` and is defined as follows:
 
 .`xFCFIE` determination
 [source, ruby]
 ----
-if ( privilege == M-mode ) 
+if ( privilege == M-mode )
     xFCFIE = mseccfg.MFCFIE
 else if ( menvcfg.CFIE == 1 && V == 0 && privilege == S-mode )
     xFCFIE = menvcfg.SFCFIE
@@ -166,23 +170,23 @@ else
     xFCFIE = 0
 ----
 
-When forward-edge CFI is not active(`xFCFIE = 0`):
+When forward-edge CFI is not active (`xFCFIE = 0`):
 
-* The implementation does not update expected landing pad (`ELP`) state on
-  indirect call or jump and does not require the instruction at the target of a
-  indirect call or jump to be a landing pad instruction.
-* The implementation does not update expected landing pad (`ELP`) when `lpcll`
+* The hart does not update the expected landing pad (`ELP`) state on an
+  indirect call or jump, and does not require the instruction at the target of
+  an indirect call or jump to be a landing pad instruction.
+* The hart does not update the expected landing pad (`ELP`) when `lpcll`
   is executed.
-* The instructions defined for forward-edge CFI revert to their Zimop defined
-  behavior and write 0 to [rd].
+* The instructions defined for forward-edge CFI revert to their Zimop-defined
+  behavior and do not set or check landing pad labels.
 
 === Landing pad instruction
 
 `lpcll` is the valid landing pad instructions at target of indirect jumps and
 indirect calls. When a forward-edge CFI is active, the instructions cause an
-illegal instruction exception if they are not placed at a 4-byte aligned `pc`.
+illegal-instruction exception if they are not placed at a 4-byte aligned `pc`.
 The `lpcll` has the lower landing pad label embedded in the `LLPL` field.
-`lpcll` causes an illegal instruction exception if the `LLPL` field in the
+`lpcll` causes an illegal-instruction exception if the `LLPL` field in the
 instruction does not match the `lpl.LL` field.
 
 When the instructions cause an illegal-instruction exception, the `ELP` does not
@@ -210,27 +214,27 @@ endif
 
 [NOTE]
 ====
-Contenation of two instructions `A` and `B` may be consumed as a valid landing
-pad in the program. For example, consider a 32-bit instruction where the bytes
-3 and 2 have a pattern of `4073h` or `c073h` (for example, the immediate fields
-of a `lui`, `auipc`, or a `jal` instruction), followed by a 16-bit or a 32-bit
-instruction with a second byte with pattern of `83` (for example, an
+Concatenation of two instructions `A` and `B` can accidentally form a valid
+landing pad in the program. For example, consider a 32-bit instruction where the
+bytes 3 and 2 have a pattern of `4073h` or `c073h` (for example, the immediate
+fields of a `lui`, `auipc`, or a `jal` instruction), followed by a 16-bit or a
+32-bit instruction with a second byte with pattern of `83` (for example, an
 `addi x6, x0, 1`).
 
-The `lpcll` requires a 4-byte alignment such that when such patterns are
-detected the assembler/linker the instruction `A` may be forced to be aligned
-to a 4-byte boundary to cause the unintended `lpcll` pattern to become
-misaligned and cause an illegal instruction exception.
+The `lpcll` requires a 4-byte alignment. When patterns that can accidentaly form
+a valid landing pad are detected, the assembler/linker can force instruction `A`
+to be aligned to a 4-byte boundary to force the unintended `lpcll` pattern to
+become misaligned and thus not a valid landing pad.
 ====
 
 === Label matching instructions
 
 The `lpcml` instruction matches the 8-bit wide middle label in its `MLPL` field with
-the `lpl.ML` field and causes an illegal instruction exception on a mismatch. The
+the `lpl.ML` field and causes an illegal-instruction exception on a mismatch. The
 `lpcml` is not a valid target for an indirect call or jump.
 
 The `lpcul` instruction matches the 8-bit wide upper label in its `ULPL` field with
-the `lpl.UL` field and causes an illegal instruction exception on a mismatch. The
+the `lpl.UL` field and causes an illegal-instruction exception on a mismatch. The
 `lpcul` is not a valid target for an indirect call or jump.
 
 The operation of the `lpcml` instruction is as follows:
@@ -263,10 +267,11 @@ endif
 
 Before performing an indirect call or indirect jump to a labeled landing pad,
 the `lpl` is loaded with the expected landing pad label - a constant determined
-at compilation time. 
+at compilation time.
 
-A `lpsll` instruction is provided to set the value of the lower label (`LL`) field
-of the `lpl`.
+The `lpsll` instruction is used to set the value of the lower label (`LL`) field
+of the `lpl`. In addition to setting `LL`, the instruction sets the `ML` and
+`UL` fields to 0.
 
 The operation of this instruction is as follows:
 
@@ -283,9 +288,9 @@ endif
 
 [NOTE]
 ====
-The following instruction sequence may be emitted at indirect call sites by the
-compiler to set up the landing pad label register when labels that are up to
-9-bit wide are used:
+The compiler may emit the following instruction sequence at indirect call/jump
+sites to set up the landing pad label register when using labels up to 9 bits
+wide:
 
 [source, ruby]
 foo:
@@ -295,8 +300,8 @@ foo:
     jalr %ra, %x10
     :
 
-The following instruction sequence may be emitted at indirect call sites by the
-compiler to set up the landing pads at entrypoint of function bar():
+The compiler may emit the following instruction sequence at the indirect
+call/jump targets, such as function entry points, to create a landing pad:
 
 [source, ruby]
 bar:
@@ -304,8 +309,9 @@ bar:
     :               # continue if landing pad checks succeed
 ====
 
-A `lpsml` instruction is provided to set the value of the middle label (`ML`) field
-of the `lpl`. This instruction is used when labels wider than 9-bit are used. 
+The `lpsml` instruction is used to set the value of the middle label (`ML`) field
+of the `lpl`. The `UL` and `LL` fields of the `lpl` remain unchanged. This
+instruction is typically used when labels wider than 9-bit are required.
 
 The operation of this instruction is as follows:
 
@@ -321,21 +327,21 @@ endif
 
 [NOTE]
 ====
-The following instruction sequence may be emitted at indirect call sites by the
-compiler to set up the landing pad label register when labels that are up to
-17-bit wide are used:
+The compiler may emit the following instruction sequence at indirect call/jump
+sites to set up the landing pad label register when using labels up to 17 bits
+wide:
 
 [source, ruby]
 foo:
-    :   
+    :
     # x10 is expected to have address of function bar()
     lpsll $0x1de    # setup lpl.LL with value 0x1de
     lpsml $0x17     # setup lpl.ML with value 0x17
     jalr %ra, %x10
     :
 
-The following instruction sequence may be emitted at indirect call sites by the
-compiler to set up the landing pads at entrypoint of function bar():
+The compiler may emit the following instruction sequence at the indirect
+call/jump targets, such as function entry points, to create a landing pad:
 
 [source, ruby]
 bar:
@@ -344,8 +350,9 @@ bar:
     :               # continue if landing pad checks succeed
 ====
 
-A `lpsul` instruction is provided to set the value of upper label (`UL`) field `lpl`.
-This instruction is used when labels wider than 17-bit are used.
+A `lpsul` instruction is used to set the value of upper label (`UL`) field the
+`lpl`. The `LL` and `ML` fields remain unchanged. This instruction is typically
+used when labels wider than 17-bit are required.
 
 The operation of this instruction is as follows:
 
@@ -361,9 +368,9 @@ endif
 
 [NOTE]
 ====
-The following instruction sequence may be emitted at indirect call sites by the
-compiler to set up the landing pad label register when labels that are up to
-25-bit wide are used:
+The compiler may emit the following instruction sequence at indirect call/jump
+sites to set up the landing pad label register when using labels up to 25 bits
+wide:
 
 [source, ruby]
 foo:
@@ -375,8 +382,8 @@ foo:
     jalr %ra, %x10
     :
 
-The following instruction sequence may be emitted at indirect call sites by the
-compiler to set up the landing pads at entrypoint of function bar():
+The compiler may emit the following instruction sequence at the indirect
+call/jump targets, such as function entry points, to create a landing pad:
 
 [source, ruby]
 bar:
@@ -390,7 +397,7 @@ bar:
 ====
 
 The `lpcml` and `lpcul` need not occur together or in that order. Use of a
-`lpcul` does not require a preceeding or a following `lpcml`. The following
+`lpcul` does not require a preceding or a following `lpcml`. The following
 sequences are also a valid label check sequence:
 
 [source, ruby]
@@ -406,44 +413,58 @@ bar:
     lpcml $mdl_label
     :
 
-A `lpsll` sets the `LL` as specified in the instruction and also initializes the
-`ML` and `UL` to zero. If the label to be assigned has a value of 0 for these
-fields then explicitly setting them to zero using a `lpsml` and/or `lpsul` is
-not required. The `lpsml` and `lpsul` need not occur together or in that order.
-Use of a `lpsul` does not require a preceeding or following `lpsml`.
+A `lpsll` sets the `LL` and also initializes the `ML` and `UL` fields to zero.
+If the label to be assigned has zero for `ML` and `UL`, then there is no need to
+explicitly set them to zero using a `lpsml` or `lpsul`. `lpsml` and `lpsul`
+can be used independently and in any order. The use of a `lpsul` does not
+require a preceding or following `lpsml`.
 
 ====
 
 [[FORWARD_TRAPS]]
 === Preserving expected landing pad state on traps
 
-A trap may need to be delivered to the same or higher privilege level on
-completion of JALR but before the instruction at the target of JALR was decoded
-due to asynchronous interrupts.
+A trap may need to be delivered to the same or to a higher privilege mode upon
+completion of `JALR`/`C.JALR`/`C.JR`, but before the instruction at the target
+of indirect call/jump was decoded, due to:
 
-A trap may be caused by synchronous exceptions with priority lower than that
-of an illegal-instruction exception (See Table 3.7 of Privileged Specification
-cite:[PRIV]).
+* Asynchronous interrupts.
+* Synchronous exceptions with priority lower than that of an illegal-instruction
+  exception (See Table 3.7 of Privileged Specification cite:[PRIV]).
+* By the illegal-instruction exception due to the instruction at the target not
+  being an `lpcll` instruction, or the `lpcll` instruction not being 4-byte
+  aligned, or due to the `LLPL` encoded in the `lpcll` not matching the `LL`
+  field of `lpl`.
 
-A trap may be caused by the illegal-instruction exception due to the
-instruction at the target of a JALR not being a `lpcll` instruction, or the
-`lpcll` instruction not being 4-byte aligned, or due to the `LLPL` encoded in
-the `lpcll` not matching the `LL` field of `lpl`.
+In such cases, the `ELP` prior to the trap, the previous `ELP`, may be
+`LP_EXPECTED`.
 
-To avoid losing previous `ELP` state, `MPELP` and `SPELP` bit is provided in the
-`mstatus` CSR for M-mode and HS/S-mode respectively. The `SPELP` bit can be
-accessed through the `sstatus` CSR. To avoid losing `ELP` state on traps to
-VS-mode, `SPELP` bit is provided in `vsstatus` (VS-modes version of
-`sstatus`) to hold the `ELP`. When a trap is taken into VS-mode, the `SPELP`
-bit of `vsstatus` CSR is updated with `ELP`. When `V=1`, `sstatus`
-aliases to `vsstatus` CSR. The `xPELP` fields in `mstatus` and `vsstatus`
-are WARL fields. The trap handler should preserve the `lpl` CSR.
+To store the previous `ELP` state on trap delivery to M-mode, a `MPELP` bit
+is provided in the `mstatus` CSR to hold the previous `ELP`.
 
-When a trap is taken into privilege mode `x`, the `xPELP` bit is updated with
-current `ELP` and `ELP` is set to `NO_LP_EXPECTED`. 
+To store the previous `ELP` state on trap delivery to S/HS-mode, a `SPELP`
+bit is provided in the `mstatus` CSR to hold the previous `ELP`. The `SPELP`
+bit in `mstatus` can be accessed through the `sstatus` CSR.
 
-`MRET` or `SRET` instruction is used to return from a trap in M-mode or S-mode
-respectively. When executing an `xRET` instruction, the `ELP` is set to `xPELP`
-if `xFCFIE` is 1 at the targeted privilege level. The `xPELP` is set to
-`NO_LP_EXPECTED`. Trap handlers should restore the preserved `lpl` value before
-executing the `SRET` or `MRET`.
+To store the previous `ELP` state on traps to VS-mode, a `SPELP` bit is
+defined in the `vsstatus` (VS-modes version of `sstatus`) to hold the previous
+`ELP`.
+
+When a trap is taken into privilege mode `x`, the `xPELP` is set to `ELP` and
+`ELP` is set to `NO_LP_EXPECTED`.
+
+An `MRET` or `SRET` instruction is used to return from a trap in M-mode or
+S-mode, respectively. When executing an `xRET` instruction, the `ELP` is set to
+`xPELP`, and the `xPELP` is set to `NO_LP_EXPECTED`.
+
+[NOTE]
+====
+The trap handler in privilege mode `x` must save the `xPELP` bit and the `lpl`
+register before performing an indirect call/jump. If the privilege mode `x`
+can respond to interrupts, then the trap handler should also save these values
+before enabling interrupts.
+
+The trap handler in privilege mode `x` must restore the saved `xPELP` bit and
+the `lpl` register before executing the `xRET` instruction to return from a
+trap.
+====
