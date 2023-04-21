@@ -212,6 +212,9 @@ else
 endif
 ----
 
+Whereas `lpcll` is the only instruction that can execute when `ELP` is
+`LP_EXPECTED`, `lpcll` can also execute when `ELP` is `NO_LP_EXPECTED`.
+
 [NOTE]
 ====
 Concatenation of two instructions `A` and `B` can accidentally form a valid
