@@ -105,35 +105,27 @@ For label widths greater than 17-bits, a second companion instruction `lpcul` is
 provided. The `lpcul` embeds a 8-bit immediate value that is compared to the `UL`
 and on a mismatch causes an illegal-instruction exception.
 
-=== Forward-edge CFI Instruction encoding
+=== Forward-edge CFI Instructions
 
 The forward-edge CFI introduces the following instructions for landing
-pad operations. All instructions are encoded using the SYSTEM major opcode and
-the `mop.rr` instructions defined by the Zimop extension.
+pad operations:
 
-[wavedrom, , ]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:'00000'},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  9, name: 'imm9', attr:['LLPL','LLPL']},
-  {bits:  1, name: 'typ', attr:['0', '1']},
-  {bits:  7, name: '1000001', attr:['lpsll','lpcll']},
-], config:{lanes: 1, hspace:1024}}
-....
+* Landing pad (See <<LP_INST>>)
+** `lpcll`
 
-[wavedrom, , ]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:'00000'},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  8, name: 'imm8', attr:['MLPL','MLPL','ULPL','ULPL']},
-  {bits:  2, name: 'typ', attr:['00','01','10','11']},
-  {bits:  7, name: '1000011', attr:['lpsml','lpcml','lpsul','lpcul']},
-], config:{lanes: 1, hspace:1024}}
-....
+* Label matching (See <<LBL_MATCH>>)
+** `lpcml` and `lpcul`
+
+* Setup landing pad label register (See <<LBL_SET>>)
+** `lpsll`, `lpsml`, and `lpsul`
+
+These instructions are encoded using the SYSTEM major opcode and
+the `mop.rr` encodings defined by the Zimop extension.
+
+When a Zimop encoding is not used by the Zisslpcfi extension then the
+instruction follows its Zimop defined behavior.
+
+=== Forward-edge CFI enables
 
 When privilege mode is M, the forward-edge CFI is active when `MFCFIE` is 1 in
 `mseccfg` register.
@@ -180,16 +172,29 @@ When forward-edge CFI is not active (`xFCFIE = 0`):
 * The instructions defined for forward-edge CFI revert to their Zimop-defined
   behavior and do not set or check landing pad labels.
 
+[[LP_INST]]
 === Landing pad instruction
 
-`lpcll` is the valid landing pad instructions at target of indirect jumps and
-indirect calls. When a forward-edge CFI is active, the instructions cause an
-illegal-instruction exception if they are not placed at a 4-byte aligned `pc`.
+`lpcll` is the valid landing pad instruction at target of indirect jumps and
+indirect calls. When a forward-edge CFI is active, the instruction causes an
+illegal-instruction exception if it is not placed at a 4-byte aligned `pc`.
 The `lpcll` has the lower landing pad label embedded in the `LLPL` field.
 `lpcll` causes an illegal-instruction exception if the `LLPL` field in the
 instruction does not match the `lpl.LL` field.
 
-When the instructions cause an illegal-instruction exception, the `ELP` does not
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:'00000'},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  9, name: 'imm9', attr:['LLPL']},
+  {bits:  1, name: 'typ', attr:['1']},
+  {bits:  7, name: '1000001', attr:['lpcll']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+When the instruction causes an illegal-instruction exception, the `ELP` does not
 change. The behavior of the trap caused by this illegal-instruction exception is
 specified in section <<FORWARD_TRAPS>>.
 
@@ -212,6 +217,9 @@ else
 endif
 ----
 
+Whereas `lpcll` is the only instruction that can execute when `ELP` is
+`LP_EXPECTED`, `lpcll` can also execute when `ELP` is `NO_LP_EXPECTED`.
+
 [NOTE]
 ====
 Concatenation of two instructions `A` and `B` can accidentally form a valid
@@ -227,6 +235,7 @@ to be aligned to a 4-byte boundary to force the unintended `lpcll` pattern to
 become misaligned and thus not a valid landing pad.
 ====
 
+[[LBL_MATCH]]
 === Label matching instructions
 
 The `lpcml` instruction matches the 8-bit wide middle label in its `MLPL` field with
@@ -236,6 +245,18 @@ the `lpl.ML` field and causes an illegal-instruction exception on a mismatch. Th
 The `lpcul` instruction matches the 8-bit wide upper label in its `ULPL` field with
 the `lpl.UL` field and causes an illegal-instruction exception on a mismatch. The
 `lpcul` is not a valid target for an indirect call or jump.
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:'00000'},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  8, name: 'imm8', attr:['MLPL','ULPL']},
+  {bits:  2, name: 'typ', attr:['01','11']},
+  {bits:  7, name: '1000011', attr:['lpcml','lpcul']},
+], config:{lanes: 1, hspace:1024}}
+....
 
 The operation of the `lpcml` instruction is as follows:
 
@@ -263,11 +284,36 @@ else
 endif
 ----
 
+[[LBL_SET]]
 === Setting up landing pad label register
 
 Before performing an indirect call or indirect jump to a labeled landing pad,
-the `lpl` is loaded with the expected landing pad label - a constant determined
-at compilation time.
+the `lpl` is loaded with the expected landing pad label. The label is a constant
+encoded into the instructions used to setup the `lpl`.
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:'00000'},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  9, name: 'imm9', attr:['LLPL']},
+  {bits:  1, name: 'typ', attr:['0']},
+  {bits:  7, name: '1000001', attr:['lpsll']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:'00000'},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  8, name: 'imm8', attr:['MLPL','ULPL']},
+  {bits:  2, name: 'typ', attr:['00','10']},
+  {bits:  7, name: '1000011', attr:['lpsml','lpsul']},
+], config:{lanes: 1, hspace:1024}}
+....
 
 The `lpsll` instruction is used to set the value of the lower label (`LL`) field
 of the `lpl`. In addition to setting `LL`, the instruction sets the `ML` and
