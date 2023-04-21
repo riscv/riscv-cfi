@@ -182,14 +182,14 @@ When forward-edge CFI is not active (`xFCFIE = 0`):
 
 === Landing pad instruction
 
-`lpcll` is the valid landing pad instructions at target of indirect jumps and
-indirect calls. When a forward-edge CFI is active, the instructions cause an
-illegal-instruction exception if they are not placed at a 4-byte aligned `pc`.
+`lpcll` is the valid landing pad instruction at target of indirect jumps and
+indirect calls. When a forward-edge CFI is active, the instruction causes an
+illegal-instruction exception if it is not placed at a 4-byte aligned `pc`.
 The `lpcll` has the lower landing pad label embedded in the `LLPL` field.
 `lpcll` causes an illegal-instruction exception if the `LLPL` field in the
 instruction does not match the `lpl.LL` field.
 
-When the instructions cause an illegal-instruction exception, the `ELP` does not
+When the instruction causes an illegal-instruction exception, the `ELP` does not
 change. The behavior of the trap caused by this illegal-instruction exception is
 specified in section <<FORWARD_TRAPS>>.
 
