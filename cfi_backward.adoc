@@ -667,7 +667,7 @@ Stores to shadow stack by instructions other than `sspush`, `c.sspush`, and
 `ssamoswap` cause an access-fault, rather than a page-fault, to indicate
 fatality.
 
-If a page-fault were triggered, it would suggest that the operating
+If a page-fault was triggered, it would suggest that the operating
 system should service that fault and correct the condition. Correcting the
 condition is not possible in this case. The page-fault handler would have to
 resort to decoding the opcode of the instruction that caused the page-fault to
@@ -735,7 +735,7 @@ shadow stack.
 
 [NOTE]
 ====
-Shadow stacks are expected to bounded on each end using guard pages, so that
+Shadow stacks are expected to be bounded on each end using guard pages, so that
 no two shadow stacks are adjacent to each other. This guards against accidentally
 underflowing or overflowing from one shadow stack to another. Traditionally,
 a guard page for a stack is a page that is inaccessible to the process owning
