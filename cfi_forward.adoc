@@ -288,8 +288,8 @@ endif
 === Setting up landing pad label register
 
 Before performing an indirect call or indirect jump to a labeled landing pad,
-the `lpl` is loaded with the expected landing pad label - a constant determined
-at compilation time.
+the `lpl` is loaded with the expected landing pad label. The label is a constant
+encoded into the instructions used to setup the `lpl`.
 
 [wavedrom, , ]
 ....
