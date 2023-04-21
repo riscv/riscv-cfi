@@ -105,7 +105,7 @@ For label widths greater than 17-bits, a second companion instruction `lpcul` is
 provided. The `lpcul` embeds a 8-bit immediate value that is compared to the `UL`
 and on a mismatch causes an illegal-instruction exception.
 
-=== Forward-edge CFI Instruction encoding
+=== Forward-edge CFI Instructions
 
 The forward-edge CFI introduces the following instructions for landing
 pad operations:
