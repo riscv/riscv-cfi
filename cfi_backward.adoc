@@ -22,12 +22,9 @@ The backward-edge CFI extension introduces instructions for following shadow
 stack operations:
 
 * Push to and pop from the shadow stack (See <<SS_PUSH_POP>>)
-** `sspush x1` and `c.sspush x1`
-** `sspush x5`
-** `sspopchk x1`
-** `sspopchk x5` and `c.sspopchk x5`
-** `sspop x1`
-** `sspop x5`
+** `sspush x1`, `c.sspush x1`, and `sspush x5`
+** `sspopchk x1`, `sspopchk x5`, and `c.sspopchk x5`
+** `sspop x1` and `sspop x5`
 
 * Read the value of ssp into a register (See <<SSP_READ>>)
 ** `ssprr`
@@ -35,7 +32,7 @@ stack operations:
 * Perform atomic swap from a shadow stack location (See <<SS_SWAP>>)
 ** `ssamoswap`
 
-These 32-bit instructions are encoded using the SYSTEM major opcode and using
+The 32-bit instructions are encoded using the SYSTEM major opcode and using
 the `mop.r` and `mop.rr` encodings defined by the Zimop extension.
 
 The 16-bit instructions are encoded using the `C.LUI` major opcode and using

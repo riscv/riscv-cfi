@@ -110,20 +110,17 @@ and on a mismatch causes an illegal-instruction exception.
 The forward-edge CFI introduces the following instructions for landing
 pad operations:
 
-* Landing pad instruction (See <<LP_INST>>)
+* Landing pad (See <<LP_INST>>)
 ** `lpcll`
 
 * Label matching (See <<LBL_MATCH>>)
-** `lpcml`
-** `lpcul`
+** `lpcml` and `lpcul`
 
-* Setting up landing pad label register (See <<LBL_SET>>)
-** `lpsll`
-** `lpsml`
-** `lpsul`
+* Setup landing pad label register (See <<LBL_SET>>)
+** `lpsll`, `lpsml`, and `lpsul`
 
-All instructions are encoded using the SYSTEM major opcode and
-the `mop.rr` instructions defined by the Zimop extension.
+These instructions are encoded using the SYSTEM major opcode and
+the `mop.rr` encodings defined by the Zimop extension.
 
 When a Zimop encoding is not used by the Zisslpcfi extension then the
 instruction follows its Zimop defined behavior.
