@@ -20,7 +20,7 @@ This chapter specifies the CSR state of the Zisslpcfi extension.
   {bits:  1, name: 'HADE'},
   {bits:  1, name: 'PBMTE'},
   {bits:  1, name: 'STCE'},
-], config:{lanes: 8, hspace:1024}}
+], config:{lanes: 2, hspace:1024}}
 ....
 
 The `CFIE` field (bit 60) controls whether Zisslpcfi extension is available for
@@ -71,7 +71,7 @@ backward-edge and forward-edge CFI at S-mode and at U-mode for each application.
   {bits:  1, name: 'HADE'},
   {bits:  1, name: 'PBMTE'},
   {bits:  1, name: 'STCE'},
-], config:{lanes: 8, hspace:1024}}
+], config:{lanes: 2, hspace:1024}}
 ....
 
 The `CFIE` field (bit 60) controls whether the Zisslpcfi extension is available
@@ -125,7 +125,7 @@ forward-edge CFI at VS-mode.
   {bits:  1, name: 'MBE'},
   {bits: 25, name: 'WPRI'},
   {bits:  1, name: 'SD'},
-], config:{lanes: 8, hspace:1024}}
+], config:{lanes: 4, hspace:1024}}
 ....
 
 The `UFCFIE` (bit 23) and `UBCFIE` (bit 24) are WARL fields that, when set to 1,
@@ -166,7 +166,7 @@ encoded as follows:
   {bits:  2, name: 'UXL[1:0]'},
   {bits: 29, name: 'WPRI'},
   {bits:  1, name: 'SD'},
-], config:{lanes: 8, hspace:1024}}
+], config:{lanes: 4, hspace:1024}}
 ....
 
 When `menvcfg.CFIE` is 1, access to the following fields accesses the homonymous
@@ -205,7 +205,7 @@ read-only zero.
   {bits:  2, name: 'UXL[1:0]'},
   {bits: 29, name: 'WPRI'},
   {bits:  1, name: 'SD'},
-], config:{lanes: 8, hspace:1024}}
+], config:{lanes: 4, hspace:1024}}
 ....
 
 The `vsstatus` register is VS-mode's version of `sstatus`, and the Zisslpcfi
@@ -241,7 +241,7 @@ in `vsstatus` when the CSR is accessed in HS-mode.
   {bits:  1, name: 'MFCFIE'},
   {bits:  6, name: 'SSPMP'},
   {bits: 47, name: 'WPRI'},
-], config:{lanes: 8, hspace:1024}}
+], config:{lanes: 1, hspace:1024}}
 ....
 
 A new WARL field `sspmp` is defined the `mseccfg` CSR to identify a PMP entry
