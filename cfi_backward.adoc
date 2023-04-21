@@ -18,100 +18,33 @@ unsafe code sequences.
 
 === Backward-edge CFI instruction encoding
 
-The backward-edge CFI extension introduces the following instructions for shadow
-stack operations. These instructions are encoded using the SYSTEM major opcode and
-using the `mop.r` and `mop.rr` encodings defined by the Zimop extension.
+The backward-edge CFI extension introduces instructions for following shadow
+stack operations:
 
-[wavedrom, , ]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['00001','00101','00000','00000']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['00000','00000', '00001', '00101']},
-  {bits: 12, name: '100000011100', attr:['sspop  x1','sspop  x5','sspopchk x1','sspopchk x5']},
-], config:{lanes: 1, hspace:1024}}
-....
-[wavedrom, , ]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['dst']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['addr']},
-  {bits:  5, name: 'rs2', attr:['src']},
-  {bits:  7, name: '1000001', attr:['ssamoswap']},
-], config:{lanes: 1, hspace:1024}}
-....
-[wavedrom, , ]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['dst']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['00000']},
-  {bits:  5, name: 'rs2', attr:['00000']},
-  {bits:  7, name: '1000011', attr:['ssprr']},
-], config:{lanes: 1, hspace:1024}}
-....
-[wavedrom, , ]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['00000']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['00000']},
-  {bits:  5, name: 'rs2', attr:['00001', '00101']},
-  {bits:  7, name: '1000101', attr:['sspush x1','sspush x5']},
-], config:{lanes: 1, hspace:1024}}
-....
+* Push to and pop from the shadow stack (See <<SS_PUSH_POP>>)
+** `sspush x1` and `c.sspush x1`
+** `sspush x5`
+** `sspopchk x1`
+** `sspopchk x5` and `c.sspopchk x5`
+** `sspop x1`
+** `sspop x5`
 
-Encoding `rd` as `x0` is not supported for `ssamoswap` and `ssprr`.
-Only `x1` and `x5` encodings are supported as `rd` for `sspop`.
-Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
-Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
+* Read the value of ssp into a register (See <<SSP_READ>>)
+** `ssprr`
 
-When a Zimop encoding is not supported by the Zisslpcfi extension then the
+* Perform atomic swap from a shadow stack location (See <<SS_SWAP>>)
+** `ssamoswap`
+
+These 32-bit instructions are encoded using the SYSTEM major opcode and using
+the `mop.r` and `mop.rr` encodings defined by the Zimop extension.
+
+The 16-bit instructions are encoded using the `C.LUI` major opcode and using
+the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
+
+When a Zimop encoding is not used by the Zisslpcfi extension then the
 instruction follows its Zimop defined behavior.
 
-The extension includes 16-bit versions of the `sspush x1` and `sspopchk x5`
-instructions using the Zcmop encodings. The `c.sspush x1` and the
-`c.sspopchk x5` instructions are encoded using the `C.LUI` major opcode and
-using the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
-
-[wavedrom, , ]
-....
-{reg: [
-  {bits:  2, name: 'op', attr:'C1'},
-  {bits:  5, name: '00000'},
-  {bits:  5, name: 'rs1', attr:['00001','00101']},
-  {bits:  1, name: '0'},
-  {bits:  3, name: '011', attr:['c.sspush x1', 'c.sspopchk x5']},
-], config:{lanes: 1, hspace:1024}}
-....
-
-The `c.sspush x1` expands to `sspush x1` and `c.sspopchk x5` expands to
-`sspopchk x5`.
-
-While any register may be used as link register, conventionally the `x1` or `x5`
-registers are used. The shadow stack instructions are designed to be most
-efficient when the `x1` and `x5` registers are used as the link register.
-
-[NOTE]
-====
-Return-address prediction stacks are a common feature of high-performance
-instruction-fetch units, but they require accurate detection of instructions
-used for procedure calls and returns to be effective. For RISC-V, hints as to
-the instructions usage are encoded implicitly via the register numbers used.
-The return-address stack (RAS) actions to pop and/or push onto the RAS are
-specified in Table 2.1 of the Privileged specification.
-
-Using `x1` or `x5` as the link register allows a program to benefit from the
-return-address prediction stacks. Additionally, since the shadow stack
-instructions are designed around the use of `x1` or `x5` as the link register,
-using any other register as a link register would incur the cost of additional
-register movements.
-====
+=== Backward-edge CFI enables
 
 When `menvcfg.CFIE` is 0, then Zisslpcfi is not enabled for privilege modes less
 than M.
@@ -193,6 +126,7 @@ shadow stack instructions cause an illegal-instruction exception. Installing
 programs that use these instructions on such machines is not supported.
 ====
 
+[[SS_PUSH_POP]]
 === Push to and Pop from the shadow stack
 
 A shadow stack push operation is defined as decrement of the `ssp` by `XLEN`
@@ -200,6 +134,52 @@ followed by a write of the link register at the new top of the shadow stack.
 A shadow stack pop operation is defined as a `XLEN` wide read from the
 current top of the shadow stack followed by an increment of the `ssp` by
 `XLEN`.
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['00001','00101','00000','00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['00000','00000', '00001', '00101']},
+  {bits: 12, name: '100000011100', attr:['sspop  x1','sspop  x5','sspopchk x1','sspopchk x5']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['00000']},
+  {bits:  5, name: 'rs2', attr:['00001', '00101']},
+  {bits:  7, name: '1000101', attr:['sspush x1','sspush x5']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  2, name: 'op', attr:'C1'},
+  {bits:  5, name: '00000'},
+  {bits:  5, name: 'rs1', attr:['00001','00101']},
+  {bits:  1, name: '0'},
+  {bits:  3, name: '011', attr:['c.sspush x1', 'c.sspopchk x5']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+Only `x1` and `x5` encodings are supported as `rd` for `sspop`.
+Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
+Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
+
+The extension includes 16-bit versions of the `sspush x1` and `sspopchk x5`
+instructions using the Zcmop encodings. The `c.sspush x1` and the
+`c.sspopchk x5` instructions are encoded using the `C.LUI` major opcode and
+using the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
+
+The `c.sspush x1` expands to `sspush x1` and `c.sspopchk x5` expands to
+`sspopchk x5`.
 
 Usually programs with a shadow stack push the return address onto the regular
 stack as well as the shadow stack in the function prologue. Such programs when
@@ -217,6 +197,26 @@ value matches the contents of the link register.
 
 The `sspop` instruction can be used to pop a return address from the shadow
 stack into a link register.
+
+While any register may be used as link register, conventionally the `x1` or `x5`
+registers are used. The shadow stack instructions are designed to be most
+efficient when the `x1` and `x5` registers are used as the link register.
+
+[NOTE]
+====
+Return-address prediction stacks are a common feature of high-performance
+instruction-fetch units, but they require accurate detection of instructions
+used for procedure calls and returns to be effective. For RISC-V, hints as to
+the instructions usage are encoded implicitly via the register numbers used.
+The return-address stack (RAS) actions to pop and/or push onto the RAS are
+specified in Table 2.1 of the Privileged specification.
+
+Using `x1` or `x5` as the link register allows a program to benefit from the
+return-address prediction stacks. Additionally, since the shadow stack
+instructions are designed around the use of `x1` or `x5` as the link register,
+using any other register as a link register would incur the cost of additional
+register movements.
+====
 
 [NOTE]
 ====
@@ -516,10 +516,25 @@ back_cfi_not_enabled:
 }
 ====
 
+[[SSP_READ]]
 === Read `ssp` into a register
 
 The `ssprr` instruction is provided to move the contents of `ssp` to the destination
 register.
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['dst']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['00000']},
+  {bits:  5, name: 'rs2', attr:['00000']},
+  {bits:  7, name: '1000011', attr:['ssprr']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+Encoding `rd` as `x0` is not supported for `ssprr`.
 
 The operation of the `ssprr` instructions is as follows:
 
@@ -551,12 +566,27 @@ An example sequence such as the following may be used:
 bcfi_not_enabled:
 ====
 
+[[SS_SWAP]]
 === Atomic Swap from a shadow stack location
 
 The `ssamoswap` instruction performs an atomic swap operation between the `XLEN`
 bits of the `src` register and the `XLEN` bits located on the shadow stack at the
 address specified in the `addr` register. The resulting value from the swap
 operation is then stored into the register specified in the `dst` operand.
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['dst']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['addr']},
+  {bits:  5, name: 'rs2', attr:['src']},
+  {bits:  7, name: '1000001', attr:['ssamoswap']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+Encoding `rd` as `x0` is not supported for `ssamoswap`.
 
 The `ssamoswap` is always sequentially consistent and cannot be reordered with
 earlier or later memory operations from the same hart.
