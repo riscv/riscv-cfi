@@ -20,7 +20,7 @@ This chapter specifies the CSR state of the Zisslpcfi extension.
   {bits:  1, name: 'HADE'},
   {bits:  1, name: 'PBMTE'},
   {bits:  1, name: 'STCE'},
-], config:{lanes: 2, hspace:1024}}
+], config:{lanes: 4, hspace:1024}}
 ....
 
 The `CFIE` field (bit 60) controls whether Zisslpcfi extension is available for
@@ -71,7 +71,7 @@ backward-edge and forward-edge CFI at S-mode and at U-mode for each application.
   {bits:  1, name: 'HADE'},
   {bits:  1, name: 'PBMTE'},
   {bits:  1, name: 'STCE'},
-], config:{lanes: 2, hspace:1024}}
+], config:{lanes: 4, hspace:1024}}
 ....
 
 The `CFIE` field (bit 60) controls whether the Zisslpcfi extension is available
@@ -241,7 +241,7 @@ in `vsstatus` when the CSR is accessed in HS-mode.
   {bits:  1, name: 'MFCFIE'},
   {bits:  6, name: 'SSPMP'},
   {bits: 47, name: 'WPRI'},
-], config:{lanes: 1, hspace:1024}}
+], config:{lanes: 4, hspace:1024}}
 ....
 
 A new WARL field `sspmp` is defined the `mseccfg` CSR to identify a PMP entry
