@@ -206,7 +206,7 @@ instruction-fetch units, but they require accurate detection of instructions
 used for procedure calls and returns to be effective. For RISC-V, hints as to
 the instructions usage are encoded implicitly via the register numbers used.
 The return-address stack (RAS) actions to pop and/or push onto the RAS are
-specified in Table 2.1 of the Privileged specification.
+specified in Table 2.1 of the Unprivileged specification cite:[UNPRIV].
 
 Using `x1` or `x5` as the link register allows a program to benefit from the
 return-address prediction stacks. Additionally, since the shadow stack
