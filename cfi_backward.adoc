@@ -448,10 +448,9 @@ else
 endif
 ----
 
-The `ssp` is incremented by `ssload`, `sspopchk`, and `c.sspopchk` only if the
-load from the shadow stack completes successfully. The `ssp` is decremented by
-`sspush` and `c.sspush` only if the store to the shadow stack completes
-successfully.
+The `ssp` is incremented by `sspopchk` and `c.sspopchk` only if the load from
+the shadow stack completes successfully. The `ssp` is decremented by `sspush`
+and `c.sspush` only if the store to the shadow stack completes successfully.
 
 [NOTE]
 ====

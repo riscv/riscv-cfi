@@ -285,7 +285,7 @@ When `menvcfg.CFIE` is 1 but `henvcfg.CFIE` is 0, an attempt to access `lpl` whe
 
 === Shadow stack pointer (`ssp`) 
 
-The `ssp` CSR is an supervisor read-write (SRW) CSR that reads and writes `XLEN`
+The `ssp` CSR is an unprivileged read-write (URW) CSR that reads and writes `XLEN`
 low order bits of the shadow stack pointer (`ssp`). There is no high CSR defined
 as the `ssp` is always as wide as the `XLEN` of the current privilege mode.
 
