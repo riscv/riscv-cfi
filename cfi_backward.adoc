@@ -527,11 +527,26 @@ longjmp() {
     num_unwind = jmp_buf->saved_ssp - cur_ssp;
     // Unwind the frames in a loop
     while ( num_unwind > 0 ) {
-        step = ( num_unwind >= 4096 ) ? 4096 : num_unwind;
-        cur_ssp += step;
-        num_unwind -= step;
-        // write the ssp register with unwound value
-        asm("csrw %0, $ssp_csr_num" : "=r"(cur_ssp):);
+        if ( num_unwind >= 31 ) {
+            asm("sspinc $31");
+            num_unwind -= 31;
+            continue;
+        } else if ( num_unwind >= 16 ) {
+            asm("sspinc $16");
+            num_unwind -= 16;
+            continue;
+        } else if ( num_unwind >= 8 ) {
+            asm("sspinc $8");
+            num_unwind -= 8;
+            continue;
+        } else if ( num_unwind >= 4 ) {
+            asm("sspinc $4");
+            num_unwind -= 4;
+            continue;
+        } else {
+            asm("sspinc $1");
+            num_unwind -= 1;
+        }
         // Test if unwound past the shadow stack bounds
         asm("ssload x5");
     }
