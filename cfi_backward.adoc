@@ -25,6 +25,7 @@ stack operations:
 ** `sspush x1`, `c.sspush x1`, and `sspush x5`
 ** `sspopchk x1`, `sspopchk x5`, and `c.sspopchk x5`
 ** `ssload x1` and `ssload x5`
+** `sspinc`
 
 * Read the value of ssp into a register (See <<SSP_READ>>)
 ** `ssprr`
@@ -147,6 +148,17 @@ current top of the shadow stack followed by an increment of the `ssp` by
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: '00000'},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'nzuimm'},
+  {bits: 12, name: '100000011101', attr:['sspinc']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
   {bits:  5, name: 'rd', attr:['00000']},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: 'rs1', attr:['00000']},
@@ -194,6 +206,10 @@ value matches the contents of the link register.
 
 The `ssload` instruction can be used to load a return address from the shadow
 stack into a link register.
+
+The `sspinc` instruction adds the zero-extended  non-zero immediate `nzuimm`,
+scaled by `XLEN/8`, to the `ssp`. This instruction may be used to pop from one
+to 31 return addresses from the shadow stack.
 
 While any register may be used as link register, conventionally the `x1` or `x5`
 registers are used. The shadow stack instructions are designed to be most
@@ -307,7 +323,7 @@ is as follows:
          :
          :
         ssload  x1     # load return address from shadow stack
-        sspinc  $1     # increment ssp by XLEN/8
+        sspinc  $1     # increment ssp by 1 * (XLEN/8)
         #
         # ssload loads the value from location addressed by ssp into
         # destination register. sspinc updates ssp to (ssp + XLEN/8)
@@ -395,6 +411,18 @@ The operation of the `ssload` instruction is as follows:
 if (xBCFIE = 1)
     [dst]   = *[ssp]           # Load dst from address in ssp
                                # Only x1 and x5 may be used as dst
+else
+    [dst] = 0;
+endif
+----
+
+The operation of the `sspinc` instruction is as follows:
+
+.`sspinc` operation
+[source, ruby]
+----
+if (xBCFIE = 1)
+    [ssp] = [ssp] + (nzuimm * XLEN/8)
 else
     [dst] = 0;
 endif
