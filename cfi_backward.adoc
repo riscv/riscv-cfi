@@ -181,6 +181,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
 Only `x1` and `x5` encodings are supported as `rd` for `ssload`.
 Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
 Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
+Only non-zero encodings of `nzuimm` are defined for `sspinc`.
 
 The extension includes 16-bit versions of the `sspush x1` and `sspopchk x5`
 instructions using the Zcmop encodings. The `c.sspush x1` and the
