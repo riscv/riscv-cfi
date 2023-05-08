@@ -39,19 +39,19 @@ the `mop.r` and `mop.rr` encodings defined by the Zimop extension.
 The 16-bit instructions are encoded using the `C.LUI` major opcode and using
 the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
 
-When a Zimop encoding is not used by the Zisslpcfi extension then the
+When a Zimop encoding is not used by the Zicfisslp extension then the
 instruction follows its Zimop defined behavior.
 
 === Backward-edge CFI enables
 
-When `menvcfg.CFIE` is 0, then Zisslpcfi is not enabled for privilege modes less
+When `menvcfg.CFIE` is 0, then Zicfisslp is not enabled for privilege modes less
 than M.
 
 When `V=0` and `menvcfg.CFIE` is 1, then backward-edge CFI is enabled in S-mode.
 When `V=0` and `menvcfg.CFIE` is 1, then backward-edge CFI is enabled in U-mode if
 `mstatus.UBCFIE` is 1.
 
-When `henvcfg.CFIE` is 0, then Zisslpcfi is not enabled for use when `V=1`.
+When `henvcfg.CFIE` is 0, then Zicfisslp is not enabled for use when `V=1`.
 
 When both `menvcfg.CFIE` and `henvcfg.CFIE` are set to 1 and `V=1`, backward-edge
 CFI is enabled in VS-mode. Additionally, in VU-mode, backward-edge CFI is
@@ -94,13 +94,13 @@ shadow stack instructions, even if the application itself does not have
 backward-edge CFI enabled. When shadow stack instructions are invoked in the
 context of this application, they revert to their Zimop/Zcmop-defined behavior.
 
-When Zisslpcfi is enabled, the use of backward-edge CFI is always enabled for
+When Zicfisslp is enabled, the use of backward-edge CFI is always enabled for
 use at S-mode. However, it is benign to use an operating system that has not
 been compiled with shadow stack instructions. Such an operating system that does
 not use backward-edge CFI for S-mode execution may still enable the
 backward-edge CFI use by U-mode applications.
 
-When Zisslpcfi is implemented, the use of backward-edge CFI is always enabled
+When Zicfisslp is implemented, the use of backward-edge CFI is always enabled
 at M-mode. However, it is benign to use M-mode firmware that has not been
 compiled with shadow stack instructions to execute with backward-edge CFI
 enabled.
@@ -109,13 +109,13 @@ enabled.
 [NOTE]
 ====
 When programs that use shadow stack instructions are installed on a processor
-that supports the Zisslpcfi extension but the extension has not been enabled at
+that supports the Zicfisslp extension but the extension has not been enabled at
 the privilege mode where the program executes, the program continues to function
 correctly. However, the shadow stack instructions will revert to their
 Zimop/Zcmop-defined behavior.
 
 When programs that use shadow stack instructions are installed on a processor
-that does not support the Zisslpcfi extension but supports the Zimop/Zcmop
+that does not support the Zicfisslp extension but supports the Zimop/Zcmop
 extensions, the programs continues to function correctly. However, the shadow
 stack instructions will revert to their Zimop/Zcmop-defined behavior.
 
@@ -241,7 +241,7 @@ a shadow copy of the link register. Such programs push the link register on
 the regular stack as well as the shadow stack in the prologue of the function.
 In the epilogue, the link register value from the regular stack is compared to the
 shadow copy on the shadow stack. Programs operating in shadow stack mode are
-portable to implementations that do not support the Zisslpcfi extension. On
+portable to implementations that do not support the Zicfisslp extension. On
 implementations where the extension is not supported, the shadow stack
 instructions revert to their Zimop defined behavior but the program continues to
 function as the link register is also pushed and popped from the regular stack.
@@ -297,7 +297,7 @@ is as follows:
 
 Programs operating in the control stack mode store the return address only
 on the shadow stack. Such programs are not portable to implementations that do
-not support the Zisslpcfi extension. As these programs do not push a return
+not support the Zicfisslp extension. As these programs do not push a return
 address on the regular stack they may not be compliant with the ABI. The
 prologue and epilogue of a function when operating in control stack mode
 is as follows:
