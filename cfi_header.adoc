@@ -1,5 +1,5 @@
 [[header]]
-:description: RISC-V Shadow Stacks and Landing Pads (Zisslpcfi)
+:description: RISC-V Shadow Stacks and Landing Pads (Zicfisslp)
 :company: RISC-V.org
 :revdate: 03/2023
 :revnumber: 0.1
@@ -36,7 +36,7 @@ endif::[]
 :footnote:
 :xrefstyle: short
 
-= RISC-V Shadow Stacks and Landing Pads (Zisslpcfi)
+= RISC-V Shadow Stacks and Landing Pads (Zicfisslp)
 RISC-V Shadow-stack and Landing-pads Task Group
 
 // Preamble
