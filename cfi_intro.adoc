@@ -47,7 +47,7 @@ address of the instruction following the jump (`pc+2`) to the link register `x1`
 and is a procedure call. The `C.JR` is a return from procedure if `rs1` is a
 conventional link register (i.e. `x1` or `x5`); else it is an indirect jump.
 
-The RISC-V control-flow integrity (CFI) extension (Zisslpcfi) builds on these
+The RISC-V control-flow integrity (CFI) extension (Zicfisslp) builds on these
 conventions and hints.
 
 The term "call" is used to refer to a `JAL` or `JALR` instruction with a link
@@ -104,7 +104,7 @@ function.
 Operating in shadow stack mode preserves the call stack layout and the ABI,
 while also allowing for the detection of corruption of the return address on
 the regular stack. Such programs are portable between implementations that
-support the Zisslpcfi extension as well as those that do not. Most programs are
+support the Zicfisslp extension as well as those that do not. Most programs are
 expected to use this mode.
 
 Operating in control stack mode breaks the ABI, but has the benefit of avoiding
@@ -112,13 +112,13 @@ additional instructions to store the return address to two stacks, and to pop
 and compare them before returning from a function. This mode also allows the
 program to have a smaller regular stack as the space to save the return address
 is not needed. However, such programs are not portable to implementations that
-do not support the Zisslpcfi extension. Some just-in-time (JIT) compiled
+do not support the Zicfisslp extension. Some just-in-time (JIT) compiled
 programs may dynamically switch between using only the regular stack or only the
 shadow stack to store return addresses, depending on the capabilities of the
 implementation.
 ====
 
-To enforce forward edge control-flow integrity, Zisslpcfi extension introduces
+To enforce forward edge control-flow integrity, Zicfisslp extension introduces
 landing pad instructions that allow software to indicate valid targets for
 indirect calls and jumps in a program. Compilers emit a landing pad instruction
 as the first instruction of address-taken functions, as well as at any  indirect
@@ -190,53 +190,53 @@ version of `sstatus` (`vsstatus`) tracks the CFI state for VS-mode and VU-mode.
 
 [NOTE]
 ====
-The operating system may activate the use of Zisslpcfi by U-mode applications,
+The operating system may activate the use of Zicfisslp by U-mode applications,
 with or without the extension being used by the operating system itself. The set
 of U-mode programs installed in an OS may be a mix, where some programs are
-compiled with Zisslpcfi capabilities and others that are not. The operating
+compiled with Zicfisslp capabilities and others that are not. The operating
 system can activate or deactivate the use of the extension in U-mode per
-application by context switching the Zisslpcfi state.
+application by context switching the Zicfisslp state.
 
-Hypervisors may activate the use of Zisslpcfi in a virtual machine, with or
+Hypervisors may activate the use of Zicfisslp in a virtual machine, with or
 without the extension being used by the hypervisor itself. Virtual machines that
 use the extension may coexist with virtual machines that do not, with the
-hypervisor context switching the Zisslpcfi state of each virtual machine.
+hypervisor context switching the Zicfisslp state of each virtual machine.
 
-To use Zisslpcfi, the operating system and hypervisors have to be modified to
+To use Zicfisslp, the operating system and hypervisors have to be modified to
 use the capabilities, including the context switching of the extension state.
 
 Machine mode firmware may activate the use of the extension in M-mode independent
 of its use in lower privilege modes.
 ====
 
-The Zisslpcfi instructions are encoded using a subset of "May be op"
+The Zicfisslp instructions are encoded using a subset of "May be op"
 instructions defined by the Zimop and Zcmop extensions. This subset of
-instructions reverts to their Zimop/Zcmop defined behavior when the Zisslpcfi
+instructions reverts to their Zimop/Zcmop defined behavior when the Zicfisslp
 extension is not implemented or if the extension has not been activated at a
-privilege mode. A program that is built with Zisslpcfi instructions can thus
+privilege mode. A program that is built with Zicfisslp instructions can thus
 continue to operate correctly, but without control-flow integrity, on processors
 that do not support the extension or if the extension is not active.
 
 [NOTE]
 ====
-An OS modified to support the Zisslpcfi extension typically includes system
-libraries (such as glibc) that are also compiled with the Zisslpcfi extension.
+An OS modified to support the Zicfisslp extension typically includes system
+libraries (such as glibc) that are also compiled with the Zicfisslp extension.
 However, these system libraries may need to dynamically link to programs that
-are not compiled with the Zisslpcfi extension. In such cases, when these
-programs are executed in user mode, the OS may disable the Zisslpcfi extension.
-When the Zisslpcfi instructions in the system libraries are invoked by these
+are not compiled with the Zicfisslp extension. In such cases, when these
+programs are executed in user mode, the OS may disable the Zicfisslp extension.
+When the Zicfisslp instructions in the system libraries are invoked by these
 programs in user mode, they revert to their Zimop/Zcmop defined behavior. The OS
 only needs to carry one version of the system libraries, which are usable by
 both applications that use the extension and those that do not.
 
-An OS distribution compiled with Zisslpcfi extension may be installed on a
-machine that does not support the extension. In such cases, the Zisslpcfi
+An OS distribution compiled with Zicfisslp extension may be installed on a
+machine that does not support the extension. In such cases, the Zicfisslp
 instructions revert to their Zimop/Zcmop defined behavior.
 
-In case a program compiled with the Zisslpcfi extension is installed on an
+In case a program compiled with the Zicfisslp extension is installed on an
 operating system that is not modified to support the extension or on a machine
-that does not support it, the Zisslpcfi instructions will revert to their
+that does not support it, the Zicfisslp instructions will revert to their
 Zimop/Zcmop defined behavior.
 ====
 
-The Zisslpcfi extension depends on the Zicsr, A, Zimop, and Zcmop extensions.
+The Zicfisslp extension depends on the Zicsr, A, Zimop, and Zcmop extensions.
