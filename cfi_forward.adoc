@@ -16,7 +16,7 @@ indirect call or jump. The `ELP` state can be one of:
 * 0 - `NO_LP_EXPECTED`
 * 1 - `LP_EXPECTED`
 
-The Zisslpcfi extension determines if an indirect call or an indirect jump must
+The Zicfisslp extension determines if an indirect call or an indirect jump must
 land on landing pad, as specified in <<IND_CALL_JMP>>. If `is_lp_expected` is 1,
 an indirect call or jump updates the `ELP` to `LP_EXPECTED`.
 
@@ -122,7 +122,7 @@ pad operations:
 These instructions are encoded using the SYSTEM major opcode and
 the `mop.rr` encodings defined by the Zimop extension.
 
-When a Zimop encoding is not used by the Zisslpcfi extension then the
+When a Zimop encoding is not used by the Zicfisslp extension then the
 instruction follows its Zimop defined behavior.
 
 === Forward-edge CFI enables
@@ -130,13 +130,13 @@ instruction follows its Zimop defined behavior.
 When privilege mode is M, the forward-edge CFI is active when `MFCFIE` is 1 in
 `mseccfg` register.
 
-When `menvcfg.CFIE` is 0, Zisslpcfi is not enabled for privilege modes less than
+When `menvcfg.CFIE` is 0, Zicfisslp is not enabled for privilege modes less than
 M, and forward-edge CFI is not active at privilege levels less than M.
 
 When `V=0` and `menvcfg.CFIE` is 1, then forward-edge CFI is active in S-mode if
 `menvcfg.SFCFIE` is 1 and is active in U-mode if `mstatus.UFCFIE` is 1.
 
-When `henvcfg.CFIE` is 0, Zisslpcfi is not enabled for use when `V=1`.
+When `henvcfg.CFIE` is 0, Zicfisslp is not enabled for use when `V=1`.
 
 When `V=1` and both `menvcfg.CFIE` and `henvcfg.CFIE` are 1, then forward-edge CFI
 is active at VS-mode if `henvcfg.SFCFIE` is 1 and is active at VU-mode if

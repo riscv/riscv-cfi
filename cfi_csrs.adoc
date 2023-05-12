@@ -1,7 +1,7 @@
 [[CSRs]]
 == Shadow Stack and Landing Pad CSRs
 
-This chapter specifies the CSR state of the Zisslpcfi extension.
+This chapter specifies the CSR state of the Zicfisslp extension.
 
 === Machine environment configuration registers (`menvcfg and menvcfgh`)
 
@@ -23,7 +23,7 @@ This chapter specifies the CSR state of the Zisslpcfi extension.
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The `CFIE` field (bit 60) controls whether Zisslpcfi extension is available for
+The `CFIE` field (bit 60) controls whether Zicfisslp extension is available for
 use in modes less privileged than M. When `CFIE` is 1, the `SFCFIE` field
 (bit 59) enables forward-edge CFI at S-mode.
 
@@ -32,7 +32,7 @@ privileged than M:
 
 * Any attempts to access the `ssp` or `lpl` CSR will result in an
   illegal-instruction exception.
-* Zisslpcfi extension instructions revert to the Zimop/Zcmop defined behavior.
+* Zicfisslp extension instructions revert to the Zimop/Zcmop defined behavior.
 * The `UBCFIE`, `UFCFIE`, and `SPELP` fields in `sstatus` will always read as
   zero.
 * The `CFIE` field in `henvcfg` will always read as zero.
@@ -40,12 +40,12 @@ privileged than M:
 
 [NOTE]
 ====
-When the Zisslpcfi extension is available for use at privilege mode less than
+When the Zicfisslp extension is available for use at privilege mode less than
 M, the operating system may use the `UBCFIE` and `UFCFIE` to selectively
 enable the backward-edge and forward-edge CFI, respectively, for U-mode
 applications.
 
-When the Zisslpcfi extension is available for use in S-mode, the operating
+When the Zicfisslp extension is available for use in S-mode, the operating
 system may use shadow stacks at S-mode. If the operating system wants to use
 forward-edge CFI in S-mode, then it should request the SEE to set the
 `menvcfg.SFCFIE` field to 1 to enable it.
@@ -74,14 +74,14 @@ backward-edge and forward-edge CFI at S-mode and at U-mode for each application.
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The `CFIE` field (bit 60) controls whether the Zisslpcfi extension is available
+The `CFIE` field (bit 60) controls whether the Zicfisslp extension is available
 for use in VS and VU modes. When `menvcfg.CFIE` is 0, `henvcfg.CFIE` is
 read-only zero.
 
 When `henvcfg.CFIE` bit is 0, then at privilege modes VS and VU:
 
 * Attempts to access the `ssp` or `lpl` CSR raise an illegal-instruction exception.
-* Zisslpcfi extension instructions revert to the Zimop/Zcmop defined behavior.
+* Zicfisslp extension instructions revert to the Zimop/Zcmop defined behavior.
 * The `UBCFIE`, `UFCFIE`, and `SPELP` fields in `sstatus` (really `vsstatus`) are
   read-only zero.
 * The `pte.xwr=010b` encoding in VS-stage page tables remains reserved.
@@ -208,7 +208,7 @@ read-only zero.
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The `vsstatus` register is VS-mode's version of `sstatus`, and the Zisslpcfi
+The `vsstatus` register is VS-mode's version of `sstatus`, and the Zicfisslp
 extension introduces the following fields.
 
 * `UFCFIE` (bit 23)
