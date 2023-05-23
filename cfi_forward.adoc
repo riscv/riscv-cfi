@@ -110,12 +110,53 @@ indirect call/jump site. The label part held in bits 31:22 of `x7` is then
 checked by the `lpcll` instruction and the label part held in bits 21:12 of `x7`
 is checked by the `lpcnl` instruction.
 
+The following instruction sequence sets up a 20-bit wide expected landing pad
+label as 0xAAB33 in `x7` register prior to the indirect call.
+
+[source, ruby]
+foo:
+    :
+    # x10 is expected to have address of function bar()
+    lui x7, $0xAAB33    # setup up the expected landing pad label
+    jalr %ra, %x10
+    :
+
+The following instruction sequence forms a landing pad and matches the landing
+pad label to the expected label.
+
+[source, ruby]
+bar:
+    lpcll $0x2AA       # Match LLPL to x7[31:22]
+    lpcnl $0x333       # Match NLPL to x7[21:12]
+    :                  # continue if landing pad checks succeed
+
 Labels wider than 20-bit may be stored in `x7` by using additional instructions
 (e.g., a label upto 32-bits may be stored using an additional `addi`
 instruction) at the indirect call/jump site. When labels wider than 20-bit are
 in use, the additional label parts held in `x7` register are shifted into bit
 positions [21:12] of the `x7` register and checked using the `lpcnl`
 instruction.
+
+The following instruction sequence illustrates the same example but using a
+30-bit landing pad label 0x2AACCD55.
+
+[source, ruby]
+foo:
+    :
+    # x10 is expected to have address of function bar()
+    lui  x7, $0xAAB33    # Setup x7[31:12] of expected LLPL and NLPL
+    addi x7, x7, $0x554  # Load next part of expected label in x7[11:2]
+    jalr %ra, %x10
+    :
+
+[source, ruby]
+bar:
+    lpcll $0x2AA         # Match LLPL to x7[31:22]
+    lpcnl $0x333         # Match NLPL to x7[21:12]
+    c.slli x7, x7, $0xA  # shift next label part from x7[11:2] to x7[21:12]
+    lpcnl $0x155         # Match NLPL to x7[21:12]
+    :                    # continue if landing pad checks succeed
+
 ====
 
 === Forward-edge CFI Instructions
