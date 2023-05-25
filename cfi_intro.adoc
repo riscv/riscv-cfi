@@ -135,11 +135,12 @@ then an illegal-instruction exception is raised.
 
 The landing pads may be labeled. With labeling enabled, the number of landing
 pads that can be reached from an indirect call or jump site can be defined using
-programming language-based policies. A landing pad label (`lpl`) register is set
-up prior to initiating an indirect call or jump with the expected landing pad
-label. If the target of the indirect call or jump is not a landing pad or if the
-label of the landing pad does not match the label in `lpl` then an
-illegal-instruction exception is raised. Up to 25-bit wide labels are supported.
+programming language-based policies. The architecture designates the register
+`x7` for use as the landing pad label register. A `x7` register is set up prior
+to initiating an indirect call or jump with the expected landing pad label. If
+the target of the indirect call or jump is not a landing pad or if the label of
+the landing pad does not match the label in `x7` then an illegal-instruction
+exception is raised.
 
 [NOTE]
 ====
@@ -179,7 +180,6 @@ to a specific call site.
 
 A portion of the label space may be dedicated to labeled landing pads that are
 only valid targets of an indirect jump (and not an indirect call).
-
 ====
 
 Forward-edge and backward-edge CFI may be activated independently for software
