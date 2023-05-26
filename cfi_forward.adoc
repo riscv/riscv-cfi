@@ -84,8 +84,8 @@ call/jump is a valid landing pad instruction, the expected label established in
 pad and the label check instructions cause an illegal-instruction exception.
 
 Each landing pad may be labeled with a label. The landing pad instruction `lpcll`
-embeds a 10-bit immediate value called the lower-landing-pad-label (`LLPL`). If
-`LLPL` is not 0, then the instruction compares the `LLPL` to the bits 31:22 of
+embeds a 10-bit immediate value called the first-landing-pad-label (`FLPL`). If
+`FLPL` is not 0, then the instruction compares the `FLPL` to the bits 31:22 of
 the `x7` register and a mismatch causes an illegal- instruction exception.
 
 A companion instruction `lpcnl` is provided that embeds a 10-bit immediate value
@@ -99,10 +99,10 @@ instruction to store the label value in bits 31:22 of the `x7` register at the
 indirect call/jump site. The bits 31:22 of the label are then checked by the
 `lpcll` instruction.
 
-The `lpcll` with `LLPL` value of 0 does not perform a label check. This enables
+The `lpcll` with `FLPL` value of 0 does not perform a label check. This enables
 the use of a single label mode of operation. In this mode of operation, the
 indirect call/jump sites do not need to set up any labels in `x7` register as
-the `lpcll` does not do any label check with `LLPL` is 0.
+the `lpcll` does not do any label check with `FLPL` is 0.
 
 A label that is up to 20-bit wide may be constructed using a single `lui`
 instruction to store the label value in bits 31:12 of the `x7` register at the
@@ -126,7 +126,7 @@ pad label to the expected label.
 
 [source, ruby]
 bar:
-    lpcll $0x2AA       # Match LLPL to x7[31:22]
+    lpcll $0x2AA       # Match FLPL to x7[31:22]
     lpcnl $0x333       # Match NLPL to x7[21:12]
     :                  # continue if landing pad checks succeed
 
@@ -144,14 +144,14 @@ The following instruction sequence illustrates the same example but using a
 foo:
     :
     # x10 is expected to have address of function bar()
-    lui  x7, $0xAAB33    # Setup x7[31:12] of expected LLPL and NLPL
+    lui  x7, $0xAAB33    # Setup x7[31:12] of expected FLPL and NLPL
     addi x7, x7, $0x554  # Load next part of expected label in x7[11:2]
     jalr %ra, %x10
     :
 
 [source, ruby]
 bar:
-    lpcll $0x2AA         # Match LLPL to x7[31:22]
+    lpcll $0x2AA         # Match FLPL to x7[31:22]
     lpcnl $0x333         # Match NLPL to x7[21:12]
     c.slli x7, x7, $0xA  # shift next label part from x7[11:2] to x7[21:12]
     lpcnl $0x155         # Match NLPL to x7[21:12]
@@ -229,9 +229,9 @@ When forward-edge CFI is not active (`xFCFIE = 0`):
 `lpcll` is the valid landing pad instruction at target of indirect jumps and
 indirect calls. When a forward-edge CFI is active, the instruction causes an
 illegal-instruction exception if it is not placed at a 4-byte aligned `pc`.
-The `lpcll` has the lower landing pad label embedded in the `LLPL` field.
-If `LLPL` is not 0, `lpcll` causes an illegal-instruction exception if the
-`LLPL` field in the instruction does not match bits 31:22 of `x7` register.
+The `lpcll` has the landing pad label embedded in the `FLPL` field.
+If `FLPL` is not 0, `lpcll` causes an illegal-instruction exception if the
+`FLPL` field in the instruction does not match bits 31:22 of `x7` register.
 
 [wavedrom, , ]
 ....
@@ -239,7 +239,7 @@ If `LLPL` is not 0, `lpcll` causes an illegal-instruction exception if the
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
   {bits:  5, name: 'rd', attr:'00000'},
   {bits:  3, name: 'funct3', attr:['100']},
-  {bits: 10, name: 'LLPL'},
+  {bits: 10, name: 'FLPL'},
   {bits:  7, name: '1000001', attr:['lpcll']},
 ], config:{lanes: 1, hspace:1024}}
 ....
@@ -257,8 +257,8 @@ If xFCFIE != 0
     // If PC not 4-byte aligned then illegal-instruction
     if pc[1:0] != 0
         Cause illegal-instruction exception
-    // If lower landing pad label not matched -> illegal-instruction
-    else if (inst.LLPL != x7[31:22] && inst.LLPL != 0)
+    // If landing pad label not matched -> illegal-instruction
+    else if (inst.FLPL != x7[31:22] && inst.FLPL != 0)
         Cause illegal-instruction exception
     else
         ELP = NO_LP_EXPECTED
@@ -328,8 +328,8 @@ of indirect call/jump was decoded, due to:
   exception (See Table 3.7 of Privileged Specification cite:[PRIV]).
 * By the illegal-instruction exception due to the instruction at the target not
   being an `lpcll` instruction, or the `lpcll` instruction not being 4-byte
-  aligned, or due to the `LLPL` encoded in the `lpcll` not matching the `LL`
-  field of `lpl`.
+  aligned, or due to the `FLPL` encoded in the `lpcll` not matching the bits
+  31:22 of `x7` register.
 
 In such cases, the `ELP` prior to the trap, the previous `ELP`, may be
 `LP_EXPECTED`.
