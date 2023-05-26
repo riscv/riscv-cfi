@@ -30,12 +30,10 @@ use in modes less privileged than M. When `CFIE` is 1, the `SFCFIE` field
 When `menvcfg.CFIE` bit is 0, the following rules apply to privilege modes less
 privileged than M:
 
-* Any attempts to access the `ssp` or `lpl` CSR will result in an
-  illegal-instruction exception.
+* Attempts to access the `ssp` CSR result in an illegal-instruction exception.
 * Zicfisslp extension instructions revert to the Zimop/Zcmop defined behavior.
-* The `UBCFIE`, `UFCFIE`, and `SPELP` fields in `sstatus` will always read as
-  zero.
-* The `CFIE` field in `henvcfg` will always read as zero.
+* The `UBCFIE`, `UFCFIE`, and `SPELP` fields in `sstatus` are read-only zero.
+* The `CFIE` field in `henvcfg` is read-only zero.
 * The `pte.xwr=010b` encoding in S-stage page tables is reserved.
 
 [NOTE]
@@ -80,11 +78,11 @@ read-only zero.
 
 When `henvcfg.CFIE` bit is 0, then at privilege modes VS and VU:
 
-* Attempts to access the `ssp` or `lpl` CSR raise an illegal-instruction exception.
+* Attempts to access the `ssp` CSR result in an virtual-instruction exception.
 * Zicfisslp extension instructions revert to the Zimop/Zcmop defined behavior.
 * The `UBCFIE`, `UFCFIE`, and `SPELP` fields in `sstatus` (really `vsstatus`) are
   read-only zero.
-* The `pte.xwr=010b` encoding in VS-stage page tables remains reserved.
+* The `pte.xwr=010b` encoding in VS-stage page tables is reserved.
 
 When `henvcfg.CFIE` is 1, the `henvcfg.SFCFIE` field (bit 59) enables
 forward-edge CFI at VS-mode.
@@ -250,38 +248,6 @@ PMP for M-mode shadow stack memory accesses are outlined in <<PMP_SS>>.
 
 The `MFCFIE` (bit 10) is a WARL field that when set to 1 enables forward-edge
 CFI at M-mode.
-
-=== Landing pad label (`lpl`)
-
-The `lpl` CSR is a supervisor read-write (SRW) 32-bit register that holds the
-label expected at the target of an indirect call or an indirect jump. The label
-is split into an 8-bit upper label (`UL`), an 8-bit middle label (`ML`), and a
-9-bit lower label (`LL`).
-
-.`lpl` for RV32 and RV64
-[wavedrom, , ]
-....
-{reg: [
-  {bits: 9, name: 'LL'},
-  {bits: 8, name: 'ML'},
-  {bits: 8, name: 'UL'},
-  {bits: 7, name: 'WPRI'},
-], config:{lanes: 1, hspace:1024}}
-....
-
-When `menvcfg.CFIE` is 0, an attempt to access `lpl` in a mode other than M-mode
-raises an illegal-instruction exception.
-
-[NOTE]
-====
-Access to `lpl` at S-mode is not dependent on `sstatus.UFCFIE` or
-`menvcfg.SFCFIE` to allow an operating system to be able to context switch
-U-mode `lpl` state even when the operating system itself does not enable the
-use of forward-edge CFI at S-mode.
-====
-
-When `menvcfg.CFIE` is 1 but `henvcfg.CFIE` is 0, an attempt to access `lpl` when
-`V=1` raises a virtual-instruction exception. 
 
 === Shadow stack pointer (`ssp`) 
 
