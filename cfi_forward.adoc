@@ -31,10 +31,11 @@ an indirect call or jump updates the `ELP` to `LP_EXPECTED`.
 ----
 
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
-stream is not 4-byte aligned, or is not a `lpcll`, or if the label part encoded
-in the `lpcll` does not match the expected landing pad label part in bits 31:22
-of the `x7` register, then an illegal-instruction exception is raised else the
-the `ELP` updates to `NO_LP_EXPECTED`.
+stream is not 4-byte aligned, or is not a `lpcll`, or if the label encoded in
+the `lpcll` does not match the lower label in `lpl` register, then an illegal-
+instruction exception is raised. If the next instruction in the instruction
+stream is 4-byte aligned and is a `lpcll` with its label matching the lower
+label in `lpl` register, then the `ELP` updates to `NO_LP_EXPECTED`.
 
 [NOTE]
 ====
@@ -68,9 +69,6 @@ interrupt or signal handler. The memory location where the register is spilled
 may be susceptible to modifications. Therefore, software should opt to use the
 software guarded branches only where such threats are not applicable or are
 mitigated.
-
-The fact that `x7` is used for both software-guarded jumps and to hold the
-landing pad labels is benign since their use is mutually exclusive.
 ====
 
 By default a landing pad allows an indirect call/jump to land on any `lpcll` in
@@ -159,6 +157,7 @@ bar:
 
 ====
 
+
 === Forward-edge CFI Instructions
 
 The forward-edge CFI introduces the following instructions for landing
@@ -168,7 +167,10 @@ pad operations:
 ** `lpcll`
 
 * Label matching (See <<LBL_MATCH>>)
-** `lpcnl`
+** `lpcml` and `lpcul`
+
+* Setup landing pad label register (See <<LBL_SET>>)
+** `lpsll`, `lpsml`, and `lpsul`
 
 These instructions are encoded using the SYSTEM major opcode and
 the `mop.rr` encodings defined by the Zimop extension.
@@ -233,6 +235,7 @@ The `lpcll` has the landing pad label embedded in the `FLPL` field.
 If `FLPL` is not 0, `lpcll` causes an illegal-instruction exception if the
 `FLPL` field in the instruction does not match bits 31:22 of `x7` register.
 
+
 [wavedrom, , ]
 ....
 {reg: [
@@ -288,9 +291,13 @@ become misaligned and thus not a valid landing pad.
 [[LBL_MATCH]]
 === Label matching instructions
 
-The `lpcnl` instruction matches the 10-bit label part in its `NLPL` field with
-the bits 21:12 of the `x7` register and causes an illegal-instruction exception
-on a mismatch. The `lpcnl` is not a valid target for an indirect call or jump.
+The `lpcml` instruction matches the 8-bit wide middle label in its `MLPL` field with
+the `lpl.ML` field and causes an illegal-instruction exception on a mismatch. The
+`lpcml` is not a valid target for an indirect call or jump.
+
+The `lpcul` instruction matches the 8-bit wide upper label in its `ULPL` field with
+the `lpl.UL` field and causes an illegal-instruction exception on a mismatch. The
+`lpcul` is not a valid target for an indirect call or jump.
 
 [wavedrom, , ]
 ....
@@ -298,23 +305,220 @@ on a mismatch. The `lpcnl` is not a valid target for an indirect call or jump.
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
   {bits:  5, name: 'rd', attr:'00000'},
   {bits:  3, name: 'funct3', attr:['100']},
-  {bits: 10, name: 'NLPL'},
-  {bits:  7, name: '1000011', attr:['lpcnl']},
+  {bits:  8, name: 'imm8', attr:['MLPL','ULPL']},
+  {bits:  2, name: 'typ', attr:['01','11']},
+  {bits:  7, name: '1000011', attr:['lpcml','lpcul']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-The operation of the `lpcnl` instruction is as follows:
+The operation of the `lpcml` instruction is as follows:
 
-.`lpcnl` operation
+.`lpcml` operation
 [source, ruby]
 ----
 If xFCFIE != 0
-    if (x7[21:12] != inst.NLPL)
+    if (lpl.ML != inst.MLPL)
         cause illegal-instruction exception
 else
     [dst] = 0;
 endif
 ----
+
+The operation of the `lpcul` instruction is as follows:
+
+.`lpcul` operation
+[source, ruby]
+----
+If xFCFIE != 0
+    if (lpl.UL != inst.ULPL)
+        cause illegal-instruction exception
+else
+    [dst] = 0;
+endif
+----
+
+[[LBL_SET]]
+=== Setting up landing pad label register
+
+Before performing an indirect call or indirect jump to a labeled landing pad,
+the `lpl` is loaded with the expected landing pad label. The label is a constant
+encoded into the instructions used to setup the `lpl`.
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:'00000'},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  9, name: 'imm9', attr:['LLPL']},
+  {bits:  1, name: 'typ', attr:['0']},
+  {bits:  7, name: '1000001', attr:['lpsll']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:'00000'},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  8, name: 'imm8', attr:['MLPL','ULPL']},
+  {bits:  2, name: 'typ', attr:['00','10']},
+  {bits:  7, name: '1000011', attr:['lpsml','lpsul']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+The `lpsll` instruction is used to set the value of the lower label (`LL`) field
+of the `lpl`. In addition to setting `LL`, the instruction sets the `ML` and
+`UL` fields to 0.
+
+The operation of this instruction is as follows:
+
+.`lpsll` operation
+[source, ruby]
+----
+If xFCFIE == 1
+   lpl.LL = inst.LLPL
+   lpl.ML = lpl.UL = 0
+else
+   [rd] = 0;
+endif
+----
+
+[NOTE]
+====
+The compiler may emit the following instruction sequence at indirect call/jump
+sites to set up the landing pad label register when using labels up to 9 bits
+wide:
+
+[source, ruby]
+foo:
+    :
+    # x10 is expected to have address of function bar()
+    lpsll $0x1de    # setup lpl.LL with value 0x1de
+    jalr %ra, %x10
+    :
+
+The compiler may emit the following instruction sequence at the indirect
+call/jump targets, such as function entry points, to create a landing pad:
+
+[source, ruby]
+bar:
+    lpcll $0x1de    # Verifies that lpl.LL matches 0x1de
+    :               # continue if landing pad checks succeed
+====
+
+The `lpsml` instruction is used to set the value of the middle label (`ML`) field
+of the `lpl`. The `UL` and `LL` fields of the `lpl` remain unchanged. This
+instruction is typically used when labels wider than 9-bit are required.
+
+The operation of this instruction is as follows:
+
+.`lpsml` operation
+[source, ruby]
+----
+If xFCFIE == 1
+   lpl.ML = inst.MLPL
+else
+   [rd] = 0;
+endif
+----
+
+[NOTE]
+====
+The compiler may emit the following instruction sequence at indirect call/jump
+sites to set up the landing pad label register when using labels up to 17 bits
+wide:
+
+[source, ruby]
+foo:
+    :
+    # x10 is expected to have address of function bar()
+    lpsll $0x1de    # setup lpl.LL with value 0x1de
+    lpsml $0x17     # setup lpl.ML with value 0x17
+    jalr %ra, %x10
+    :
+
+The compiler may emit the following instruction sequence at the indirect
+call/jump targets, such as function entry points, to create a landing pad:
+
+[source, ruby]
+bar:
+    lpcll $0x1de    # Verifies that lpl.LL matches 0x1de
+    lpcml $0x17     # Verifies that lpl.ML matches 0x17
+    :               # continue if landing pad checks succeed
+====
+
+A `lpsul` instruction is used to set the value of upper label (`UL`) field the
+`lpl`. The `LL` and `ML` fields remain unchanged. This instruction is typically
+used when labels wider than 17-bit are required.
+
+The operation of this instruction is as follows:
+
+.`lpsul` operation
+[source, ruby]
+----
+If xFCFIE == 1
+   lpl.UL = inst.ULPL
+else
+   [rd] = 0;
+endif
+----
+
+[NOTE]
+====
+The compiler may emit the following instruction sequence at indirect call/jump
+sites to set up the landing pad label register when using labels up to 25 bits
+wide:
+
+[source, ruby]
+foo:
+    :
+    # x10 is expected to have address of function bar()
+    lpsll $0x1de    # setup lpl.LL with value 0x1de
+    lpsml $0x17     # setup lpl.ML with value 0x17
+    lpsul $0x13     # setup lpl.UL with value 0x13
+    jalr %ra, %x10
+    :
+
+The compiler may emit the following instruction sequence at the indirect
+call/jump targets, such as function entry points, to create a landing pad:
+
+[source, ruby]
+bar:
+    lpcll $0x1de    # Verifies that lpl.LL matches 0x1de
+    lpcml  $0x17    # Verifies that lpl.ML matches 0x17
+    lpcul  $0x13    # Verifies that lpl.ML matches 0x13
+    :               # continue if landing pad checks succeed
+====
+
+[NOTE]
+====
+
+The `lpcml` and `lpcul` need not occur together or in that order. Use of a
+`lpcul` does not require a preceding or a following `lpcml`. The following
+sequences are also a valid label check sequence:
+
+[source, ruby]
+bar:
+    lpcll $lwr_label
+    lpcul $upr_label
+    :
+
+[source, ruby]
+bar:
+    lpcll $lwr_label
+    lpcul $upr_label
+    lpcml $mdl_label
+    :
+
+A `lpsll` sets the `LL` and also initializes the `ML` and `UL` fields to zero.
+If the label to be assigned has zero for `ML` and `UL`, then there is no need to
+explicitly set them to zero using a `lpsml` or `lpsul`. `lpsml` and `lpsul`
+can be used independently and in any order. The use of a `lpsul` does not
+require a preceding or following `lpsml`.
+
+====
 
 [[FORWARD_TRAPS]]
 === Preserving expected landing pad state on traps
