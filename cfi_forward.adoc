@@ -182,7 +182,7 @@ The `lpcll` has the lower landing pad label embedded in the `LLPL` field.
 `lpcll` causes an illegal-instruction exception if the `LLPL` field in the
 instruction does not match the `lpl.LL` field.
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
@@ -246,7 +246,7 @@ The `lpcul` instruction matches the 8-bit wide upper label in its `ULPL` field w
 the `lpl.UL` field and causes an illegal-instruction exception on a mismatch. The
 `lpcul` is not a valid target for an indirect call or jump.
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
@@ -291,7 +291,7 @@ Before performing an indirect call or indirect jump to a labeled landing pad,
 the `lpl` is loaded with the expected landing pad label. The label is a constant
 encoded into the instructions used to setup the `lpl`.
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
@@ -303,7 +303,7 @@ encoded into the instructions used to setup the `lpl`.
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
