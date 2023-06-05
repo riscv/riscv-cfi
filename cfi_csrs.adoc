@@ -6,7 +6,7 @@ This chapter specifies the CSR state of the Zicfisslp extension.
 === Machine environment configuration registers (`menvcfg and menvcfgh`)
 
 .Machine environment configuration register (`menvcfg`) for MXLEN=64
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  1, name: 'FIOM'},
@@ -55,7 +55,7 @@ backward-edge and forward-edge CFI at S-mode and at U-mode for each application.
 === Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
 
 .Hypervisor environment configuration register (`henvcfg`) for MXLEN=64
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  1, name: 'FIOM'},
@@ -90,7 +90,7 @@ forward-edge CFI at VS-mode.
 === Machine status registers (`mstatus`)
 
 .Machine-mode status register (`mstatus`) for RV64
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  1, name: 'WPRI'},
@@ -139,7 +139,7 @@ encoded as follows:
 === Supervisor status registers (`sstatus`)
 
 .Supervisor-mode status register (`sstatus`) when `SXLEN=64`
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  1, name: 'WPRI'},
@@ -178,7 +178,7 @@ read-only zero.
 === Virtual supervisor status registers (`vsstatus`)
 
 .Virtual supervisor status register (`vsstatus`) when `VSXLEN=64`
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  1, name: 'WPRI'},
@@ -227,7 +227,7 @@ in `vsstatus` when the CSR is accessed in HS-mode.
 === Machine Security Configuration (`mseccfg`)
 
 .Machine security configuration register (`mseccfg`) when `MXLEN=64`
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  1, name: 'MML'},

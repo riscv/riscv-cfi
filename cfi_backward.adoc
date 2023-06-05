@@ -133,7 +133,7 @@ A shadow stack pop operation is defined as a `XLEN` wide read from the
 current top of the shadow stack followed by an increment of the `ssp` by
 `XLEN`.
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
@@ -144,7 +144,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
@@ -155,7 +155,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
@@ -167,7 +167,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  2, name: 'op', attr:'C1'},
@@ -561,7 +561,7 @@ back_cfi_not_enabled:
 The `ssprr` instruction is provided to move the contents of `ssp` to the destination
 register.
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
@@ -613,7 +613,7 @@ bits of the `src` register and the `XLEN` bits located on the shadow stack at th
 address specified in the `addr` register. The resulting value from the swap
 operation is then stored into the register specified in the `dst` operand.
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},

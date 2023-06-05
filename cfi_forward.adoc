@@ -233,7 +233,7 @@ The `lpcll` has the landing pad label embedded in the `FLPL` field.
 If `FLPL` is not 0, `lpcll` causes an illegal-instruction exception if the
 `FLPL` field in the instruction does not match bits 31:22 of `x7` register.
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
@@ -292,7 +292,7 @@ The `lpcnl` instruction matches the 10-bit label part in its `NLPL` field with
 the bits 21:12 of the `x7` register and causes an illegal-instruction exception
 on a mismatch. The `lpcnl` is not a valid target for an indirect call or jump.
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
