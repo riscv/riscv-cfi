@@ -32,7 +32,7 @@ an indirect call or jump updates the `ELP` to `LP_EXPECTED`.
 
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
 stream is not 4-byte aligned, or is not a `lpad`, or if the label part encoded
-in the `lpad` does not match the expected landing pad label part in bits 31:22
+in the `lpad` does not match the expected landing pad label in bits 31:12
 of the `x7` register, then an illegal-instruction exception is raised else the
 the `ELP` updates to `NO_LP_EXPECTED`.
 
@@ -84,26 +84,20 @@ call/jump is a valid landing pad instruction, the expected label established in
 pad and the label check instructions cause an illegal-instruction exception.
 
 Each landing pad may be labeled with a label. The landing pad instruction `lpad`
-embeds a 10-bit immediate value called the first-landing-pad-label (`FLPL`). If
-`FLPL` is not 0, then the instruction compares the `FLPL` to the bits 31:22 of
-the `x7` register and a mismatch causes an illegal- instruction exception.
+embeds a 20-bit immediate value called the landing-pad-label (`LPL`). If
+`LPL` is not 0, then the instruction compares the `LPL` to the bits 31:12 of
+the `x7` register and a mismatch causes an illegal-instruction exception.
 
 [NOTE]
 ====
-A label that is up to 10-bit wide may be constructed using a single `lui`
-instruction to store the label value in bits 31:22 of the `x7` register at the
-indirect call/jump site. The bits 31:22 of the label are then checked by the
-`lpad` instruction.
-
-The `lpad` with `FLPL` value of 0 does not perform a label check. This enables
+The `lpad` with `LPL` value of 0 does not perform a label check. This enables
 the use of a single label mode of operation. In this mode of operation, the
 indirect call/jump sites do not need to set up any labels in `x7` register as
-the `lpad` does not do any label check with `FLPL` is 0.
+the `lpad` does not do any label check with `LPL` is 0.
 
-A label that is up to 20-bit wide may be constructed using a single `lui`
-instruction to store the label value in bits 31:12 of the `x7` register at the
-indirect call/jump site. The label held in bits 31:12 of `x7` is then
-checked by the `lpad` instruction.
+A single `lui` instruction can be used to store the expected label value in
+bits 31:12 of the `x7` register at the indirect call/jump site. The label held
+in bits 31:12 of `x7` is then checked by the `lpad` instruction.
 
 The following instruction sequence sets up a 20-bit wide expected landing pad
 label as 0xAAB33 in `x7` register prior to the indirect call.
@@ -192,9 +186,9 @@ When forward-edge CFI is not active (`xFCFIE = 0`):
 `lpad` is the valid landing pad instruction at target of indirect jumps and
 indirect calls. When a forward-edge CFI is active, the instruction causes an
 illegal-instruction exception if it is not placed at a 4-byte aligned `pc`.
-The `lpad` has the landing pad label embedded in the `FLPL` field.
-If `FLPL` is not 0, `lpad` causes an illegal-instruction exception if the
-`FLPL` field in the instruction does not match bits 31:22 of `x7` register.
+The `lpad` has the landing pad label embedded in the `LPL` field.
+If `LPL` is not 0, `lpad` causes an illegal-instruction exception if the
+`LPL` field in the instruction does not match bits 31:12 of `x7` register.
 
 [wavedrom, ,svg]
 ....
@@ -221,7 +215,7 @@ If xFCFIE != 0
     if pc[1:0] != 0
         Cause illegal-instruction exception
     // If landing pad label not matched -> illegal-instruction
-    else if (inst.FLPL != x7[31:22] && inst.FLPL != 0)
+    else if (inst.LPL != x7[31:12] && inst.LPL != 0)
         Cause illegal-instruction exception
     else
         ELP = NO_LP_EXPECTED
@@ -260,8 +254,8 @@ of indirect call/jump was decoded, due to:
   exception (See Table 3.7 of Privileged Specification cite:[PRIV]).
 * By the illegal-instruction exception due to the instruction at the target not
   being an `lpad` instruction, or the `lpad` instruction not being 4-byte
-  aligned, or due to the `FLPL` encoded in the `lpad` not matching the bits
-  31:22 of `x7` register.
+  aligned, or due to the `LPL` encoded in the `lpad` not matching the bits
+  31:12 of `x7` register.
 
 In such cases, the `ELP` prior to the trap, the previous `ELP`, may be
 `LP_EXPECTED`.
