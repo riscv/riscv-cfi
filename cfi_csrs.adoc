@@ -31,7 +31,8 @@ When `menvcfg.CFIE` bit is 0, the following rules apply to privilege modes less
 privileged than M:
 
 * Attempts to access the `ssp` CSR result in an illegal-instruction exception.
-* Zicfisslp extension instructions revert to the Zimop/Zcmop defined behavior.
+* Shadow stack instructions revert to the Zimop/Zcmop defined behavior.
+* The `lpad` instruction executes as a no-op.
 * The `UBCFIE`, `UFCFIE`, and `SPELP` fields in `sstatus` are read-only zero.
 * The `CFIE` field in `henvcfg` is read-only zero.
 * The `pte.xwr=010b` encoding in S-stage page tables is reserved.
@@ -79,7 +80,8 @@ read-only zero.
 When `henvcfg.CFIE` bit is 0, then at privilege modes VS and VU:
 
 * Attempts to access the `ssp` CSR result in an virtual-instruction exception.
-* Zicfisslp extension instructions revert to the Zimop/Zcmop defined behavior.
+* Shadow stack instructions revert to the Zimop/Zcmop defined behavior.
+* The `lpad` instruction executes as a no-op.
 * The `UBCFIE`, `UFCFIE`, and `SPELP` fields in `sstatus` (really `vsstatus`) are
   read-only zero.
 * The `pte.xwr=010b` encoding in VS-stage page tables is reserved.
