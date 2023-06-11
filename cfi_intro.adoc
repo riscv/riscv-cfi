@@ -119,7 +119,7 @@ implementation.
 ====
 
 To enforce forward edge control-flow integrity, Zicfisslp extension introduces
-landing pad instructions that allow software to indicate valid targets for
+a landing pad instruction that allow software to indicate valid targets for
 indirect calls and jumps in a program. Compilers emit a landing pad instruction
 as the first instruction of address-taken functions, as well as at any indirect
 jump targets.
@@ -128,7 +128,7 @@ The landing pads are designed to provide integrity to control transfers
 performed using indirect call and jumps, and this is referred to as forward-edge
 protection.
 
-When the landing pad feature is active, the hart tracks an expected landing pad
+When the forward-edge CFI is active, the hart tracks an expected landing pad
 (`ELP`) that is updated by an indirect call or jump to require a landing pad
 instruction at the target. If the instruction at the target is not a landing pad,
 then an illegal-instruction exception is raised.
@@ -210,13 +210,17 @@ Machine mode firmware may activate the use of the extension in M-mode independen
 of its use in lower privilege modes.
 ====
 
-The Zicfisslp instructions are encoded using a subset of "May be op"
+The Zicfisslp shadow stack instructions are encoded using a subset of "May be op"
 instructions defined by the Zimop and Zcmop extensions. This subset of
 instructions reverts to their Zimop/Zcmop defined behavior when the Zicfisslp
 extension is not implemented or if the extension has not been activated at a
 privilege mode. A program that is built with Zicfisslp instructions can thus
 continue to operate correctly, but without control-flow integrity, on processors
-that do not support the extension or if the extension is not active.
+that do not support the extension or if the extension is not active. The
+Zicfisslp landing pad instruction uses the code points defined as HINTs for the
+`AUIPC` opcode. When forward-edge CFI is not active at a privilege level or when
+the extension si not implemented, the landing pad instruction executes as a
+no-op.
 
 [NOTE]
 ====
@@ -266,6 +270,21 @@ not support it, the Zicfisslp instructions will revert to their Zimop/Zcmop
 defined behavior. This allows an application developer to distribute a single
 application image that can be used on machines and/or OS installations with
 support for the Zicfisslp extension and those that do not.
+
+Two binaries (an application and a library for example) may be linked,
+statically or dynamically, even if only one of them has been compiled with
+shadow stack instructions. While the backward-edge CFI protections are not
+available when executing the part of the program not compiled with shadow stack
+instructions, the program may continue to execute functionally. On other hand
+the use of landing pads requires that all binaries used by a program (e.g., an
+application, operating system, hypervisor, etc.) must all be compiled with the
+landing pad instructions. Due to each binary needing to be compiled to include
+the landing pad instruction the use of the HINT code points for landing pads
+does not lead to compatibility issue. Due to this only the shadow stack
+instructions are encoded using the Zimop/Zcmop defined code points. The use of
+the HINT code points for landing pads enables compact code sequences for
+setting up the landing pad label and the landing pad itself.
+
 ====
 
 The Zicfisslp extension depends on the Zicsr, A, Zimop, and Zcmop extensions.
