@@ -4,7 +4,7 @@
 The forward-edge CFI introduces landing pad instructions that enable software to
 indicate valid targets for indirect calls and indirect jumps in a program.
 
-A landing pad instruction (`lpcll`) is defined as the instruction that must be
+A landing pad instruction (`lpad`) is defined as the instruction that must be
 placed at the program locations that can be valid targets of indirect jumps or
 calls.
 
@@ -31,8 +31,8 @@ an indirect call or jump updates the `ELP` to `LP_EXPECTED`.
 ----
 
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
-stream is not 4-byte aligned, or is not a `lpcll`, or if the label part encoded
-in the `lpcll` does not match the expected landing pad label part in bits 31:22
+stream is not 4-byte aligned, or is not a `lpad`, or if the label part encoded
+in the `lpad` does not match the expected landing pad label part in bits 31:22
 of the `x7` register, then an illegal-instruction exception is raised else the
 the `ELP` updates to `NO_LP_EXPECTED`.
 
@@ -73,7 +73,7 @@ The fact that `x7` is used for both software-guarded jumps and to hold the
 landing pad labels is benign since their use is mutually exclusive.
 ====
 
-By default a landing pad allows an indirect call/jump to land on any `lpcll` in
+By default a landing pad allows an indirect call/jump to land on any `lpad` in
 the program, which significantly reduces the number of valid targets for an
 indirect call/jump. Labeling of the landing pads enables software to achieve
 greater precision in pairing up indirect call/jump sites sites with valid
@@ -83,7 +83,7 @@ call/jump is a valid landing pad instruction, the expected label established in
 `x7` is matched with the target's label. If a mismatch is detected then the landing
 pad and the label check instructions cause an illegal-instruction exception.
 
-Each landing pad may be labeled with a label. The landing pad instruction `lpcll`
+Each landing pad may be labeled with a label. The landing pad instruction `lpad`
 embeds a 10-bit immediate value called the first-landing-pad-label (`FLPL`). If
 `FLPL` is not 0, then the instruction compares the `FLPL` to the bits 31:22 of
 the `x7` register and a mismatch causes an illegal- instruction exception.
@@ -93,12 +93,12 @@ the `x7` register and a mismatch causes an illegal- instruction exception.
 A label that is up to 10-bit wide may be constructed using a single `lui`
 instruction to store the label value in bits 31:22 of the `x7` register at the
 indirect call/jump site. The bits 31:22 of the label are then checked by the
-`lpcll` instruction.
+`lpad` instruction.
 
-The `lpcll` with `FLPL` value of 0 does not perform a label check. This enables
+The `lpad` with `FLPL` value of 0 does not perform a label check. This enables
 the use of a single label mode of operation. In this mode of operation, the
 indirect call/jump sites do not need to set up any labels in `x7` register as
-the `lpcll` does not do any label check with `FLPL` is 0.
+the `lpad` does not do any label check with `FLPL` is 0.
 
 A label that is up to 20-bit wide may be constructed using a single `lui`
 instruction to store the label value in bits 31:12 of the `x7` register at the
@@ -131,7 +131,7 @@ The forward-edge CFI introduces the following instructions for landing
 pad operations:
 
 * Landing pad (See <<LP_INST>>)
-** `lpcll`
+** `lpad`
 
 These instructions are encoded using the SYSTEM major opcode and
 the `mop.rr` encodings defined by the Zimop extension.
@@ -181,7 +181,7 @@ When forward-edge CFI is not active (`xFCFIE = 0`):
 * The hart does not update the expected landing pad (`ELP`) state on an
   indirect call or jump, and does not require the instruction at the target of
   an indirect call or jump to be a landing pad instruction.
-* The hart does not update the expected landing pad (`ELP`) when `lpcll`
+* The hart does not update the expected landing pad (`ELP`) when `lpad`
   is executed.
 * The instructions defined for forward-edge CFI revert to their Zimop-defined
   behavior and do not set or check landing pad labels.
@@ -189,11 +189,11 @@ When forward-edge CFI is not active (`xFCFIE = 0`):
 [[LP_INST]]
 === Landing pad instruction
 
-`lpcll` is the valid landing pad instruction at target of indirect jumps and
+`lpad` is the valid landing pad instruction at target of indirect jumps and
 indirect calls. When a forward-edge CFI is active, the instruction causes an
 illegal-instruction exception if it is not placed at a 4-byte aligned `pc`.
-The `lpcll` has the landing pad label embedded in the `FLPL` field.
-If `FLPL` is not 0, `lpcll` causes an illegal-instruction exception if the
+The `lpad` has the landing pad label embedded in the `FLPL` field.
+If `FLPL` is not 0, `lpad` causes an illegal-instruction exception if the
 `FLPL` field in the instruction does not match bits 31:22 of `x7` register.
 
 [wavedrom, ,svg]
@@ -203,7 +203,7 @@ If `FLPL` is not 0, `lpcll` causes an illegal-instruction exception if the
   {bits:  5, name: 'rd', attr:'00000'},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits: 10, name: 'FLPL'},
-  {bits:  7, name: '1000001', attr:['lpcll']},
+  {bits:  7, name: '1000001', attr:['lpad']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
@@ -211,9 +211,9 @@ When the instruction causes an illegal-instruction exception, the `ELP` does not
 change. The behavior of the trap caused by this illegal-instruction exception is
 specified in section <<FORWARD_TRAPS>>.
 
-The operation of the `lpcll` instruction is as follows:
+The operation of the `lpad` instruction is as follows:
 
-.`lpcll` operation
+.`lpad` operation
 [source, ruby]
 ----
 If xFCFIE != 0
@@ -230,8 +230,8 @@ else
 endif
 ----
 
-Whereas `lpcll` is the only instruction that can execute when `ELP` is
-`LP_EXPECTED`, `lpcll` can also execute when `ELP` is `NO_LP_EXPECTED`.
+Whereas `lpad` is the only instruction that can execute when `ELP` is
+`LP_EXPECTED`, `lpad` can also execute when `ELP` is `NO_LP_EXPECTED`.
 
 [NOTE]
 ====
@@ -242,9 +242,9 @@ fields of a `lui`, `auipc`, or a `jal` instruction), followed by a 16-bit or a
 32-bit instruction with a second byte with pattern of `83` (for example, an
 `addi x6, x0, 1`).
 
-The `lpcll` requires a 4-byte alignment. When patterns that can accidentaly form
+The `lpad` requires a 4-byte alignment. When patterns that can accidentaly form
 a valid landing pad are detected, the assembler/linker can force instruction `A`
-to be aligned to a 4-byte boundary to force the unintended `lpcll` pattern to
+to be aligned to a 4-byte boundary to force the unintended `lpad` pattern to
 become misaligned and thus not a valid landing pad.
 ====
 
@@ -259,8 +259,8 @@ of indirect call/jump was decoded, due to:
 * Synchronous exceptions with priority lower than that of an illegal-instruction
   exception (See Table 3.7 of Privileged Specification cite:[PRIV]).
 * By the illegal-instruction exception due to the instruction at the target not
-  being an `lpcll` instruction, or the `lpcll` instruction not being 4-byte
-  aligned, or due to the `FLPL` encoded in the `lpcll` not matching the bits
+  being an `lpad` instruction, or the `lpad` instruction not being 4-byte
+  aligned, or due to the `FLPL` encoded in the `lpad` not matching the bits
   31:22 of `x7` register.
 
 In such cases, the `ELP` prior to the trap, the previous `ELP`, may be
