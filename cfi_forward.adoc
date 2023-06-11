@@ -88,10 +88,6 @@ embeds a 10-bit immediate value called the first-landing-pad-label (`FLPL`). If
 `FLPL` is not 0, then the instruction compares the `FLPL` to the bits 31:22 of
 the `x7` register and a mismatch causes an illegal- instruction exception.
 
-A companion instruction `lpcnl` is provided that embeds a 10-bit immediate value
-called the next-landing-pad-label (`NLPL`) that is compared to the bits 21:12 of
-the `x7` register and a mismatch causes an illegal-instruction exception.
-
 [NOTE]
 ====
 A label that is up to 10-bit wide may be constructed using a single `lui`
@@ -106,9 +102,8 @@ the `lpcll` does not do any label check with `FLPL` is 0.
 
 A label that is up to 20-bit wide may be constructed using a single `lui`
 instruction to store the label value in bits 31:12 of the `x7` register at the
-indirect call/jump site. The label part held in bits 31:22 of `x7` is then
-checked by the `lpcll` instruction and the label part held in bits 21:12 of `x7`
-is checked by the `lpcnl` instruction.
+indirect call/jump site. The label held in bits 31:12 of `x7` is then
+checked by the `lpad` instruction.
 
 The following instruction sequence sets up a 20-bit wide expected landing pad
 label as 0xAAB33 in `x7` register prior to the indirect call.
@@ -126,37 +121,8 @@ pad label to the expected label.
 
 [source, ruby]
 bar:
-    lpcll $0x2AA       # Match FLPL to x7[31:22]
-    lpcnl $0x333       # Match NLPL to x7[21:12]
+    lpad $0xAAB33      # Match LPL to x7[31:12]
     :                  # continue if landing pad checks succeed
-
-Labels wider than 20-bit may be stored in `x7` by using additional instructions
-(e.g., a label upto 32-bits may be stored using an additional `addi`
-instruction) at the indirect call/jump site. When labels wider than 20-bit are
-in use, the additional label parts held in `x7` register are shifted into bit
-positions [21:12] of the `x7` register and checked using the `lpcnl`
-instruction.
-
-The following instruction sequence illustrates the same example but using a
-30-bit landing pad label 0x2AACCD55.
-
-[source, ruby]
-foo:
-    :
-    # x10 is expected to have address of function bar()
-    lui  x7, $0xAAB33    # Setup x7[31:12] of expected FLPL and NLPL
-    addi x7, x7, $0x554  # Load next part of expected label in x7[11:2]
-    jalr %ra, %x10
-    :
-
-[source, ruby]
-bar:
-    lpcll $0x2AA         # Match FLPL to x7[31:22]
-    lpcnl $0x333         # Match NLPL to x7[21:12]
-    c.slli x7, x7, $0xA  # shift next label part from x7[11:2] to x7[21:12]
-    lpcnl $0x155         # Match NLPL to x7[21:12]
-    :                    # continue if landing pad checks succeed
-
 ====
 
 === Forward-edge CFI Instructions
@@ -166,9 +132,6 @@ pad operations:
 
 * Landing pad (See <<LP_INST>>)
 ** `lpcll`
-
-* Label matching (See <<LBL_MATCH>>)
-** `lpcnl`
 
 These instructions are encoded using the SYSTEM major opcode and
 the `mop.rr` encodings defined by the Zimop extension.
@@ -284,37 +247,6 @@ a valid landing pad are detected, the assembler/linker can force instruction `A`
 to be aligned to a 4-byte boundary to force the unintended `lpcll` pattern to
 become misaligned and thus not a valid landing pad.
 ====
-
-[[LBL_MATCH]]
-=== Label matching instructions
-
-The `lpcnl` instruction matches the 10-bit label part in its `NLPL` field with
-the bits 21:12 of the `x7` register and causes an illegal-instruction exception
-on a mismatch. The `lpcnl` is not a valid target for an indirect call or jump.
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:'00000'},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits: 10, name: 'NLPL'},
-  {bits:  7, name: '1000011', attr:['lpcnl']},
-], config:{lanes: 1, hspace:1024}}
-....
-
-The operation of the `lpcnl` instruction is as follows:
-
-.`lpcnl` operation
-[source, ruby]
-----
-If xFCFIE != 0
-    if (x7[21:12] != inst.NLPL)
-        cause illegal-instruction exception
-else
-    [dst] = 0;
-endif
-----
 
 [[FORWARD_TRAPS]]
 === Preserving expected landing pad state on traps
