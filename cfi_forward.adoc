@@ -121,18 +121,13 @@ bar:
 
 === Forward-edge CFI Instructions
 
-The forward-edge CFI introduces the following instructions for landing
-pad operations:
+The forward-edge CFI introduces the landing pad - `lpad` - instruction
+(See <<LP_INST>>). This instructions is encoded using the `AUIPC` major opcode
+with `rd=x0`. If forward-edge CFI is not active (See <<FCIFIACT>>) or if the
+Zisslpcfi extension is not implemented, the instruction reverts to being a
+no-op.
 
-* Landing pad (See <<LP_INST>>)
-** `lpad`
-
-These instructions are encoded using the SYSTEM major opcode and
-the `mop.rr` encodings defined by the Zimop extension.
-
-When a Zimop encoding is not used by the Zicfisslp extension then the
-instruction follows its Zimop defined behavior.
-
+[[FCIFIACT]]
 === Forward-edge CFI enables
 
 When privilege mode is M, the forward-edge CFI is active when `MFCFIE` is 1 in
@@ -177,8 +172,7 @@ When forward-edge CFI is not active (`xFCFIE = 0`):
   an indirect call or jump to be a landing pad instruction.
 * The hart does not update the expected landing pad (`ELP`) when `lpad`
   is executed.
-* The instructions defined for forward-edge CFI revert to their Zimop-defined
-  behavior and do not set or check landing pad labels.
+* The `lpad` instruction executes as a no-op.
 
 [[LP_INST]]
 === Landing pad instruction
@@ -193,11 +187,9 @@ If `LPL` is not 0, `lpad` causes an illegal-instruction exception if the
 [wavedrom, ,svg]
 ....
 {reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  7, name: 'opcode', attr:'AUIPC'},
   {bits:  5, name: 'rd', attr:'00000'},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits: 10, name: 'FLPL'},
-  {bits:  7, name: '1000001', attr:['lpad']},
+  {bits: 20, name: 'LPL'},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
@@ -231,10 +223,9 @@ Whereas `lpad` is the only instruction that can execute when `ELP` is
 ====
 Concatenation of two instructions `A` and `B` can accidentally form a valid
 landing pad in the program. For example, consider a 32-bit instruction where the
-bytes 3 and 2 have a pattern of `4073h` or `c073h` (for example, the immediate
-fields of a `lui`, `auipc`, or a `jal` instruction), followed by a 16-bit or a
-32-bit instruction with a second byte with pattern of `83` (for example, an
-`addi x6, x0, 1`).
+bytes 3 and 2 have a pattern of `?013h` (for example, the immediate fields of a
+`lui`, `auipc`, or a `jal` instruction), followed by a 16-bit or a 32-bit
+instruction.
 
 The `lpad` requires a 4-byte alignment. When patterns that can accidentaly form
 a valid landing pad are detected, the assembler/linker can force instruction `A`
@@ -280,12 +271,12 @@ S-mode, respectively. When executing an `xRET` instruction, the `ELP` is set to
 
 [NOTE]
 ====
-The trap handler in privilege mode `x` must save the `xPELP` bit and the `lpl`
+The trap handler in privilege mode `x` must save the `xPELP` bit and the `x7`
 register before performing an indirect call/jump. If the privilege mode `x`
 can respond to interrupts, then the trap handler should also save these values
 before enabling interrupts.
 
 The trap handler in privilege mode `x` must restore the saved `xPELP` bit and
-the `lpl` register before executing the `xRET` instruction to return from a
+the `x7` register before executing the `xRET` instruction to return from a
 trap.
 ====
