@@ -1,12 +1,10 @@
 [[forward]]
 == Forward-edge control-flow integrity
 
-The forward-edge CFI introduces landing pad instructions that enable software to
-indicate valid targets for indirect calls and indirect jumps in a program.
-
-A landing pad instruction (`lpad`) is defined as the instruction that must be
-placed at the program locations that can be valid targets of indirect jumps or
-calls.
+The forward-edge CFI introduces a landing pad instruction (`lpad`) that must be
+placed at the program locations that are valid targets of indirect jumps or
+calls. The landing pad - `lpad` - instruction (See <<LP_INST>>) is encoded using
+the `AUIPC` major opcode with `rd=x0`.
 
 To enforce that the target of an indirect call or indirect jump must be a valid
 landing pad instruction, the hart maintains an expected landing pad (`ELP`) state
@@ -31,14 +29,14 @@ an indirect call or jump updates the `ELP` to `LP_EXPECTED`.
 ----
 
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
-stream is not 4-byte aligned, or is not a `lpad`, or if the label part encoded
-in the `lpad` does not match the expected landing pad label in bits 31:12
-of the `x7` register, then an illegal-instruction exception is raised else the
-the `ELP` updates to `NO_LP_EXPECTED`.
+stream is not 4-byte aligned, or is not `lpad`, or if the label part encoded
+in `lpad` does not match the expected landing pad label in bits 31:12 of the
+`x7` register, then an illegal-instruction exception is raised else the `ELP`
+is updated to `NO_LP_EXPECTED`.
 
 [NOTE]
 ====
-The tracking of `ELP` and the requirement for valid landing pad instructions
+The tracking of `ELP` and the requirement for a landing pad instruction
 at the target of indirect call and jump enables a processor implementation to
 significantly reduce or to prevent speculation to non-landing-pad instructions.
 Constraining speculation using this technique, greatly reduces the gadget space
@@ -49,9 +47,9 @@ through side channels.
 
 When the indirect branch using `JALR` encodes both `rd` and `rs1` as `x7`, the
 branch is termed a software guarded branch. Such branches do not need to land on
-a landing pad and thus do not update `ELP`. Such branches must be used by a
-program only when the compiler or the program has emitted code to explicitly
-verify that the target held in `x7` is a valid target for that branch.
+a `lpad` and thus do not set `ELP` to `LP_EXPECTED`. Such branches must be used
+by a program only when the compiler or the program has emitted code to
+explicitly verify that the target in `x7` is a valid target for that branch.
 
 [NOTE]
 ====
@@ -70,7 +68,7 @@ software guarded branches only where such threats are not applicable or are
 mitigated.
 
 The fact that `x7` is used for both software-guarded jumps and to hold the
-landing pad labels is benign since their use is mutually exclusive.
+landing pad label is benign since their use is mutually exclusive.
 ====
 
 By default a landing pad allows an indirect call/jump to land on any `lpad` in
@@ -78,29 +76,23 @@ the program, which significantly reduces the number of valid targets for an
 indirect call/jump. Labeling of the landing pads enables software to achieve
 greater precision in pairing up indirect call/jump sites sites with valid
 targets. To support labeled landing pads, the indirect call/jump sites establish
-an expected landing pad label in the `x7` register. If the target of the indirect
-call/jump is a valid landing pad instruction, the expected label established in
-`x7` is matched with the target's label. If a mismatch is detected then the landing
-pad and the label check instructions cause an illegal-instruction exception.
-
-Each landing pad may be labeled with a label. The landing pad instruction `lpad`
-embeds a 20-bit immediate value called the landing-pad-label (`LPL`). If
-`LPL` is not 0, then the instruction compares the `LPL` to the bits 31:12 of
-the `x7` register and a mismatch causes an illegal-instruction exception.
+an expected landing pad label in the bits 31:12 of the `x7` register. The
+`lpad` instruction is encoded with a 20-bit immediate value called the
+landing-pad-label (`LPL`). If `LPL` is not 0, then `lpad` compares the `LPL` to
+the bits 31:12 of the `x7` register and a mismatch causes an illegal-instruction
+exception. When `LPL` is 0, `lpad` does not perform a label check. This enables
+the use of a single label mode of operation. In this mode of operation, the
+indirect call/jump sites do not need to set up expected label in `x7` register.
 
 [NOTE]
 ====
-The `lpad` with `LPL` value of 0 does not perform a label check. This enables
-the use of a single label mode of operation. In this mode of operation, the
-indirect call/jump sites do not need to set up any labels in `x7` register as
-the `lpad` does not do any label check with `LPL` is 0.
-
-A single `lui` instruction can be used to store the expected label value in
+A single `lui` instruction may be used to store the expected label value in
 bits 31:12 of the `x7` register at the indirect call/jump site. The label held
 in bits 31:12 of `x7` is then checked by the `lpad` instruction.
 
-The following instruction sequence sets up a 20-bit wide expected landing pad
-label as 0xAAB33 in `x7` register prior to the indirect call.
+The following example instruction sequence sets up the expected landing pad
+label as 0xAAB33 in `x7` register prior to the indirect call to function `bar`
+that is assigned the label 0xAAB33.
 
 [source, ruby]
 foo:
@@ -109,23 +101,11 @@ foo:
     lui x7, $0xAAB33    # setup up the expected landing pad label
     jalr %ra, %x10
     :
-
-The following instruction sequence forms a landing pad and matches the landing
-pad label to the expected label.
-
-[source, ruby]
+    :
 bar:
     lpad $0xAAB33      # Match LPL to x7[31:12]
     :                  # continue if landing pad checks succeed
 ====
-
-=== Forward-edge CFI Instructions
-
-The forward-edge CFI introduces the landing pad - `lpad` - instruction
-(See <<LP_INST>>). This instructions is encoded using the `AUIPC` major opcode
-with `rd=x0`. If forward-edge CFI is not active (See <<FCIFIACT>>) or if the
-Zisslpcfi extension is not implemented, the instruction reverts to being a
-no-op.
 
 [[FCIFIACT]]
 === Forward-edge CFI enables
@@ -170,19 +150,19 @@ When forward-edge CFI is not active (`xFCFIE = 0`):
 * The hart does not update the expected landing pad (`ELP`) state on an
   indirect call or jump, and does not require the instruction at the target of
   an indirect call or jump to be a landing pad instruction.
-* The hart does not update the expected landing pad (`ELP`) when `lpad`
-  is executed.
 * The `lpad` instruction executes as a no-op.
+
 
 [[LP_INST]]
 === Landing pad instruction
 
 `lpad` is the valid landing pad instruction at target of indirect jumps and
-indirect calls. When a forward-edge CFI is active, the instruction causes an
-illegal-instruction exception if it is not placed at a 4-byte aligned `pc`.
-The `lpad` has the landing pad label embedded in the `LPL` field.
-If `LPL` is not 0, `lpad` causes an illegal-instruction exception if the
-`LPL` field in the instruction does not match bits 31:12 of `x7` register.
+indirect calls. When forward-edge CFI is active, the instruction causes an
+illegal-instruction exception if it is not at a 4-byte aligned `pc`.
+
+The `lpad` has the landing pad label encoded in the `LPL` field. If `LPL` is not
+0, `lpad` causes an illegal-instruction exception if the `LPL` does not match
+bits 31:12 of `x7` register.
 
 [wavedrom, ,svg]
 ....
@@ -212,7 +192,7 @@ If xFCFIE != 0
     else
         ELP = NO_LP_EXPECTED
 else
-    [rd] = 0;
+    no-op
 endif
 ----
 
@@ -221,16 +201,17 @@ Whereas `lpad` is the only instruction that can execute when `ELP` is
 
 [NOTE]
 ====
-Concatenation of two instructions `A` and `B` can accidentally form a valid
-landing pad in the program. For example, consider a 32-bit instruction where the
-bytes 3 and 2 have a pattern of `?013h` (for example, the immediate fields of a
-`lui`, `auipc`, or a `jal` instruction), followed by a 16-bit or a 32-bit
-instruction.
+Concatenation of two instructions `A` and `B` may accidentally form a landing
+pad in the program. For example, consider a 32-bit instruction where the bytes
+3 and 2 have a pattern of `?013h` (for example, the immediate fields of a `lui`,
+`auipc`, or a `jal` instruction), followed by a 16-bit or a 32-bit instruction.
 
 The `lpad` requires a 4-byte alignment. When patterns that can accidentaly form
 a valid landing pad are detected, the assembler/linker can force instruction `A`
 to be aligned to a 4-byte boundary to force the unintended `lpad` pattern to
 become misaligned and thus not a valid landing pad.
+
+When Zisslpcfi extension is not implemented, `AUIPC` with `rd=x0` is a no-op.
 ====
 
 [[FORWARD_TRAPS]]
@@ -248,26 +229,25 @@ of indirect call/jump was decoded, due to:
   aligned, or due to the `LPL` encoded in the `lpad` not matching the bits
   31:12 of `x7` register.
 
-In such cases, the `ELP` prior to the trap, the previous `ELP`, may be
-`LP_EXPECTED`.
+In such cases, the `ELP` prior to the trap, the previous `ELP`, must be
+preserved.
 
 To store the previous `ELP` state on trap delivery to M-mode, a `MPELP` bit
-is provided in the `mstatus` CSR to hold the previous `ELP`.
+is provided in the `mstatus` CSR.
 
 To store the previous `ELP` state on trap delivery to S/HS-mode, a `SPELP`
-bit is provided in the `mstatus` CSR to hold the previous `ELP`. The `SPELP`
-bit in `mstatus` can be accessed through the `sstatus` CSR.
+bit is provided in the `mstatus` CSR. The `SPELP` bit in `mstatus` can be
+accessed through the `sstatus` CSR.
 
 To store the previous `ELP` state on traps to VS-mode, a `SPELP` bit is
-defined in the `vsstatus` (VS-modes version of `sstatus`) to hold the previous
-`ELP`.
+defined in the `vsstatus` (VS-modes version of `sstatus`).
 
 When a trap is taken into privilege mode `x`, the `xPELP` is set to `ELP` and
 `ELP` is set to `NO_LP_EXPECTED`.
 
 An `MRET` or `SRET` instruction is used to return from a trap in M-mode or
-S-mode, respectively. When executing an `xRET` instruction, the `ELP` is set to
-`xPELP`, and the `xPELP` is set to `NO_LP_EXPECTED`.
+S-mode, respectively. An `xRET` instruction sets the `ELP` to `xPELP`, and sets
+`xPELP` to `NO_LP_EXPECTED`.
 
 [NOTE]
 ====
