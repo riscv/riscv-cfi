@@ -163,7 +163,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: 'rs1', attr:['00000']},
   {bits:  5, name: 'rs2', attr:['00001', '00101']},
-  {bits:  7, name: '1000101', attr:['sspush x1','sspush x5']},
+  {bits:  7, name: '1000001', attr:['sspush x1','sspush x5']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
@@ -567,9 +567,8 @@ register.
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
   {bits:  5, name: 'rd', attr:['dst']},
   {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['00000']},
-  {bits:  5, name: 'rs2', attr:['00000']},
-  {bits:  7, name: '1000011', attr:['ssprr']},
+  {bits:  5, name: '00000'},
+  {bits: 12, name: '100000011101', attr:['ssprr']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
