@@ -29,10 +29,10 @@ an indirect call or jump updates the `ELP` to `LP_EXPECTED`.
 ----
 
 When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
-stream is not 4-byte aligned, or is not `lpad`, or if the label part encoded
-in `lpad` does not match the expected landing pad label in bits 31:12 of the
-`x7` register, then an illegal-instruction exception is raised else the `ELP`
-is updated to `NO_LP_EXPECTED`.
+stream is not 4-byte aligned, or is not `lpad`, or if the landing pad label
+encoded in `lpad` does not match the expected landing pad label in bits 31:12 of
+the `x7` register, then an illegal-instruction exception is raised else the
+`ELP` is updated to `NO_LP_EXPECTED`.
 
 [NOTE]
 ====
@@ -67,8 +67,8 @@ may be susceptible to modifications. Therefore, software should opt to use the
 software guarded branches only where such threats are not applicable or are
 mitigated.
 
-The fact that `x7` is used for both software-guarded jumps and to hold the
-landing pad label is benign since their use is mutually exclusive.
+Using `x7` for both holding target of software-guarded jumps and to hold the
+expected landing pad label is benign since their use is mutually exclusive.
 ====
 
 By default a landing pad allows an indirect call/jump to land on any `lpad` in
@@ -88,11 +88,10 @@ indirect call/jump sites do not need to set up expected label in `x7` register.
 ====
 A single `lui` instruction may be used to store the expected label value in
 bits 31:12 of the `x7` register at the indirect call/jump site. The label held
-in bits 31:12 of `x7` is then checked by the `lpad` instruction.
-
-The following example instruction sequence sets up the expected landing pad
-label as 0xAAB33 in `x7` register prior to the indirect call to function `bar`
-that is assigned the label 0xAAB33.
+in bits 31:12 of `x7` is then checked by the `lpad` instruction. The following
+example instruction sequence sets up the expected landing pad label as 0xAAB33
+in `x7` register prior to the indirect call to function `bar` that is assigned
+the label 0xAAB33.
 
 [source, ruby]
 foo:
@@ -100,7 +99,6 @@ foo:
     # x10 is expected to have address of function bar()
     lui x7, $0xAAB33    # setup up the expected landing pad label
     jalr %ra, %x10
-    :
     :
 bar:
     lpad $0xAAB33      # Match LPL to x7[31:12]
@@ -156,13 +154,14 @@ When forward-edge CFI is not active (`xFCFIE = 0`):
 [[LP_INST]]
 === Landing pad instruction
 
-`lpad` is the valid landing pad instruction at target of indirect jumps and
-indirect calls. When forward-edge CFI is active, the instruction causes an
-illegal-instruction exception if it is not at a 4-byte aligned `pc`.
-
-The `lpad` has the landing pad label encoded in the `LPL` field. If `LPL` is not
+When forward-edge CFI is active, `lpad` is the only valid instruction at target
+of indirect jumps and indirect calls. When forward-edge CFI is active, the
+instruction causes an illegal-instruction exception if it is not at a 4-byte
+aligned `pc`. The `lpad` encodes the landing pad label (`LPL`). If `LPL` is not
 0, `lpad` causes an illegal-instruction exception if the `LPL` does not match
-bits 31:12 of `x7` register.
+bits 31:12 of `x7` register. When the instruction causes an illegal-instruction
+exception, the `ELP` does not change. The behavior of the trap caused by this
+illegal-instruction exception is specified in section <<FORWARD_TRAPS>>.
 
 [wavedrom, ,svg]
 ....
@@ -172,10 +171,6 @@ bits 31:12 of `x7` register.
   {bits: 20, name: 'LPL'},
 ], config:{lanes: 1, hspace:1024}}
 ....
-
-When the instruction causes an illegal-instruction exception, the `ELP` does not
-change. The behavior of the trap caused by this illegal-instruction exception is
-specified in section <<FORWARD_TRAPS>>.
 
 The operation of the `lpad` instruction is as follows:
 
@@ -230,17 +225,13 @@ of indirect call/jump was decoded, due to:
   31:12 of `x7` register.
 
 In such cases, the `ELP` prior to the trap, the previous `ELP`, must be
-preserved.
-
-To store the previous `ELP` state on trap delivery to M-mode, a `MPELP` bit
-is provided in the `mstatus` CSR.
-
-To store the previous `ELP` state on trap delivery to S/HS-mode, a `SPELP`
-bit is provided in the `mstatus` CSR. The `SPELP` bit in `mstatus` can be
-accessed through the `sstatus` CSR.
-
-To store the previous `ELP` state on traps to VS-mode, a `SPELP` bit is
-defined in the `vsstatus` (VS-modes version of `sstatus`).
+preserved by the trap delivery such that it can be restored on a return from the
+trap. To store the previous `ELP` state on trap delivery to M-mode, a `MPELP`
+bit is provided in the `mstatus` CSR. To store the previous `ELP` state on trap
+delivery to S/HS-mode, a `SPELP` bit is provided in the `mstatus` CSR. The
+`SPELP` bit in `mstatus` can be accessed through the `sstatus` CSR. To store
+the previous `ELP` state on traps to VS-mode, a `SPELP` bit is defined in the
+`vsstatus` (VS-modes version of `sstatus`).
 
 When a trap is taken into privilege mode `x`, the `xPELP` is set to `ELP` and
 `ELP` is set to `NO_LP_EXPECTED`.
