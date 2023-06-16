@@ -1,20 +1,13 @@
 [[backward]]
 == Backward-edge control-flow integrity
 
-A shadow stack is a second stack used to push the link register if it needs to
-be spilled to make a new procedure call.
+A shadow stack is a second stack used to store the link register if it needs to
+be spilled.
 
 The shadow stack, similar to the regular stack, grows downwards, i.e. from higher
 addresses to lower addresses. Each entry on the shadow stack is `XLEN` wide and
 holds the link register value. The `ssp` points to the top of the shadow stack,
-i.e. address of the last element pushed on the shadow stack.
-
-[NOTE]
-====
-Compilers when generating code for a CFI enabled program must protect the link
-register, e.g. `x1` and/or `x5`, from arbitrary modification by not emitting
-unsafe code sequences.
-====
+i.e. address of the last element stored on the shadow stack.
 
 === Backward-edge CFI instructions
 
@@ -27,13 +20,13 @@ stack operations:
 ** `ssload x1` and `ssload x5`
 ** `sspinc`
 
-* Read the value of ssp into a register (See <<SSP_READ>>)
+* Read the value of `ssp` into a register (See <<SSP_READ>>)
 ** `ssprr`
 
 * Perform atomic swap from a shadow stack location (See <<SS_SWAP>>)
 ** `ssamoswap`
 
-The 32-bit instructions are encoded using the SYSTEM major opcode and using
+The 32-bit instructions are encoded using the `SYSTEM` major opcode and using
 the `mop.r` and `mop.rr` encodings defined by the Zimop extension.
 
 The 16-bit instructions are encoded using the `C.LUI` major opcode and using
@@ -230,6 +223,10 @@ return-address prediction stacks. Additionally, since the shadow stack
 instructions are designed around the use of `x1` or `x5` as the link register,
 using any other register as a link register would incur the cost of additional
 register movements.
+
+Compilers when generating code for a CFI enabled program must protect the link
+register, e.g. `x1` and/or `x5`, from arbitrary modification by not emitting
+unsafe code sequences.
 ====
 
 [NOTE]

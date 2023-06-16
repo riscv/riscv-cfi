@@ -86,12 +86,12 @@ indirect call/jump sites do not need to set up expected label in `x7` register.
 
 [NOTE]
 ====
-A single `lui` instruction may be used to store the expected label value in
-bits 31:12 of the `x7` register at the indirect call/jump site. The label held
-in bits 31:12 of `x7` is then checked by the `lpad` instruction. The following
-example instruction sequence sets up the expected landing pad label as 0xAAB33
-in `x7` register prior to the indirect call to function `bar` that is assigned
-the label 0xAAB33.
+The `lui` instruction may be used to store the expected label value in bits 31:12
+of the `x7` register at the indirect call/jump site. The label held in bits 31:12
+of `x7` is then checked by the `lpad` instruction. The following example
+instruction sequence sets up the expected landing pad label as 0xAAB33 in `x7`
+register prior to the indirect call to function `bar`. In this example, `bar`
+has a landing pad with the label 0xAAB33.
 
 [source, ruby]
 foo:
@@ -111,8 +111,8 @@ bar:
 When privilege mode is M, the forward-edge CFI is active when `MFCFIE` is 1 in
 `mseccfg` register.
 
-When `menvcfg.CFIE` is 0, Zicfisslp is not enabled for privilege modes less than
-M, and forward-edge CFI is not active at privilege levels less than M.
+When `menvcfg.CFIE` is 0, Zicfisslp is not enabled for use by privilege modes
+less than M, and forward-edge CFI is not active at privilege levels less than M.
 
 When `V=0` and `menvcfg.CFIE` is 1, then forward-edge CFI is active in S-mode if
 `menvcfg.SFCFIE` is 1 and is active in U-mode if `mstatus.UFCFIE` is 1.
@@ -147,7 +147,7 @@ When forward-edge CFI is not active (`xFCFIE = 0`):
 
 * The hart does not update the expected landing pad (`ELP`) state on an
   indirect call or jump, and does not require the instruction at the target of
-  an indirect call or jump to be a landing pad instruction.
+  an indirect call or jump to be `lpad`.
 * The `lpad` instruction executes as a no-op.
 
 
@@ -155,7 +155,7 @@ When forward-edge CFI is not active (`xFCFIE = 0`):
 === Landing pad instruction
 
 When forward-edge CFI is active, `lpad` is the only valid instruction at target
-of indirect jumps and indirect calls. When forward-edge CFI is active, the
+of a indirect jumps and indirect calls. When forward-edge CFI is active, the
 instruction causes an illegal-instruction exception if it is not at a 4-byte
 aligned `pc`. The `lpad` encodes the landing pad label (`LPL`). If `LPL` is not
 0, `lpad` causes an illegal-instruction exception if the `LPL` does not match
