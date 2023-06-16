@@ -27,10 +27,10 @@ Unconditional direct jumps using `JAL` transfer control to a target that is in a
 encoded in the instruction to the `rs1` register.
 
 The RV32I/RV64I does not have a dedicated instruction for calling a procedure or
-returning from a procedure. A `JAL` or `JALR` may be used to perform either a
-procedure call or a return from a procedure. The RISC-V ABI however defines the
+returning from a procedure. A `JAL` or `JALR` may be used to perform a procedure
+call and `JALR` to return from a procedure. The RISC-V ABI however defines the
 convention that a `JAL`/`JALR` where `rd` (i.e. the link register) is `x1` or
-`x5` is a procedure call, and a `JAL`/`JALR` where `rs1` is the conventional
+`x5` is a procedure call, and a `JALR` where `rs1` is the conventional
 link register (i.e. `x1` or `x5`) is a return from procedure. The architecture
 allows for using these hints and conventions to support return address
 prediction. The hints are specified in Table 2.1 of the Unprivileged ISA
