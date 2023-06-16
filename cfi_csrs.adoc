@@ -25,7 +25,7 @@ This chapter specifies the CSR state of the Zicfisslp extension.
 
 The `CFIE` field (bit 60) controls whether Zicfisslp extension is available for
 use in modes less privileged than M. When `CFIE` is 1, the `SFCFIE` field
-(bit 59) enables forward-edge CFI at S-mode.
+(bit 59) activates forward-edge CFI at S-mode.
 
 When `menvcfg.CFIE` bit is 0, the following rules apply to privilege modes less
 privileged than M:
@@ -41,16 +41,15 @@ privileged than M:
 ====
 When the Zicfisslp extension is available for use at privilege mode less than
 M, the operating system may use the `UBCFIE` and `UFCFIE` to selectively
-enable the backward-edge and forward-edge CFI, respectively, for U-mode
-applications.
+activate the backward-edge and forward-edge CFI, respectively, for U-mode.
 
 When the Zicfisslp extension is available for use in S-mode, the operating
 system may use shadow stacks at S-mode. If the operating system wants to use
 forward-edge CFI in S-mode, then it should request the SEE to set the
-`menvcfg.SFCFIE` field to 1 to enable it.
+`menvcfg.SFCFIE` field to 1 to activate it.
 
-The set of controls described above allows for the separate enforcement of
-backward-edge and forward-edge CFI at S-mode and at U-mode for each application.
+The set of controls described above allows for the separate activation of
+backward-edge and forward-edge CFI at S-mode and for each application at U-mode.
 ====
 
 === Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
@@ -86,7 +85,7 @@ When `henvcfg.CFIE` bit is 0, then at privilege modes VS and VU:
   read-only zero.
 * The `pte.xwr=010b` encoding in VS-stage page tables is reserved.
 
-When `henvcfg.CFIE` is 1, the `henvcfg.SFCFIE` field (bit 59) enables
+When `henvcfg.CFIE` is 1, the `henvcfg.SFCFIE` field (bit 59) activates
 forward-edge CFI at VS-mode.
 
 === Machine status registers (`mstatus`)
@@ -129,7 +128,7 @@ forward-edge CFI at VS-mode.
 ....
 
 The `UFCFIE` (bit 23) and `UBCFIE` (bit 24) are WARL fields that, when set to 1,
-enable forward-edge and backward-edge CFI, respectively, in U-mode.
+activate forward-edge and backward-edge CFI, respectively, in U-mode.
 
 The `SPELP` (bit 25) and `MPELP` (bit 26) WARL fields are hold the previous
 `ELP`, and are updated as specified in <<FORWARD_TRAPS>>. The `xPELP` fields are
@@ -222,8 +221,8 @@ When `menvcfg.CFIE` is 0, these fields are read-only zero. When `menvcfg.CFIE` i
 [NOTE]
 ====
 The `vsstatus` and `henvcfg` CSR for a virtual machine may be restored in any
-order. The state of `henvcfg.CFIE` does not prevent access to the bits introduced
-in `vsstatus` when the CSR is accessed in HS-mode.
+order. The state of `henvcfg.CFIE` does not prevent access to the bits
+introduced in `vsstatus` when the CSR is accessed in HS-mode.
 ====
 
 === Machine Security Configuration (`mseccfg`)
@@ -245,10 +244,10 @@ in `vsstatus` when the CSR is accessed in HS-mode.
 ....
 
 A new WARL field `sspmp` is defined the `mseccfg` CSR to identify a PMP entry
-as the shadow stack memory region for M-mode accesses. The rules enforced by
-PMP for M-mode shadow stack memory accesses are outlined in <<PMP_SS>>.
+as the shadow stack memory region for M-mode use. The rules enforced by PMP for
+M-mode shadow stack memory accesses are outlined in <<PMP_SS>>.
 
-The `MFCFIE` (bit 10) is a WARL field that when set to 1 enables forward-edge
+The `MFCFIE` (bit 10) is a WARL field that when set to 1 activates forward-edge
 CFI at M-mode.
 
 === Shadow stack pointer (`ssp`) 
