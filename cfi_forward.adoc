@@ -22,7 +22,7 @@ an indirect call or jump updates the `ELP` to `LP_EXPECTED`.
 .Landing pad expected determination
 [source, ruby]
 ----
-    is_indirect_call_jump = ( (JALR || C.JR || C.JALR) && 
+    is_indirect_call_jump = ( (JALR || C.JR || C.JALR) &&
                               ((rs1 != x1 && rs1 != x5) || (rd != x0)) ) ? 1 : 0;
     is_sw_guarded_jump = ( JALR && rd == x7 && rs1 == x7 ) ? 1 : 0;
     is_lp_expected = is_indirect_call_jump & ~is_sw_guarded_jump;
