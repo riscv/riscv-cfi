@@ -795,7 +795,7 @@ instruction initiated memory accesses. The state of the `MXR` bit does not
 affect read access to a shadow stack page as the shadow stack page is always
 readable by all instructions that load from memory.
 
-Svpbmt extension and Svnapot extensions are supported for shadow stack pages.
+Svpbmt and Svnapot extensions are supported for shadow stack pages.
 
 [NOTE]
 ====
