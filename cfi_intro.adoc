@@ -1,7 +1,7 @@
 [[intro]]
 == Introduction
 
-Zicfisslp extension provides a for Control-flow Integrity (CFI) capabilities to
+Zicfisslp extension provides Control-flow Integrity (CFI) capabilities to
 defend against Return-Oriented Programming (ROP) and Call/Jump-Oriented
 Programming (COP/JOP) style control-flow subversion attacks. This attack
 methodology uses code sequences in authorized modules, with at least one
