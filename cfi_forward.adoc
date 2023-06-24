@@ -198,7 +198,7 @@ Whereas `lpad` is the only instruction that can execute when `ELP` is
 ====
 Concatenation of two instructions `A` and `B` may accidentally form a landing
 pad in the program. For example, consider a 32-bit instruction where the bytes
-3 and 2 have a pattern of `?013h` (for example, the immediate fields of a `lui`,
+3 and 2 have a pattern of `?017h` (for example, the immediate fields of a `lui`,
 `auipc`, or a `jal` instruction), followed by a 16-bit or a 32-bit instruction.
 
 The `lpad` requires a 4-byte alignment. When patterns that can accidentaly form
