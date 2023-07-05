@@ -1,16 +1,17 @@
 [[intro]]
 == Introduction
 
-Zicfisslp extension provides Control-flow Integrity (CFI) capabilities to
-defend against Return-Oriented Programming (ROP) and Call/Jump-Oriented
-Programming (COP/JOP) style control-flow subversion attacks. This attack
-methodology uses code sequences in authorized modules, with at least one
-instruction in the sequence being a control transfer instruction that depends on
-attacker-controlled data either in the return stack or in a register/memory for
-the target address. Attackers stitch these sequences together by diverting the
-control flow instruction (e.g., `JALR`, `C.JR`, `C.JALR`), from its original
+The Zicfiss extension provides Control-flow Integrity (CFI) capabilities to
+defend against Return-Oriented Programming (ROP) and the Zicfilp extension
+provides CFI capabilities to defend against Call/Jump-Oriented Programming
+(COP/JOP) style control-flow subversion attacks. These attack methodologies use
+code sequences in authorized modules, with at least one instruction in the
+sequence being a control transfer instruction that depends on attacker-controlled
+data either in the return stack or in memory used to obtain the target address
+for a call or jump. Attackers stitch these sequences together by diverting the
+control flow instructions (e.g., `JALR`, `C.JR`, `C.JALR`), from their original
 target address to a new target via modification in the return stack or in the
-register or memory used by the instruction.
+memory used to obtain the jump/call target address.
 
 RV32/RV64 provide two types of control transfer instructions - unconditional
 jumps and conditional branches. Conditional branches encode an offset in the
@@ -43,247 +44,138 @@ address of the instruction following the jump (`pc+2`) to the link register `x1`
 and is a procedure call. The `C.JR` is a return from procedure if `rs1` is a
 conventional link register (i.e. `x1` or `x5`); else it is an indirect jump.
 
-The RISC-V control-flow integrity (CFI) extension (Zicfisslp) builds on these
-conventions and hints.
-
-The term "call" is used to refer to a `JAL` or `JALR` instruction with a link
+The term _call_ is used to refer to a `JAL` or `JALR` instruction with a link
 register as destination, i.e., `rd != x0`. Conventionally, the link register is
-`x1` or `x5`. A call using `JAL` or `C.JAL` is termed a direct call. A `C.JALR`
-expands to `JALR x1, 0(rs1)` and is a call. A call using `JALR` or `C.JALR` is
-termed an indirect call.
+`x1` or `x5`. A _call_ using `JAL` or `C.JAL` is termed a direct call. A
+`C.JALR` expands to `JALR x1, 0(rs1)` and is a _call_. A _call_ using `JALR` or
+`C.JALR` is termed an _indirect-call_.
 
-The term "return" is used to refer to a `JALR` instruction with `rs1 == x1` or
+The term _return_ is used to refer to a `JALR` instruction with `rs1 == x1` or
 `rs1 == x5` and `rd == x0`. A `C.JR` instruction expands to `JALR x0, 0(rs1)`
-and is a return if `rs1 == x1` or `rs1 == x5`.
+and is a _return_ if `rs1 == x1` or `rs1 == x5`.
 
-The term "indirect jump" is used to refer to a `JALR` instruction with `rd == x0`
+The term _indirect-jump_ is used to refer to a `JALR` instruction with `rd == x0`
 and where the `rs1` is not `x1` or `x5` (i.e., not a return). A `C.JR`
-instruction where `rs1` is not `x1` or `x5` (i.e., not a return) is an indirect
-jump.
+instruction where `rs1` is not `x1` or `x5` (i.e., not a return) is an
+_indirect-jump_.
 
-To enforce backward-edge control-flow integrity, the extension introduces a
-shadow stack. The shadow stack is designed to provide integrity to control
-transfers performed using return instructions (where the return may be from a
-procedure invoked using an indirect call or a direct call), and this is referred
-to as backward-edge protection. A program using backward-edge control-flow
-integrity has two stacks: a regular stack and a shadow stack. The shadow stack
-is used exclusively to store shadow copies of return addresses.
+The Zicfiss and Zicfilp extensions builds on these conventions and hints.
 
-The shadow stack is used to spill the link register if required by non-leaf
+To enforce backward-edge control-flow integrity, the Zicfiss extension
+introduces a shadow stack. The shadow stack is designed to provide integrity to
+control transfers performed using a _return_ (where the return may be
+from a procedure invoked using an indirect call or a direct call), and this is
+referred to as backward-edge protection. A program using backward-edge 
+control-flow integrity has two stacks: a regular stack and a shadow stack.
+The shadow stack is used to spill the link register, if required, by non-leaf
 functions. An additional register, shadow-stack-pointer (`ssp`), is introduced
-in the architecture to hold the address of the top of the current active shadow
-stack. The shadow stack is architecturally protected from inadvertent
-corruptions and modifications, as detailed later. The extension provides
-instructions to store and load the link register to/from the shadow stack and to
-check the integrity of the return address.
+in the architecture to hold the address of the top of the active shadow stack.
+The shadow stack is architecturally protected from inadvertent corruptions and
+modifications, as detailed later. The Zicfiss extension provides instructions to
+store and load the link register to/from the shadow stack and to check the
+integrity of the return address. The Zicfiss instructions are encoded
+using a subset of "May be op" instructions defined by the Zimop and Zcmop
+extensions. This subset of instructions revert to their Zimop/Zcmop defined
+behavior when the Zicfiss extension is not implemented or if the extension has
+not been activated at a privilege mode. A program that is built with Zicfiss
+instructions can thus continue to operate correctly, but without backward-edge
+control-flow integrity, on processors that do not support the Zicfiss extensiono
+or if the Zicfiss extension is not active. 
 
-Each function in a program that uses a shadow stack stores the link register to
-the regular stack and a shadow copy of the link register to the shadow stack
-when the function is entered (the prologue). When the function needs to return
-(the epilogue), the function loads the link register from the regular stack and
-the shadow copy of the link register from the shadow stack. The link register
-value from the regular stack and the shadow link register value from the shadow
-stack are compared. A mismatch of the two values is indicative of a subversion
-of the return address control variable and causes an illegal-instruction
-exception.
+To enforce forward edge control-flow integrity, Zicfilp extension introduces
+a landing pad (`lpad`) instruction that allows software to indicate valid
+targets for indirect calls and jumps in a program. Compilers emit a landing pad
+instruction as the first instruction of an address-taken functions, as well as at
+any indirect jump targets. A landing pad instruction is not required in functions
+that are only reached using a direct call or jump. The landing pad is designed to
+provide integrity to control transfers performed using indirect call and jumps,
+and this is referred to as forward-edge protection. When the forward-edge CFI is
+active, the hart tracks an expected landing pad (`ELP`) state that is updated by
+an _indirect_call_ or _indirect_jump_ to require a landing pad instruction at
+the target of the branch. If the instruction at the target is not a landing
+pad, then an illegal-instruction exception is raised. A landing pad may be
+optionally associated with a 20-bit label such that an indirect call or jump
+site can specify the expected label of the landing pad and thereby constrain
+the set of landing pads that may be reached from each indirect call or jump site
+in the program. With labeling enabled, the number of landing pads that can be
+reached from an indirect call or jump site can be defined using programming
+language-based policies. Labeling of the landing pads enables software to
+achieve greater precision in pairing up indirect call/jump sites sites with
+valid targets. The `lpad` instruction uses the code points defined as HINTs for
+the `AUIPC` opcode. When forward-edge CFI is not active at a privilege level or
+when the extension is not implemented, the landing pad instruction executes as a
+no-op. A program that is built with `lpad` instruction can thus continue to
+operate correctly, but without forward-edge control-flow integrity, on processors
+that do not support the Zicfilp extension or if the Zicfilp extension is not
+active.
 
-[NOTE]
-====
-Programs that use the shadow stack can operate in two modes: a shadow stack mode
-or a control stack mode. In shadow stack mode, programs store the return
-addresses on both the regular stack and the shadow stack in the function
-prologue, and then pop them them from both stacks and compare the values before
-returning from the function. In the control stack mode, programs only store the
-return addresses on the shadow stack and pop it from there to return from the
-function.
-
-Operating in shadow stack mode preserves the call stack layout and the ABI,
-while also allowing for the detection of corruption of the return address on
-the regular stack. Such programs are portable between implementations that
-support the Zicfisslp extension as well as those that do not. Most programs are
-expected to use this mode.
-
-Operating in control stack mode breaks the ABI, but has the benefit of avoiding
-additional instructions to store the return address to two stacks, and to pop
-and compare them before returning from a function. This mode also allows the
-program to have a smaller regular stack as the space to save the return address
-is not needed. However, such programs are not portable to implementations that
-do not support the Zicfisslp extension. Some just-in-time (JIT) compiled
-programs may dynamically switch between using only the regular stack or only the
-shadow stack to store return addresses, depending on the capabilities of the
-implementation.
-====
-
-To enforce forward edge control-flow integrity, Zicfisslp extension introduces
-a landing pad instruction that allows software to indicate valid targets for
-indirect calls and jumps in a program. Compilers emit a landing pad instruction
-as the first instruction of address-taken functions, as well as at any indirect
-jump targets.
-
-The landing pad is designed to provide integrity to control transfers
-performed using indirect call and jumps, and this is referred to as forward-edge
-protection.
-
-When the forward-edge CFI is active, the hart tracks an expected landing pad
-(`ELP`) state that is updated by an indirect call or jump to require a landing
-pad instruction at the target. If the instruction at the target is not a landing
-pad, then an illegal-instruction exception is raised.
-
-The landing pad may be labeled. With labeling enabled, the number of landing
-pads that can be reached from an indirect call or jump site can be defined using
-programming language-based policies. The architecture designates the register
-`x7` for use as the landing pad label register. The `x7` register is set up prior
-to initiating an indirect call or jump with the expected landing pad label. If
-the target of the indirect call or jump is not a landing pad or if the label of
-the landing pad does not match the label in `x7` then an illegal-instruction
-exception is raised.
-
-[NOTE]
-====
 In the simplest form, a program can be built with a single label value to
 implement a coarse-grained version of forward-edge control-flow integrity. By
 constraining gadgets to be preceded by a landing pad instruction that marks
 the start of indirect callable functions, the program can significantly reduce
-the available gadget space.
+the available gadget space. A second form of label generation may generate a
+signature, such as a MAC, using the prototype of the function. Programs that use
+this approach would further constrain the gadgets accessible from a call site to
+only indirect callable functions that match the prototype of the called
+functions. Another approach to label generation involves analyzing the
+control-flow-graph (CFG) of the program, which can lead to even more stringent
+constraints on the set of reachable gadgets. Such programs may further use
+multiple labels per function, which means that if a function is called from two
+or more call sites, the functions can be labeled as reachable from each of the
+call sites. For instance, consider two call sites A and B, where A calls
+functions X and Y, and B calls functions Y and Z. In a single label scheme,
+functions X, Y, and Z would need to be assigned the same label so that both call
+sites A and B can invoke the common function Y. This scheme would allow call
+site A to also call function Z and call site B to also call function X. However,
+if function Y was assigned two labels - one corresponding to call site A and the
+other to call site B, then Y can be invoked by both call sites, but X can only be
+invoked by call site A and Z can only be invoked by call site B. To support
+multiple labels, the compiler could generate a call-site-specific entry point
+for shared functions, with each entry point having its own landing pad
+instruction followed by a direct branch to the start of the function. This would
+allow the function to be labeled with multiple labels, each corresponding to a
+specific call site. A portion of the label space may be dedicated to labeled
+landing pads that are only valid targets of an indirect jump (and not an
+indirect call).
 
-A second form of label generation may generate a signature, such as a MAC, using
-the prototype of the function. Programs that use this approach would further
-constrain the gadgets accessible from a call site to only indirect callable
-functions that match the prototype of the called functions.
+The Zicfilp and Zicfiss extensions may be activated for use individually and
+independently for each privilege mode allowing.
 
-Another approach to label generation involves analyzing the control-flow-graph
-(CFG) of the program, which can lead to even more stringent constraints on the
-set of reachable gadgets. Such programs may further use the multi-label
-capability, which means that if a function is called from two or more call
-sites, the common functions can be labeled as reachable from each of the call
-sites.
-
-For instance, consider two call sites A and B, where A calls functions X
-and Y, and B calls functions Y and Z. In a single label scheme, functions X, Y,
-and Z would need to be assigned the same label so that both call sites A and B
-can invoke the common function Y. This scheme would allow call site A to also
-call function Z and call site B to also call function X.
-
-However, if function Y was assigned two labels - one corresponding to call site
-A and the other to call site B, then Y can be invoked by both call sites, but X
-can only be invoked by call site A and Z can only be invoked by call site B.
-
-To support multiple labels, the compiler could generate a call-site-specific
-entry point for shared functions, with each entry point having its own landing
-pad instruction followed by a direct branch to the start of the function. This
-would allow the function to be labeled with multiple labels, each corresponding
-to a specific call site.
-
-A portion of the label space may be dedicated to labeled landing pads that are
-only valid targets of an indirect jump (and not an indirect call).
-
-====
-
-Forward-edge and backward-edge CFI may be activated independently for software
-that executes in U-mode, S-mode, or M-mode. The processor keeps track of the CFI
-activation and CFI state for each mode in the `mstatus` CSR. A subset of the
-fields in the `mstatus` CSR are accessible using the `sstatus` CSR. VS-mode’s
-version of `sstatus` (`vsstatus`) tracks the CFI state for VS-mode and VU-mode.
-
-[NOTE]
-====
-The operating system may activate the use of Zicfisslp by U-mode applications,
-with or without the extension being used by the operating system itself. The set
-of U-mode programs installed in an OS may be a mix, where some programs are
-compiled with Zicfisslp capabilities and others that are not. The operating
-system can activate or deactivate the use of the extension in U-mode per
-application by context switching the Zicfisslp state.
-
-Hypervisors may activate the use of Zicfisslp in a virtual machine, with or
-without the extension being used by the hypervisor itself. Virtual machines that
-use the extension may coexist with virtual machines that do not, with the
-hypervisor context switching the Zicfisslp state of each virtual machine.
-
-To use Zicfisslp, the operating system and hypervisors have to be modified to
-use the capabilities, including the context switching of the extension state.
-
-Machine mode firmware may activate the use of the extension in M-mode independent
-of its use in lower privilege modes.
-====
-
-The Zicfisslp shadow stack instructions are encoded using a subset of "May be op"
-instructions defined by the Zimop and Zcmop extensions. This subset of
-instructions revert to their Zimop/Zcmop defined behavior when the Zicfisslp
-extension is not implemented or if the extension has not been activated at a
-privilege mode. A program that is built with Zicfisslp instructions can thus
-continue to operate correctly, but without control-flow integrity, on processors
-that do not support the extension or if the extension is not active. The
-Zicfisslp landing pad instruction uses the code points defined as HINTs for the
-`AUIPC` opcode. When forward-edge CFI is not active at a privilege level or when
-the extension is not implemented, the landing pad instruction executes as a
-no-op.
-
-[NOTE]
-====
 Compilers should flag each object file (for example, using flags in the elf
-attributes) to indicate if the object file has been compiled with the Zicfisslp
-instructions. The linker should flag (for example, using flags in the elf
-attributes) the binary/executable generated by linking objects as being compiled
-with the Zicfisslp only if all the object files that are linked have the same
-Zicfisslp attributes.
+attributes) to indicate if the object file has been compiled with the Zicfiss
+and/or the Zicfilp instructions. The linker should flag (for example, using
+flags in the elf attributes) the binary/executable generated by linking objects
+as being compiled with the Zicfiss and/or Zicfilp instructions only if all the
+object files that are linked have the same attributes.
 
-The dynamic loader should activate the use of Zicfisslp extension for a process
-only if all executables (the application and the dependent dynamically linked
-libraries) used by that process have the same Zicfisslp attributes. When the use
-of the extension is not enabled for a process then the Zicfisslp instructions in
-that application or in the dynamically linked libraries invoked by that
-process revert to their Zimop/Zcmop defined behavior. This allows the program
-to operate correctly but without control-flow integrity.
+The dynamic loader should activate the use of Zicfiss and/or Zicfilp extension
+for an application only if all executables (the application and the dependent
+dynamically linked libraries) used by that application use the corresponding
+extension.
 
-A process that has the Zicfisslp extension active may request the dynamic
-loader at runtime to load a new dynamic shared object (using dlopen() for
-example). If the requested object does not have the Zicfisslp attribute then
-the dynamic loader, based on its policy (e.g, established by the operating
-system or the administrator) configuration, either fail the request or
-deactivate the extension for the process. If the extension is disabled then the
-Zicfisslp instructions revert to their Zimop/Zcmop defined behavior and the
-program continues to operate correctly but without control-flow integrity.
+An application that has the Zicfiss and/or Zicfilp extension active may request
+the dynamic loader at runtime to load a new dynamic shared object (using
+dlopen() for example). If the requested object does not have the Zicfiss and/or
+Zicfilp attribute then the dynamic loader, based on its policy (e.g, established
+by the operating system or the administrator) configuration, either fail the
+request or deactivate the unsupported extension for the application.
 
-An OS modified to support the Zicfisslp extension typically includes system
-libraries (such as glibc) that are also compiled with the Zicfisslp extension.
-However, these system libraries may need to dynamically link to programs that
-are not compiled with the Zicfisslp extension. In such cases, when these
-programs are executed in user mode, the OS may deactivate the Zicfisslp
-extension for that process. When the Zicfisslp instructions in the system
-libraries are invoked by these programs in user mode, they revert to their
-Zimop/Zcmop defined behavior. The OS only needs to carry one version of the
-system libraries, which are usable by both applications that use the extension
-and those that do not.
+When the Zicfiss extension is not active for an application then the Zicfiss
+instructions issued by that application or by the dynamically linked libraries
+invoked by that process revert to their Zimop/Zcmop defined behavior. This
+allows the application to operate correctly but without backward-edge
+control-flow integrity.
 
-An OS distribution compiled with Zicfisslp extension may be installed on a
-machine that does not support the extension. In such cases, the Zicfisslp
-instructions revert to their Zimop/Zcmop defined behavior. This allows a single
-OS image distribution to support machines that support the Zicfisslp extension
-and those that do not. The OS continues to operate correctly but without
-control-flow integrity on machines that do not support the extension.
+When Zicfilp extension is not active for an application then the landing
+instructions issued by that application or by the dynamically linked libraries
+invoked by that process revert to being a no-op. This allows the application to
+operate correctly but without forward-edge control-flow integrity.
 
-If a program compiled with the Zicfisslp extension is installed on an operating
-system that does not support the Zicfisslp extension or on a machine that does
-not support it, the Zicfisslp instructions will revert to their Zimop/Zcmop
-defined behavior. This allows an application developer to distribute a single
-application image that can be used on machines and/or OS installations with
-support for the Zicfisslp extension and those that do not. The application
-continues to operate correctly but without control-flow integrity when the
-extension is not active.
+The Zicfiss extension is specified in <<backward>> and depends on the Zicsr, A,
+Zimop, and Zcmop extensions. 
 
-Two binaries (an application and a library for example) may be linked,
-statically or dynamically, even if only one of them has been compiled with
-shadow stack instructions. While the backward-edge CFI protections are not
-available when executing the part of the program not compiled with shadow stack
-instructions, the program may continue to operate correctly. On other hand
-the use of landing pads requires that all binaries used by a program must all be
-compiled with the landing pad instructions. Due to each binary needing to be
-compiled to include the landing pad instruction the use of the `AUIPC` HINT code
-points for landing pads does not lead to compatibility issue. Due to this only
-the shadow stack instructions are encoded using the Zimop/Zcmop defined code
-points. The use of the `AUIPC` HINT code points for landing pad enables compact
-encoding of the landing pad label label in the instruction.
+The Zicfilp extension is specified in <<forward>>  and depends on the Zicsr
+extension.
 
-====
-
-The Zicfisslp extension depends on the Zicsr, A, Zimop, and Zcmop extensions.
+The CSR state introduced by the Zicfiss and the Zicfilp extension is specified
+in <<CSRs>>.
