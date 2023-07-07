@@ -63,18 +63,18 @@ else
 
 [NOTE]
 ====
-Activating Zicfiss at U-mode must be done explicitly per process. Not activating
+Activating Zicfiss in U-mode must be done explicitly per process. Not activating
 Zicfiss at U-mode for a process when that application is not compiled with
 Zicfiss allows it to invoke shared libraries that may contain Zicfiss
 instructions. The Zicfiss instructions in the shared library revert to their
 Zimop/Zcmop-defined behavior in this case.
 
-When Zicfiss is active at S-mode is benign to use an operating system that has
-not been compiled with Zicfiss instructions. Such an operating system that does
+When Zicfiss is active in S-mode it is benign to use an operating system that is
+not compiled with Zicfiss instructions. Such an operating system that does
 not use backward-edge CFI for S-mode execution may still activate Zicfiss for
 U-mode applications.
 
-When Zicfiss is implemented, the extension is always active at M-mode. However,
+When Zicfiss is implemented, the extension is always active in M-mode. However,
 it is benign to use M-mode firmware that has not been compiled with Zicfiss
 instructions. Such M-mode firmware that does not use backward-edge CFI for
 M-mode execution may still enable the use of Zicfiss by lower privilege modes.

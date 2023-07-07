@@ -16,7 +16,7 @@ indirect call or an indirect jump. The `ELP` state can be one of:
 * 1 - `LP_EXPECTED`
 
 The Zicfilp extension, when active, determines if an indirect call or an
-indirect jump must land on landing pad, as specified in <<IND_CALL_JMP>>. If
+indirect jump must land on a landing pad, as specified in <<IND_CALL_JMP>>. If
 `is_lp_expected` is 1, then the hart updates the `ELP` to `LP_EXPECTED`.
 
 [[IND_CALL_JMP]]
@@ -95,10 +95,11 @@ instructions `A` and `B` accidentally forming an unintended landing pad in the
 program. For example, consider a 32-bit instruction where the bytes 3 and 2 have
 a pattern of `?017h` (for example, the immediate fields of a `lui`, `auipc`, or
 a `jal` instruction), followed by a 16-bit or a 32-bit instruction. When
-patterns that can accidentaly form a valid landing pad are detected, the assembler
-or linker can force instruction `A` to be aligned to a 4-byte boundary to force
-the unintended `lpad` pattern to become misaligned and thus not a valid landing
-pad.
+patterns that can accidentally form a valid landing pad are detected, the
+assembler or linker can force instruction `A` to be aligned to a 4-byte
+boundary to force the unintended `lpad` pattern to become misaligned and thus
+not a valid landing pad or may use an alternate register allocation to prevent
+the accidental landing pad.
 ====
 
 [[FCIFIACT]]

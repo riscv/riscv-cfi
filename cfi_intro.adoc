@@ -59,7 +59,7 @@ and where the `rs1` is not `x1` or `x5` (i.e., not a return). A `C.JR`
 instruction where `rs1` is not `x1` or `x5` (i.e., not a return) is an
 _indirect-jump_.
 
-The Zicfiss and Zicfilp extensions builds on these conventions and hints.
+The Zicfiss and Zicfilp extensions build on these conventions and hints.
 
 === Backward-edge control-flow integrity
 
@@ -91,7 +91,7 @@ their Zimop/Zcmop defined behavior when the Zicfiss extension is not implemented
 or if the extension has not been activated at a privilege mode. A program that
 is built with Zicfiss instructions can thus continue to operate correctly, but
 without backward-edge control-flow integrity, on processors that do not support
-the Zicfiss extensiono or if the Zicfiss extension is not active.
+the Zicfiss extension or if the Zicfiss extension is not active.
 
 The Zicfiss extensions may be activated for use individually and independently
 for each privilege mode.
@@ -147,7 +147,7 @@ A landing pad may be optionally associated with a 20-bit label. With labeling
 enabled, the number of landing pads that can be reached from an indirect call
 or jump site can be defined using programming language-based policies. Labeling
 of the landing pads enables software to achieve greater precision in pairing up
-indirect call/jump sites sites with valid targets. When labeling of landing pads
+indirect call/jump sites with valid targets. When labeling of landing pads
 is used, indirect call or indirect jump site can specify the expected label of
 the landing pad and thereby constrain the set of landing pads that may be
 reached from each indirect call or indirect jump site in the program.
@@ -165,8 +165,8 @@ control-flow-graph (CFG) of the program, which can lead to even more stringent
 constraints on the set of reachable gadgets. Such programs may further use
 multiple labels per function, which means that if a function is called from two
 or more call sites, the functions can be labeled as reachable from each of the
-call sites. For instance, consider two call sites A and B, where A calls
-functions X and Y, and B calls functions Y and Z. In a single label scheme,
+call sites. For instance, consider two call sites A and B, where A calls the
+functions X and Y, and B calls the functions Y and Z. In a single label scheme,
 functions X, Y, and Z would need to be assigned the same label so that both call
 sites A and B can invoke the common function Y. This scheme would allow call
 site A to also call function Z and call site B to also call function X. However,
@@ -191,7 +191,7 @@ support the Zicfilp extension or if the Zicfilp extension is not active.
 As discussed earlier for the Zicfiss extension, compilers, linkers, and dynamic
 loaders should provided an attribute flag to indicate if the program has been
 compiled with the Zicfilp extension and use that to determine if the Zicfilp
-extesion should be activated.
+extension should be activated.
 
 When Zicfilp extension is not active or not implemented, that hart does not
 required landing pad instructions at targets of indirect calls/jumps and the
