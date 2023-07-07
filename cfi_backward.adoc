@@ -1,5 +1,5 @@
 [[backward]]
-== Backward-edge control-flow integrity (Zicfiss)
+== Shadow Stack (Zicfiss)
 
 To enforce backward-edge control-flow integrity, the Zicfiss extension
 introduces a shadow stack. A shadow stack is a second stack used to store a
@@ -91,9 +91,10 @@ extensions, the programs continues to function correctly but without
 backward-edge CFI protection as the Zicfiss instructions will revert to their
 Zimop/Zcmop-defined behavior.
 
-On processors that do not support Zimop/Zcmop extensions, the corresponding
-backward-edge CFI instructions cause an illegal-instruction exception. Execution
-of programs that use these instructions on such machines is not supported.
+On processors that do not support Zimop/Zcmop extensions, all Zimop/Zcmop code
+points including those used for Zicfiss instructions cause an
+illegal-instruction exception. Execution of programs that use these
+instructions on such machines is not supported.
 ====
 
 [[SS_PUSH_POP]]
@@ -213,7 +214,7 @@ unsafe code sequences.
 [NOTE]
 ====
 Programs that use the shadow stack can operate in two modes: a shadow stack mode
-or a control stack mode. 
+or a control stack mode.
 
 In shadow stack mode, programs store the return addresses on both the regular
 stack and the shadow stack in the function prologue, and then pop them them from

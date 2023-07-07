@@ -1,5 +1,5 @@
 [[forward]]
-== Forward-edge control-flow integrity
+== Landing pad (Zicfilp)
 
 To enforce forward-edge control-flow integrity, the Zicfilp extension introduces
 a landing pad (`lpad`) instruction. The `lpad` instruction that must be placed
@@ -23,10 +23,10 @@ indirect jump must land on landing pad, as specified in <<IND_CALL_JMP>>. If
 .Landing pad expected determination
 [listing]
 ----
-  is_indirect_call_jump = ( (JALR || C.JR || C.JALR) && 
-                            (rs1 != x1) && (rs1 != x5) ) ? 1 : 0;
-  is_sw_guarded_jump = (JALR || C.JR) && (rd == x0 && rs1 == x6) ? 1 : 0;
-  is_lp_expected = is_indirect_call_jump & ~is_sw_guarded_jump;
+    is_indirect_call_jump = ( (JALR || C.JR || C.JALR) &&
+                              (rs1 != x1) && (rs1 != x5) ) ? 1 : 0;
+    is_sw_guarded_jump = (JALR || C.JR) && (rd == x0 && rs1 == x6) ? 1 : 0;
+    is_lp_expected = is_indirect_call_jump & ~is_sw_guarded_jump;
 ----
 
 An indirect branch using `JALR` or `C.JR` with `rd` as `x0` and `rs1` as `x6`
@@ -41,7 +41,7 @@ target.
 
 When the register source and register destination are both link registers then
 its a semantically-direct-call. For example, the `call offset` pseudoinstruction
-may expand to a two instruction sequence composed of a `lui ra, imm20` or a 
+may expand to a two instruction sequence composed of a `lui ra, imm20` or a
 `auipc ra, imm20` instruction followed by a `jalr ra, imm12(ra)` instruction
 where `ra` is the link register (either `x1` or `x5`). Since the address of the
 procedure was not explicitly taken and the computed address is not obtained from
@@ -72,7 +72,7 @@ instruction is encoded with a 20-bit immediate value called the landing-pad-labe
 (`LPL`) that is matched to the expected landing pad label. When `LPL` is encoded
 as zero, the `lpad` instruction does not perform the label check and in programs
 built with this single label mode of operation the indirect call/jump sites do
-not need to establish an expected landing pad label value in `x7`. 
+not need to establish an expected landing pad label value in `x7`.
 
 When `ELP` is set to `LP_EXPECTED`, if the next instruction in the instruction
 stream is not 4-byte aligned, or is not `lpad`, or if the landing pad label
@@ -118,6 +118,15 @@ else
     xFCFIE = (V == 0) ? mstatus.UFCFIE : vsstatus.UFCFIE
 ----
 
+[NOTE]
+====
+The Zicfilp must be explicitly activated for use at each privilege mode.
+
+Programs compiled with the `lpad` instruction continue to function correctly,
+but without forward-edge CFI protection, when the Zicfilp extension is not
+implemented or is not active.
+====
+
 [[LP_INST]]
 === Landing pad instruction
 
@@ -133,7 +142,7 @@ illegal-instruction exception if any of the following conditions are true:
 If the instruction causes an illegal-instruction exception, the `ELP` does not
 change. The behavior of the trap caused by this illegal-instruction exception is
 specified in section <<FORWARD_TRAPS>>. If an illegal-instruction exception is
-not caused then the `ELP` is updated to `NO_LP_EXPECTED`. 
+not caused then the `ELP` is updated to `NO_LP_EXPECTED`.
 
 [wavedrom, ,svg]
 ....
