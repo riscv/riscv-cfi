@@ -1,38 +1,84 @@
 [[forward]]
-== Forward-edge control-flow integrity
+== Landing pad (Zicfilp)
 
-The forward-edge CFI introduces a landing pad instruction (`lpad`) that must be
-placed at the program locations that are valid targets of indirect jumps or
-calls. The landing pad - `lpad` - instruction (See <<LP_INST>>) is encoded using
-the `AUIPC` major opcode with `rd=x0`.
+To enforce forward-edge control-flow integrity, the Zicfilp extension introduces
+a landing pad (`lpad`) instruction. The `lpad` instruction that must be placed
+at the program locations that are valid targets of indirect jumps or calls. The
+`lpad` instruction (See <<LP_INST>>) is encoded using the `AUIPC` major opcode
+with `rd=x0`.
 
 To enforce that the target of an indirect call or indirect jump must be a valid
 landing pad instruction, the hart maintains an expected landing pad (`ELP`) state
 to determine if a landing pad instruction is required at the target of an
-indirect call or jump. The `ELP` state can be one of:
+indirect call or an indirect jump. The `ELP` state can be one of:
 
 * 0 - `NO_LP_EXPECTED`
 * 1 - `LP_EXPECTED`
 
-The Zicfisslp extension determines if an indirect call or an indirect jump must
-land on landing pad, as specified in <<IND_CALL_JMP>>. If `is_lp_expected` is 1,
-an indirect call or jump updates the `ELP` to `LP_EXPECTED`.
+The Zicfilp extension, when active, determines if an indirect call or an
+indirect jump must land on a landing pad, as specified in <<IND_CALL_JMP>>. If
+`is_lp_expected` is 1, then the hart updates the `ELP` to `LP_EXPECTED`.
 
 [[IND_CALL_JMP]]
 .Landing pad expected determination
-[source, ruby]
+[listing]
 ----
     is_indirect_call_jump = ( (JALR || C.JR || C.JALR) &&
-                              ((rs1 != x1 && rs1 != x5) || (rd != x0)) ) ? 1 : 0;
-    is_sw_guarded_jump = ( JALR && rd == x7 && rs1 == x7 ) ? 1 : 0;
+                              (rs1 != x1) && (rs1 != x5) ) ? 1 : 0;
+    is_sw_guarded_jump = (JALR || C.JR) && (rd == x0 && rs1 == x6) ? 1 : 0;
     is_lp_expected = is_indirect_call_jump & ~is_sw_guarded_jump;
 ----
 
-When `ELP` is set to `LP_EXPECTED` and the next instruction in the instruction
+An indirect branch using `JALR` or `C.JR` with `rd` as `x0` and `rs1` as `x6`
+is termed a software guarded branch. Such branches do not need to land on a
+`lpad` instruction and thus do not set `ELP` to `LP_EXPECTED`.
+
+[NOTE]
+====
+When the register source is a link register and the register destination is `x0`
+then its a return from a procedure and does not require a landing pad at the
+target.
+
+When the register source and register destination are both link registers then
+its a semantically-direct-call. For example, the `call offset` pseudoinstruction
+may expand to a two instruction sequence composed of a `lui ra, imm20` or a
+`auipc ra, imm20` instruction followed by a `jalr ra, imm12(ra)` instruction
+where `ra` is the link register (either `x1` or `x5`). Since the address of the
+procedure was not explicitly taken and the computed address is not obtained from
+mutable memory, such semantically-direct calls do not require a landing pad to
+be placed at the target. Compilers and JITers must only use the
+semantically-direct calls only if when the `rs1` was computed as a PC-relative
+or an absolute offset to the symbol.
+
+The `tail offset` pseudoinstruction used to tail call a far-away procedure may
+also expand to a two instruction sequence composed of a `lui x6, imm20` or
+`auipc x6, imm20` followed by a `jalr x0, x6` cite:[ASM-MANUAL]. Since the
+address of the procedure was not explicitly taken and the computed address is
+not obtained from mutable memory, such semantically-direct tail-calls do not
+require a landing pad to be placed at the target.
+
+Software guarded branches may also be used by compilers to generate code for
+constructs like switch-cases. When using the software guarded branches, the
+compiler is required to ensure it has full control on the possible jump
+targets (e.g., by obtaining the targets from a read-only table in memory and
+performing bounds checking on the index into the table, etc.).
+====
+
+The landing pad may be labeled. Zicfilp extension designates the register `x7`
+for use as the landing pad label register. To support labeled landing pads, the
+indirect call/jump sites establish an expected landing pad label (e.g., using
+the `lui` instruction) in the bits 31:12 of the `x7` register. The `lpad`
+instruction is encoded with a 20-bit immediate value called the landing-pad-label
+(`LPL`) that is matched to the expected landing pad label. When `LPL` is encoded
+as zero, the `lpad` instruction does not perform the label check and in programs
+built with this single label mode of operation the indirect call/jump sites do
+not need to establish an expected landing pad label value in `x7`.
+
+When `ELP` is set to `LP_EXPECTED`, if the next instruction in the instruction
 stream is not 4-byte aligned, or is not `lpad`, or if the landing pad label
-encoded in `lpad` does not match the expected landing pad label in bits 31:12 of
-the `x7` register, then an illegal-instruction exception is raised else the
-`ELP` is updated to `NO_LP_EXPECTED`.
+encoded in `lpad` is not zero and does not match the expected landing pad label
+in bits 31:12 of the `x7` register, then an illegal-instruction exception is
+raised else the `ELP` is updated to `NO_LP_EXPECTED`.
 
 [NOTE]
 ====
@@ -43,125 +89,61 @@ Constraining speculation using this technique, greatly reduces the gadget space
 and increases the difficulty of using techniques such as branch-target-injection,
 also known as Spectre variant 2, which use speculative execution to leak data
 through side channels.
-====
 
-When the indirect branch using `JALR` encodes both `rd` and `rs1` as `x7`, the
-branch is termed a software guarded branch. Such branches do not need to land on
-a `lpad` and thus do not set `ELP` to `LP_EXPECTED`. Such branches must be used
-by a program only when the compiler or the program has emitted code to
-explicitly verify that the target in `x7` is a valid target for that branch.
-
-[NOTE]
-====
-Software guarded branches are expected to be used by compilers for generating
-code for constructs like switch-cases. When using the software guarded branches,
-the compiler is required to ensure it has full control on the possible jump
-targets (e.g., by obtaining the targets from a read-only table in memory and
-performing bounds checking on the index into the table, etc.).
-
-While software guarded branches may be secured using such compiler generated
-checks, in some cases they may be susceptible. For example, where software can
-be interrupted, the `x7` register may be spilled to mutable memory by the
-interrupt or signal handler. The memory location where the register is spilled
-may be susceptible to modifications. Therefore, software should opt to use the
-software guarded branches only where such threats are not applicable or are
-mitigated.
-
-Using `x7` for both holding target of software-guarded jumps and to hold the
-expected landing pad label is benign since their use is mutually exclusive.
-====
-
-By default a landing pad allows an indirect call/jump to land on any `lpad` in
-the program, which significantly reduces the number of valid targets for an
-indirect call/jump. Labeling of the landing pads enables software to achieve
-greater precision in pairing up indirect call/jump sites sites with valid
-targets. To support labeled landing pads, the indirect call/jump sites establish
-an expected landing pad label in the bits 31:12 of the `x7` register. The
-`lpad` instruction is encoded with a 20-bit immediate value called the
-landing-pad-label (`LPL`). If `LPL` is not 0, then `lpad` compares the `LPL` to
-the bits 31:12 of the `x7` register and a mismatch causes an illegal-instruction
-exception. When `LPL` is 0, `lpad` does not perform a label check. This enables
-the use of a single label mode of operation. In this mode of operation, the
-indirect call/jump sites do not need to set up expected label in `x7` register.
-
-[NOTE]
-====
-The `lui` instruction may be used to store the expected label value in bits 31:12
-of the `x7` register at the indirect call/jump site. The label held in bits 31:12
-of `x7` is then checked by the `lpad` instruction. The following example
-instruction sequence sets up the expected landing pad label as 0xAAB33 in `x7`
-register prior to the indirect call to function `bar`. In this example, `bar`
-has a landing pad with the label 0xAAB33.
-
-[source, ruby]
-foo:
-    :
-    # x10 is expected to have address of function bar()
-    lui x7, $0xAAB33    # setup up the expected landing pad label
-    jalr %ra, %x10
-    :
-bar:
-    lpad $0xAAB33      # Match LPL to x7[31:12]
-    :                  # continue if landing pad checks succeed
+The `lpad` requires a 4-byte alignment to address the concatenation of two
+instructions `A` and `B` accidentally forming an unintended landing pad in the
+program. For example, consider a 32-bit instruction where the bytes 3 and 2 have
+a pattern of `?017h` (for example, the immediate fields of a `lui`, `auipc`, or
+a `jal` instruction), followed by a 16-bit or a 32-bit instruction. When
+patterns that can accidentally form a valid landing pad are detected, the
+assembler or linker can force instruction `A` to be aligned to a 4-byte
+boundary to force the unintended `lpad` pattern to become misaligned and thus
+not a valid landing pad or may use an alternate register allocation to prevent
+the accidental landing pad.
 ====
 
 [[FCIFIACT]]
-=== Forward-edge CFI enables
+=== Forward-edge-CFI-active state
 
-When privilege mode is M, the forward-edge CFI is active when `MFCFIE` is 1 in
-`mseccfg` register.
-
-When `menvcfg.CFIE` is 0, Zicfisslp is not enabled for use by privilege modes
-less than M, and forward-edge CFI is not active at privilege levels less than M.
-
-When `V=0` and `menvcfg.CFIE` is 1, then forward-edge CFI is active in S-mode if
-`menvcfg.SFCFIE` is 1 and is active in U-mode if `mstatus.UFCFIE` is 1.
-
-When `henvcfg.CFIE` is 0, Zicfisslp is not enabled for use when `V=1`.
-
-When `V=1` and both `menvcfg.CFIE` and `henvcfg.CFIE` are 1, then forward-edge CFI
-is active at VS-mode if `henvcfg.SFCFIE` is 1 and is active at VU-mode if
-`vsstatus.UFCFIE` is 1.
-
-The term `xFCFIE` is used to determine if forward-edge CFI is active at
-privilege mode `x` and is defined as follows:
+The term `xFCFIE` is used to determine if forward-edge CFI provided by the
+Zicfilp extension is active at privilege mode `x` and is defined as follows:
 
 .`xFCFIE` determination
-[source, ruby]
+[listing]
 ----
 if ( privilege == M-mode )
     xFCFIE = mseccfg.MFCFIE
-else if ( menvcfg.CFIE == 1 && V == 0 && privilege == S-mode )
-    xFCFIE = menvcfg.SFCFIE
-else if ( menvcfg.CFIE == 1 && V == 0 && privilege == U-mode )
-    xFCFIE = mstatus.UFCFIE
-else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 && V == 1 && privilege == S-mode )
-    xFCFIE = henvcfg.SFCFIE
-else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 && V == 1 && privilege == U-mode )
-    xFCFIE = vsstatus.UFCFIE
+else if ( privilege == S-mode )
+    xFCFIE = (V == 0) ? menvcfg.SFCFIE : henvcfg.SFCFIE
 else
-    xFCFIE = 0
+    xFCFIE = (V == 0) ? mstatus.UFCFIE : vsstatus.UFCFIE
 ----
 
-When forward-edge CFI is not active (`xFCFIE = 0`):
+[NOTE]
+====
+The Zicfilp must be explicitly activated for use at each privilege mode.
 
-* The hart does not update the expected landing pad (`ELP`) state on an
-  indirect call or jump, and does not require the instruction at the target of
-  an indirect call or jump to be `lpad`.
-* The `lpad` instruction executes as a no-op.
-
+Programs compiled with the `lpad` instruction continue to function correctly,
+but without forward-edge CFI protection, when the Zicfilp extension is not
+implemented or is not active.
+====
 
 [[LP_INST]]
 === Landing pad instruction
 
-When forward-edge CFI is active, `lpad` is the only valid instruction at target
-of a indirect jumps and indirect calls. When forward-edge CFI is active, the
-instruction causes an illegal-instruction exception if it is not at a 4-byte
-aligned `pc`. The `lpad` encodes the landing pad label (`LPL`). If `LPL` is not
-0, `lpad` causes an illegal-instruction exception if the `LPL` does not match
-bits 31:12 of `x7` register. When the instruction causes an illegal-instruction
-exception, the `ELP` does not change. The behavior of the trap caused by this
-illegal-instruction exception is specified in section <<FORWARD_TRAPS>>.
+When Zicfilp is active, `lpad` is the only instruction allowed to execute when
+the `ELP` state is `LP_EXPECTED`. If Zicfilp is not active then the instruction
+is a no-op. If Zicfilp is active, the `lpad` instruction causes an
+illegal-instruction exception if any of the following conditions are true:
+
+* The `pc` is not 4-byte aligned.
+* The `ELP` is `LP_EXPECTED` and the `LPL` is not zero and the `LPL` does not
+  match the expected landing pad label in bits 31:12 of the `x7` register.
+
+If the instruction causes an illegal-instruction exception, the `ELP` does not
+change. The behavior of the trap caused by this illegal-instruction exception is
+specified in section <<FORWARD_TRAPS>>. If an illegal-instruction exception is
+not caused then the `ELP` is updated to `NO_LP_EXPECTED`.
 
 [wavedrom, ,svg]
 ....
@@ -175,14 +157,14 @@ illegal-instruction exception is specified in section <<FORWARD_TRAPS>>.
 The operation of the `lpad` instruction is as follows:
 
 .`lpad` operation
-[source, ruby]
+[listing]
 ----
-If xFCFIE != 0
+if (xFCFIE != 0)
     // If PC not 4-byte aligned then illegal-instruction
     if pc[1:0] != 0
         Cause illegal-instruction exception
     // If landing pad label not matched -> illegal-instruction
-    else if (inst.LPL != x7[31:12] && inst.LPL != 0)
+    else if (inst.LPL != x7[31:12] && inst.LPL != 0 && ELP == LP_EXPECTED)
         Cause illegal-instruction exception
     else
         ELP = NO_LP_EXPECTED
@@ -190,24 +172,6 @@ else
     no-op
 endif
 ----
-
-Whereas `lpad` is the only instruction that can execute when `ELP` is
-`LP_EXPECTED`, `lpad` can also execute when `ELP` is `NO_LP_EXPECTED`.
-
-[NOTE]
-====
-Concatenation of two instructions `A` and `B` may accidentally form a landing
-pad in the program. For example, consider a 32-bit instruction where the bytes
-3 and 2 have a pattern of `?017h` (for example, the immediate fields of a `lui`,
-`auipc`, or a `jal` instruction), followed by a 16-bit or a 32-bit instruction.
-
-The `lpad` requires a 4-byte alignment. When patterns that can accidentaly form
-a valid landing pad are detected, the assembler/linker can force instruction `A`
-to be aligned to a 4-byte boundary to force the unintended `lpad` pattern to
-become misaligned and thus not a valid landing pad.
-
-When Zisslpcfi extension is not implemented, `AUIPC` with `rd=x0` is a no-op.
-====
 
 [[FORWARD_TRAPS]]
 === Preserving expected landing pad state on traps
@@ -219,10 +183,11 @@ of indirect call/jump was decoded, due to:
 * Asynchronous interrupts.
 * Synchronous exceptions with priority lower than that of an illegal-instruction
   exception (See Table 3.7 of Privileged Specification cite:[PRIV]).
-* By the illegal-instruction exception due to the instruction at the target not
-  being an `lpad` instruction, or the `lpad` instruction not being 4-byte
-  aligned, or due to the `LPL` encoded in the `lpad` not matching the bits
-  31:12 of `x7` register.
+
+The illegal-instruction exception due to the instruction not being an `lpad`
+instruction when `ELP` is `LP_EXPECTED` or an illegal-instruction exception
+caused by the `lpad` instruction itself (See <<LP_INST>>) leads to a trap being
+delivered to the same or to a higher privilege mode.
 
 In such cases, the `ELP` prior to the trap, the previous `ELP`, must be
 preserved by the trap delivery such that it can be restored on a return from the

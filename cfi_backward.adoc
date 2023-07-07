@@ -1,18 +1,27 @@
 [[backward]]
-== Backward-edge control-flow integrity
+== Shadow Stack (Zicfiss)
 
-A shadow stack is a second stack used to store the link register if it needs to
-be spilled.
+To enforce backward-edge control-flow integrity, the Zicfiss extension
+introduces a shadow stack. A shadow stack is a second stack used to store a
+shadow copy of the return address in the link register if it needs to be spilled.
 
 The shadow stack, similar to the regular stack, grows downwards, i.e. from higher
 addresses to lower addresses. Each entry on the shadow stack is `XLEN` wide and
 holds the link register value. The `ssp` points to the top of the shadow stack,
 i.e. address of the last element stored on the shadow stack.
 
-=== Backward-edge CFI instructions
+When backward-edge CFI is active, each function that needs to spill the link
+register (e.g., non-leaf functions) stores the link register value to the regular
+stack and a shadow copy of the link register value to the shadow stack when the
+function is entered (the prologue). When such a function need to return (the
+epilogue), the function loads the link register from the regular stack and
+the shadow copy of the link register from the shadow stack. The link register
+value from the regular stack and the shadow link register value from the shadow
+stack are compared. A mismatch of the two values is indicative of a subversion
+of the return address control variable and causes an illegal-instruction
+exception.
 
-The backward-edge CFI extension introduces instructions for following shadow
-stack operations:
+The Zicfiss extension introduces the following instructions:
 
 * Push to and pop from the shadow stack (See <<SS_PUSH_POP>>)
 ** `sspush x1`, `c.sspush x1`, and `sspush x5`
@@ -33,91 +42,59 @@ extension.
 The 16-bit instructions are encoded using the `C.LUI` major opcode and using
 the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
 
-When a Zimop encoding is not used by the Zicfisslp extension then the
+When a Zimop encoding is not used by the Zicfiss extension then the
 instruction follows its Zimop defined behavior.
 
-=== Backward-edge CFI enables
+=== Backward-edge-CFI-active state
 
-When `menvcfg.CFIE` is 0, then Zicfisslp is not enabled for use by privilege
-modes less than M.
-
-When `V=0` and `menvcfg.CFIE` is 1, then backward-edge CFI is active in S-mode.
-When `V=0` and `menvcfg.CFIE` is 1, then backward-edge CFI is active in U-mode if
-`mstatus.UBCFIE` is 1.
-
-When `henvcfg.CFIE` is 0, then Zicfisslp is not enabled for use when `V=1`.
-
-When both `menvcfg.CFIE` and `henvcfg.CFIE` are set to 1 and `V=1`, backward-edge
-CFI is active in VS-mode. Additionally, in VU-mode, backward-edge CFI is
-active when `V=1`, `menvcfg.CFIE` and `henvcfg.CFIE` are both set to 1, and
-`vsstatus.UBCFIE` is 1.
-
-The term `xBCFIE` is used to determine if backward-edge CFI is active at a
-privilege mode `x` and is defined as follows:
+The term `xBCFIE` is used to determine if backward-edge CFI provided by the
+Zicfiss extension is active at a privilege mode `x` and is defined as follows:
 
 .`xBCFIE` determination
-[source, ruby]
+[listing]
 ----
 if ( privilege == M-mode )
     xBCFIE = 1
-else if ( menvcfg.CFIE == 1 && V == 0 && privilege == S-mode )
-    xBCFIE = 1
-else if ( menvcfg.CFIE == 1 && V == 0 && privilege == U-mode )
-    xBCFIE = mstatus.UBCFIE
-else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 && V == 1 && privilege == S-mode )
-    xBCFIE = 1
-else if ( menvcfg.CFIE == 1 && henvcfg.CFIE == 1 && V == 1 && privilege == U-mode )
-    xBCFIE = vsstatus.UBCFIE
+else if ( privilege == S-mode )
+    xBCFIE = (V == 0) ? menvcfg.SBCFIE : henvcfg.SBCFIE
 else
-    xBCFIE = 0
+    xBCFIE = (V == 0) ? sstatus.UBCFIE : vsstatus.UBCFIE
 ----
 
-When backward-edge CFI is not active (`xBCFIE = 0`):
-
-* The 32-bit instructions defined for backward-edge CFI revert to their Zimop
-  defined behavior.
-* The 16-bit instructions defined for backward-edge CFI revert to their Zcmop
-  defined behavior.
-
 [NOTE]
 ====
-Activating backward-edge CFI at U-mode must be done explicitly per process.
-Not activating backward-edge CFI at U-mode for a process when that application
-is not compiled with backward-edge CFI allows it to invoke shared libraries
-that may contain backward-edge CFI instructions. The backward-edge CFI
-instructions in the shared library revert to their Zimop/Zcmop-defined behavior
-in this case.
+Activating Zicfiss in U-mode must be done explicitly per process. Not activating
+Zicfiss at U-mode for a process when that application is not compiled with
+Zicfiss allows it to invoke shared libraries that may contain Zicfiss
+instructions. The Zicfiss instructions in the shared library revert to their
+Zimop/Zcmop-defined behavior in this case.
 
-When Zicfisslp extension is enabled for use by S-mode, the backward-edge CFI is
-unconditionally active at S-mode. However, it is benign to use an operating
-system that has not been compiled with backward-edge CFI instructions. Such an
-operating system that does not use backward-edge CFI for S-mode execution may
-still activate the backward-edge CFI for U-mode applications.
+When Zicfiss is active in S-mode it is benign to use an operating system that is
+not compiled with Zicfiss instructions. Such an operating system that does
+not use backward-edge CFI for S-mode execution may still activate Zicfiss for
+U-mode applications.
 
-When Zicfisslp is implemented, the backward-edge CFI is always active at M-mode.
-However, it is benign to use M-mode firmware that has not been compiled with
-backward-edge CFI instructions. Such M-mode firmware that does not use
-backward-edge CFI for M-mode execution may still enable the use of backward-edge
-CFI by lower privilege modes.
-====
+When Zicfiss is implemented, the extension is always active in M-mode. However,
+it is benign to use M-mode firmware that has not been compiled with Zicfiss
+instructions. Such M-mode firmware that does not use backward-edge CFI for
+M-mode execution may still enable the use of Zicfiss by lower privilege modes.
 
-[NOTE]
-====
-When programs that use backward-edge CFI instructions are installed on a
-processor that supports the Zicfisslp extension but the extension is not active
-at the privilege mode where the program executes, the program continues to
-function correctly but without backward-edge CFI protection. The backward-edge
-CFI instructions will revert to their Zimop/Zcmop-defined behavior in this case.
+When programs that use Zicfiss instructions are installed on a processor that
+supports the Zicfiss extension but the extension is not active at the privilege
+mode where the program executes, the program continues to function correctly but
+without backward-edge CFI protection as the Zicfiss instructions will revert to
+their Zimop/Zcmop-defined behavior.
 
-When programs that use backward-edge CFI instructions are installed on a
-processor that does not support the Zicfisslp extension but supports the
-Zimop and Zcmop extensions, the programs continues to function correctly but
-without backward-edge CFI protection. The backward-edge CFI instructions will
-revert to their Zimop/Zcmop-defined behavior.
+When programs that use Zicfiss instructions are installed on a processor that
+does not support the Zicfiss extension but supports the Zimop and Zcmop
+extensions, the programs continues to function correctly but without
+backward-edge CFI protection as the Zicfiss instructions will revert to their
+Zimop/Zcmop-defined behavior.
 
-On processors that do not support Zimop/Zcmop extensions, the corresponding
-backward-edge CFI instructions cause an illegal-instruction exception. Execution
-of programs that use these instructions on such machines is not supported.
+On processors that do not support Zimop/Zcmop extensions, all Zimop/Zcmop code
+points including those used for Zicfiss instructions cause an
+illegal-instruction exception. Execution of programs that use these
+instructions on such machines is not supported.
 ====
 
 [[SS_PUSH_POP]]
@@ -179,7 +156,7 @@ Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
 Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
 Only non-zero encodings of `nzuimm` are defined for `sspinc`.
 
-The extension includes 16-bit versions of the `sspush x1` and `sspopchk x5`
+Zicfiss provides 16-bit versions of the `sspush x1` and `sspopchk x5`
 instructions using the Zcmop encodings. The `c.sspush x1` and the
 `c.sspopchk x5` instructions are encoded using the `C.LUI` major opcode and
 using the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
@@ -236,22 +213,35 @@ unsafe code sequences.
 
 [NOTE]
 ====
-Programs may operate in shadow stack mode or in control stack mode.
+Programs that use the shadow stack can operate in two modes: a shadow stack mode
+or a control stack mode.
 
-When operating in shadow stack mode, the program uses the shadow stack to store
-a shadow copy of the link register. Such programs push the link register on
-the regular stack as well as the shadow stack in the prologue of a non-leaf
-function. In the epilogue, the link register value from the regular stack is
-compared to the shadow copy on the shadow stack. Programs operating in shadow
-stack mode are portable to implementations that do not support the Zicfisslp
-extension. On implementations where the extension is not supported, the
-backward-edge CFI instructions revert to their Zimop/Zcmop defined behavior but
-the program continues to function correctly as the link register is also pushed
-and popped from the regular stack. Pushing and popping the link register to
-regular stack allows such programs to comply with the ABI. The prologue and
-epilogue of a non-leaf function in shadow stack mode is as follows:
+In shadow stack mode, programs store the return addresses on both the regular
+stack and the shadow stack in the function prologue, and then pop them them from
+both stacks and compare the values before returning from the function. In the
+control stack mode, programs only store the return addresses on the shadow stack
+and pop it from there to return from the function.
 
-[source, ruby]
+Operating in shadow stack mode preserves the call stack layout and the ABI,
+while also allowing for the detection of corruption of the return address on
+the regular stack. Such programs are portable between implementations that
+support the Zicfiss extension as well as those that do not. Most programs are
+expected to use this mode.
+
+Operating in control stack mode breaks the ABI, but has the benefit of avoiding
+additional instructions to store the return address to two stacks, and to pop
+and compare them before returning from a function. This mode also allows the
+program to have a smaller regular stack as the space to save the return address
+is not needed. However, such programs are not portable to implementations that
+do not support the Zicfiss extension. Some just-in-time (JIT) compiled
+programs may dynamically switch between using only the regular stack or only the
+shadow stack to store return addresses, depending on the capabilities of the
+implementation.
+
+The prologue and epilogue of a non-leaf function in shadow stack mode is as
+follows:
+
+[listing]
     function_entry:
         addi sp,sp,-8  # push link register x1
         sd x1,(sp)     # on data stack
@@ -297,14 +287,10 @@ epilogue of a non-leaf function in shadow stack mode is as follows:
         #
         ret
 
-Programs operating in the control stack mode store the return address only
-on the shadow stack. Such programs are not portable to implementations that do
-not support the Zicfisslp extension. As these programs do not push a return
-address on the regular stack they may not be compliant with the ABI. The
-prologue and epilogue of a non-leaf function when operating in control stack
+The prologue and epilogue of a non-leaf function when operating in control stack
 mode is as follows:
 
-[source, ruby]
+[listing]
     function_entry:
         #
         # Let the contents of ssp register be 0x19740428 and XLEN be 32
@@ -325,8 +311,8 @@ mode is as follows:
         #
          :
          :
-        ssload  x1     # load return address from shadow stack
-        sspinc  $1     # increment ssp by 1 * (XLEN/8)
+        ssload x1      # load return address from shadow stack
+        sspinc 1       # increment ssp by 1 * (XLEN/8)
         #
         # ssload loads the value from location addressed by ssp into
         # destination register. sspinc updates ssp to (ssp + XLEN/8)
@@ -342,7 +328,7 @@ mode is as follows:
 These examples illustrate the use of `x1` register as the link register.
 Alternatively, the `x5` register may also be used as the link register.
 
-A leaf function i.e. a function that does not itself make function calls does
+A leaf function (i.e., a function that does not itself make function calls) does
 not need to push the link register to the shadow stack or pop it from the shadow
 stack in either shadow stack mode or in control stack mode. The return value may
 be held in the link register itself for the duration of the leaf function
@@ -389,66 +375,61 @@ usage, and requiring memory referenced by `ssp` to be idempotent does not pose a
 significant restriction.
 ====
 
-When backward-edge CFI is active (i.e., `xBCFIE = 1`), the `c.sspush x1`
-instruction behaves identically to the `sspush x1` instruction, and the
-`c.sspopchk x5` instruction behaves identically to the `sspopchk x5`
-instruction.
-
 The operation of the `sspush` and `c.sspush` instructions is as follows:
 
 .`sspush` and `c.sspush` operation
-[source, ruby]
+[listing]
 ----
-If (xBCFIE = 1)
-   *[ssp - (XLEN/8)] = [src]   # Store src value to ssp - XLEN/8
-    [ssp] = [ssp] - (XLEN/8)   # decrement ssp by XLEN/8
+If (xBCFIE == 1)
+    mem[ssp - (XLEN/8)] = X[src]  # Store src value to ssp - XLEN/8
+    ssp = ssp - (XLEN/8)          # decrement ssp by XLEN/8
 else
-    [dst] = 0
+    X[dst] = 0
 endif
 ----
 
 The operation of the `ssload` instruction is as follows:
 
 .`ssload` operation
-[source, ruby]
+[listing]
 ----
-if (xBCFIE = 1)
-    [dst] = *[ssp]             # Load dst from address in ssp
+if (xBCFIE == 1)
+    X[dst] = mem[ssp]          # Load dst from address in ssp
                                # Only x1 and x5 may be used as dst
 else
-    [dst] = 0;
+    X[dst] = 0
 endif
 ----
 
 The operation of the `sspinc` instruction is as follows:
 
 .`sspinc` operation
-[source, ruby]
+[listing]
 ----
-if (xBCFIE = 1)
-    [ssp] = [ssp] + (nzuimm * XLEN/8)
+if (xBCFIE == 1)
+    ssp = ssp + (nzuimm * XLEN/8)
 else
-    [dst] = 0;
+    X[dst] = 0
 endif
 ----
 
 The operation of the `sspopchk` and `c.sspopchk` instructions is as follows:
 
 .`sspopchk` and `c.sspopchk` operation
-[source, ruby]
+[listing]
 ----
-if (xBCFIE = 1)
-    temp  = *[ssp]             # Load temp from address in ssp and
-    if temp != [src]           # Compare temp to value in src and
+if (xBCFIE == 1)
+    temp = mem[ssp]            # Load temp from address in ssp and
+    if temp != X[src]          # Compare temp to value in src and
                                # cause an illegal-instruction exception
                                # if they are not bitwise equal.
                                # Only x1 and x5 may be used as src
        Raise illegal-instruction exception
     else
-       [ssp] = [ssp] + (XLEN/8)# increment ssp by XLEN/8.
+       ssp = ssp + (XLEN/8)    # increment ssp by XLEN/8.
     endif
 else
-    [dst] = 0;
+    X[dst] = 0
 endif
 ----
 
@@ -467,7 +448,7 @@ link register `x5` and use the `c.sspopchk x5` to compare the return address to
 the shadow copy stored on the shadow stack. The function then uses `c.jr x5` to
 jump to the return address.
 
-[source, ruby]
+[listing]
 ----
     function_entry:
         c.addi sp,sp,-8  # push link register x1
@@ -487,7 +468,7 @@ jump to the return address.
 [NOTE]
 ====
 Store-to-load forwarding is a common technique employed by high-performance
-processor implementations. Zicfisslp implementations may prevent forwarding from
+processor implementations. Zicfiss implementations may prevent forwarding from
 a non-shadow-stack store to `ssload`/`sspopchk`/`c.sspopchk` instructions. A
 non-shadow-stack store causes a fault if done to a page mapped as a shadow
 stack. However, such determination may be delayed till the PTE has been examined
@@ -510,7 +491,7 @@ following examples illustrate the use of shadow stack instructions to
 unwind a shadow stack. This example assumes that the `setjmp` function itself does
 not push on to the shadow stack (being a leaf function, it is not required to).
 
-[source, ruby]
+[listing]
 setjmp() {
     :
     :
@@ -531,23 +512,23 @@ longjmp() {
     // Unwind the frames in a loop
     while ( num_unwind > 0 ) {
         if ( num_unwind >= 31 ) {
-            asm("sspinc $31");
+            asm("sspinc 31");
             num_unwind -= 31;
             continue;
         } else if ( num_unwind >= 16 ) {
-            asm("sspinc $16");
+            asm("sspinc 16");
             num_unwind -= 16;
             continue;
         } else if ( num_unwind >= 8 ) {
-            asm("sspinc $8");
+            asm("sspinc 8");
             num_unwind -= 8;
             continue;
         } else if ( num_unwind >= 4 ) {
-            asm("sspinc $4");
+            asm("sspinc 4");
             num_unwind -= 4;
             continue;
         } else {
-            asm("sspinc $1");
+            asm("sspinc 1");
             num_unwind -= 1;
         }
         // Test if unwound past the shadow stack bounds
@@ -561,7 +542,7 @@ back_cfi_not_enabled:
 [[SSP_READ]]
 === Read `ssp` into a register
 
-The `ssprr` instruction is provided to move the contents of `ssp` to the destination
+The `ssprr` instruction is provided to move the contents of `ssp` to a destination
 register.
 
 [wavedrom, ,svg]
@@ -580,12 +561,12 @@ Encoding `rd` as `x0` is not supported for `ssprr`.
 The operation of the `ssprr` instructions is as follows:
 
 .`ssprr` operation
-[source, ruby]
+[listing]
 ----
-If (xBCFIE = 1)
-    [dst] = [ssp]
+If (xBCFIE == 1)
+    X[dst] = ssp
 else
-    [dst] = 0;
+    X[dst] = 0
 endif
 ----
 
@@ -599,7 +580,7 @@ CFI extension is active.
 
 An example sequence such as the following may be used:
 
-[source, ruby]
+[listing]
     ssprr t0                  # mv ssp to t0
     beqz bcfi_not_active      # zero is not a valid shadow stack
                               # pointer by convention
@@ -644,14 +625,14 @@ The `ssamoswap` causes a store/AMO access-fault exception if the address in
 The operation of the `ssamoswap` instructions is as follows:
 
 .`ssamoswap` operation
-[source, ruby]
+[listing]
 ----
-If (xBCFIE = 1)
+If (xBCFIE == 1)
     Perform the following atomically with sequential consistency
-        [dst]  = *[addr]
-       *[addr] = [src]
+        X[dst] = mem[X[addr]]
+        mem[X[addr]] = X[src]
 else
-    [dst] = 0;
+    X[dst] = 0
 endif
 ----
 
@@ -671,7 +652,7 @@ checkpoint.
 
 An example sequence to store and restore the shadow stack pointer is as follows:
 
-[source, ruby]
+[listing]
 # The a0 register holds the pointer to top of new shadow
 # to switch to. The current ssp is first pushed on the current
 # shadow stack and the ssp is restored from new shadow stack
@@ -684,11 +665,11 @@ save_shadow_stack_pointer:
                                 # restore later.
 restore_shadow_stack_pointer:
     ssamoswap t0, x0, (a0)      # t0=*[a0] and *[a0]=0
-                                # The [a0] should hold ptr'
-                                # The [t0] should hold ptr'+XLEN/8
-    addi      a0, a0, (XLEN/8)  # a0+XLEN/8 must match to t0
-    bne       t0, a0, crash     # if not crash program
-    csrw      ssp, t0           # setup new ssp
+                                # The [a0] should hold ptr
+                                # The [t0] should hold ptr+XLEN/8
+    addi   a0, a0, (XLEN/8)     # a0+XLEN/8 must match to t0
+    bne    t0, a0, crash        # if not crash program
+    csrw   ssp, t0              # setup new ssp
 
 Further, the program may enforce an invariant that a shadow stack can be active
 only on one hart by using the `ssamoswap` when performing the restore from the
@@ -799,24 +780,26 @@ Svpbmt and Svnapot extensions are supported for shadow stack pages.
 
 [NOTE]
 ====
+All instructions that load from memory are allowed to read the shadow stack. The
+shadow stack only holds a copy of the link register as saved on the regular
+stack. The ability to read the shadow stack is useful for debugging, performance
+profiling, and other use cases.
+
 Operating systems should protect against writable non-shadow-stack alias
 virtual-addresses mappings being created to the physical memory of the
 shadow stack.
-====
 
-[NOTE]
-====
 Shadow stacks are expected to be bounded on each end using guard pages, so that
 no two shadow stacks are adjacent to each other. This guards against accidentally
 underflowing or overflowing from one shadow stack to another. Traditionally,
 a guard page for a stack is a page that is inaccessible to the process owning
 the stack. For shadow stacks, the guard page may also be a non-shadow-stack
 page that is otherwise accessible to the process owning the shadow stack
-because shadow stack loads and stores to non-shadow-stack pages will result in
-an exception.
+because shadow stack loads and stores to non-shadow-stack pages cause an
+access-fault exception.
 ====
 
-The G-stage address translation and protections remain unaffected by Zicfisslp
+The G-stage address translation and protections remain unaffected by Zicfiss
 extension. When G-stage page tables are active, the `ssamoswap`, `ssload`,
 `c.sspopchk`, and `sspopchk` instructions require the G-stage page table to have
 read permission for the accessed memory, whereas the `ssamoswap`, `c.sspush`, and
@@ -828,14 +811,6 @@ the G-stage PTE remains reserved.
 A future extension may define a shadow stack encoding in the G-stage page table
 to support use cases such as a hypervisor enforcing shadow stack protections for
 its guests.
-====
-
-[NOTE]
-====
-All instructions that load from memory are allowed to read the shadow stack. The
-shadow stack only holds a copy of the link register as saved on the regular
-stack. The ability to read the shadow stack is useful for debugging, performance
-profiling, and other use cases.
 ====
 
 [[PMP_SS]]
@@ -853,20 +828,21 @@ The M-mode memory accesses by `ssload`, `c.sspopchk`, and `sspopchk` instruction
 test for read permission in the matching PMP entry when permission checking is
 required.
 
-A new WARL field `sspmp` is defined in the `mseccfg` CSR to identify a PMP entry
+A new WARL field `SSPMP` is defined in the `mseccfg` CSR to identify a PMP entry
 as the shadow stack memory region for M-mode accesses.
 
-When `mseccfg.MML` is 1, the `sspmp` field is read-only else it may be written.
+When `mseccfg.MML` is 1, the `SSPMP` field is read-only else it may be written.
 
-When the `sspmp` field is implemented, the following rules are additionally
+When the `SSPMP` field is not zero, the following rules are additionally
 enforced for M-mode memory accesses:
 
 * `sspush`, `c.sspush`, `ssload`, `sspopchk`, `c.sspopchk`, and `ssamoswap`
-  instructions must match PMP entry `sspmp` else an access-fault exception
-  corresponding to the access type occurs.
+  instructions must match the PMP entry identified by `SSPMP` else an
+  access-fault exception corresponding to the access type occurs.
 
 * Write by instructions other than `sspush`, `c.sspush`, and `ssamoswap` that
-  match PMP entry `sspmp` cause an store/AMO access-fault exception.
+  match the PMP entry identified by `SSPMP` cause an store/AMO
+  access-fault exception.
 
 [NOTE]
 ====
