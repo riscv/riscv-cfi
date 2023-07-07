@@ -382,10 +382,10 @@ The operation of the `sspush` and `c.sspush` instructions is as follows:
 [listing]
 ----
 If (xBCFIE == 1)
-    mem[ssp - (XLEN/8)] = X[src]  # Store src value to ssp - XLEN/8
+    mem[ssp - (XLEN/8)] = X(src)  # Store src value to ssp - XLEN/8
     ssp = ssp - (XLEN/8)          # decrement ssp by XLEN/8
 else
-    X[dst] = 0
+    X(dst) = 0
 endif
 ----
 
@@ -395,10 +395,10 @@ The operation of the `ssload` instruction is as follows:
 [listing]
 ----
 if (xBCFIE == 1)
-    X[dst] = mem[ssp]          # Load dst from address in ssp
+    X(dst) = mem[ssp]          # Load dst from address in ssp
                                # Only x1 and x5 may be used as dst
 else
-    X[dst] = 0
+    X(dst) = 0
 endif
 ----
 
@@ -410,7 +410,7 @@ The operation of the `sspinc` instruction is as follows:
 if (xBCFIE == 1)
     ssp = ssp + (nzuimm * XLEN/8)
 else
-    X[dst] = 0
+    X(dst) = 0
 endif
 ----
 
@@ -421,7 +421,7 @@ The operation of the `sspopchk` and `c.sspopchk` instructions is as follows:
 ----
 if (xBCFIE == 1)
     temp = mem[ssp]            # Load temp from address in ssp and
-    if temp != X[src]          # Compare temp to value in src and
+    if temp != X(src)          # Compare temp to value in src and
                                # cause an illegal-instruction exception
                                # if they are not bitwise equal.
                                # Only x1 and x5 may be used as src
@@ -430,7 +430,7 @@ if (xBCFIE == 1)
        ssp = ssp + (XLEN/8)    # increment ssp by XLEN/8.
     endif
 else
-    X[dst] = 0
+    X(dst) = 0
 endif
 ----
 
@@ -565,9 +565,9 @@ The operation of the `ssprr` instructions is as follows:
 [listing]
 ----
 If (xBCFIE == 1)
-    X[dst] = ssp
+    X(dst) = ssp
 else
-    X[dst] = 0
+    X(dst) = 0
 endif
 ----
 
@@ -630,10 +630,10 @@ The operation of the `ssamoswap` instructions is as follows:
 ----
 If (xBCFIE == 1)
     Perform the following atomically with sequential consistency
-        X[dst] = mem[X[addr]]
-        mem[X[addr]] = X[src]
+        X(dst) = mem[X(addr)]
+        mem[X(addr)] = X(src)
 else
-    X[dst] = 0
+    X(dst) = 0
 endif
 ----
 
