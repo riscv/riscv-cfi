@@ -278,3 +278,4 @@ apply to M-mode.
 * The hart does not update the expected landing pad (`ELP`) state and the `ELP`
   state is always `NO_LP_EXPECTED`.
 * The `lpad` instruction executes as a no-op.
+
