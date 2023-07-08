@@ -384,8 +384,6 @@ The operation of the `sspush` and `c.sspush` instructions is as follows:
 If (xBCFIE == 1)
     mem[ssp - (XLEN/8)] = X(src)  # Store src value to ssp - XLEN/8
     ssp = ssp - (XLEN/8)          # decrement ssp by XLEN/8
-else
-    X(dst) = 0
 endif
 ----
 
@@ -409,8 +407,6 @@ The operation of the `sspinc` instruction is as follows:
 ----
 if (xBCFIE == 1)
     ssp = ssp + (nzuimm * XLEN/8)
-else
-    X(dst) = 0
 endif
 ----
 
@@ -429,8 +425,6 @@ if (xBCFIE == 1)
     else
        ssp = ssp + (XLEN/8)    # increment ssp by XLEN/8.
     endif
-else
-    X(dst) = 0
 endif
 ----
 
