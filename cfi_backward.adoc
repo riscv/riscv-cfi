@@ -752,7 +752,8 @@ follows:
 3. If `pte.v = 0` or if any bits of encodings that are reserved for future
    standard use are set within `pte`, stop and raise a page-fault exception
    corresponding to the original access type. The encoding `pte.xwr = 010b`
-   is not reserved if `menvcfg.CFIE` is 1 or if `V=1` and `henvcfg.CFIE` is 1.
+   is not reserved if `V=0` and `menvcfg.SBCFIE` is 1 or if `V=1` and
+   `henvcfg.SBCFIE` is 1.
 
 4. Otherwise, the PTE is valid. If `pte.r = 1` or `pte.w = 1` or `pte.x = 1`,
    go to step 5. Otherwise, this PTE is a pointer to the next level of the page
