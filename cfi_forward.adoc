@@ -181,7 +181,7 @@ completion of `JALR`/`C.JALR`/`C.JR`, but before the instruction at the target
 of indirect call/jump was decoded, due to:
 
 * Asynchronous interrupts.
-* Synchronous exceptions with priority lower than that of an illegal-instruction
+* Synchronous exceptions with priority higher than that of an illegal-instruction
   exception (See Table 3.7 of Privileged Specification cite:[PRIV]).
 
 The illegal-instruction exception due to the instruction not being an `lpad`
