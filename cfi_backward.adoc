@@ -93,7 +93,7 @@ backward-edge CFI protection as the Zicfiss instructions will revert to their
 Zimop/Zcmop-defined behavior.
 
 On processors that do not support Zimop/Zcmop extensions, all Zimop/Zcmop code
-points including those used for Zicfiss instructions cause an
+points including those used for Zicfiss instructions may cause an
 illegal-instruction exception. Execution of programs that use these
 instructions on such machines is not supported.
 ====
