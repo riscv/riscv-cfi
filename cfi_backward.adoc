@@ -466,6 +466,60 @@ jump to the return address.
 
 ====
 
+If the Zcmp extension is implemented and `xBCFIE = 1`, the `CM.PUSH`, `CM.POP`,
+`CM.POPRET`, and `CM.POPRETZ` instructions are modified to store the `x1` link
+register on the shadow stack instead of the regular stack.  Within the
+expansion of `CM.PUSH`, a `SSPUSH x1` operation is performed immediately before
+the `x2` adjustment, and the store of `x1` to the stack is skipped.  Within the
+expansion of `CM.POP`, `CM.POPRET`, and `CM.POPRETZ`, a `SSLOAD x1` operation
+followed by a `SSPINC 1` operation is performed immediately before the `x2`
+adjustment, and the load of `x1` from the stack is skipped.  `stack_adj_base` in
+the definitions of the instructions is calculated using `rlist - 1` instead of
+`rlist`, or 0 if `rlist = 4`.
+
+[NOTE]
+====
+Due to limited encoding space, the behavior of Zcmp instructions must be
+determined by external state.  The control stack mode of operation is chosen
+since Zcmp is primarily expected to be used in closed systems where all
+extensions are known and all software can be compiled with knowledge of all
+extensions; support for shadow stack mode may be provided by means of new bits
+in `xenvcfg` in future extensions, otherwise a shadow stack prologue or epilogue
+must not use Zcmp instructions.
+
+Zcmp binary code which uses push and pop instructions in a paired fashion will
+execute correctly regardless of `xBCFIE`, however the frame layout differs
+significantly; it is expected that compilers will generate frame metadata only
+for the `xBCFIE = 1` case, and will mark object files as requiring `xBCFIE = 1`
+if Zcmp and Zicfiss are both enabled.
+
+The possible values of `stack_adj` with `xBCFIE = 1` are as follows:
+[source,sail]
+--
+RV32I:
+switch (rlist) {
+  case      4: stack_adj = [ 0|16|32| 48];
+  case  5.. 8: stack_adj = [16|32|48| 64];
+  case  9..12: stack_adj = [32|48|64| 80];
+  case 13..15: stack_adj = [48|64|80| 96];
+}
+--
+
+[source,sail]
+--
+RV64:
+switch (rlist) {
+  case      4: stack_adj = [  0| 16| 32| 48];
+  case  5.. 6: stack_adj = [ 16| 32| 48| 64];
+  case  7.. 8: stack_adj = [ 32| 48| 64| 80];
+  case  9..10: stack_adj = [ 48| 64| 80| 96];
+  case 11..12: stack_adj = [ 64| 80| 96|112];
+  case 13..14: stack_adj = [ 80| 96|112|128];
+  case     15: stack_adj = [ 96|112|128|144];
+}
+--
+====
+
 [NOTE]
 ====
 Store-to-load forwarding is a common technique employed by high-performance

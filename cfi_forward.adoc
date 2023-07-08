@@ -33,6 +33,9 @@ An indirect branch using `JALR` or `C.JR` with `rd` as `x0` and `rs1` as `x6`
 is termed a software guarded branch. Such branches do not need to land on a
 `lpad` instruction and thus do not set `ELP` to `LP_EXPECTED`.
 
+A branch using `CM.TBLJAL` or `CM.TBLJ` is considered direct and does not set
+`ELP` to `LP_EXPECTED`.
+
 [NOTE]
 ====
 When the register source is a link register and the register destination is `x0`
@@ -62,6 +65,10 @@ constructs like switch-cases. When using the software guarded branches, the
 compiler is required to ensure it has full control on the possible jump
 targets (e.g., by obtaining the targets from a read-only table in memory and
 performing bounds checking on the index into the table, etc.).
+
+Since `CM.TBLJ` and `CM.TBLJAL` are treated as direct branches, the compiler is
+responsible for ensuring that the `JVT` CSR cannot be overwritten and points to
+at least `256 * (XLEN/8)` bytes of read-only memory.
 ====
 
 The landing pad may be labeled. Zicfilp extension designates the register `x7`
