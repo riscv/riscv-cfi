@@ -93,7 +93,7 @@ backward-edge CFI protection as the Zicfiss instructions will revert to their
 Zimop/Zcmop-defined behavior.
 
 On processors that do not support Zimop/Zcmop extensions, all Zimop/Zcmop code
-points including those used for Zicfiss instructions cause an
+points including those used for Zicfiss instructions may cause an
 illegal-instruction exception. Execution of programs that use these
 instructions on such machines is not supported.
 ====
@@ -384,8 +384,6 @@ The operation of the `sspush` and `c.sspush` instructions is as follows:
 If (xBCFIE == 1)
     mem[ssp - (XLEN/8)] = X(src)  # Store src value to ssp - XLEN/8
     ssp = ssp - (XLEN/8)          # decrement ssp by XLEN/8
-else
-    X(dst) = 0
 endif
 ----
 
@@ -409,8 +407,6 @@ The operation of the `sspinc` instruction is as follows:
 ----
 if (xBCFIE == 1)
     ssp = ssp + (nzuimm * XLEN/8)
-else
-    X(dst) = 0
 endif
 ----
 
@@ -429,8 +425,6 @@ if (xBCFIE == 1)
     else
        ssp = ssp + (XLEN/8)    # increment ssp by XLEN/8.
     endif
-else
-    X(dst) = 0
 endif
 ----
 
@@ -695,6 +689,10 @@ cannot be stored to by instructions other than `sspush`, `c.sspush`, and
 `ssamoswap`. The `ssload`, `sspopchk`, and `c.sspopchk` instructions can only
 load from shadow stack memory.
 
+The `sspush` and `c.sspush` instructions perform a store. The `ssamoswap`
+instruction performs an AMO. The `ssload`, `sspopchk`, and `c.sspopchk`
+instructions perfom a load.
+
 The shadow stack can be read using all instructions that load from memory.
 
 Attempting to fetch an instruction from a shadow stack page raises an
@@ -752,7 +750,8 @@ follows:
 3. If `pte.v = 0` or if any bits of encodings that are reserved for future
    standard use are set within `pte`, stop and raise a page-fault exception
    corresponding to the original access type. The encoding `pte.xwr = 010b`
-   is not reserved if `menvcfg.CFIE` is 1 or if `V=1` and `henvcfg.CFIE` is 1.
+   is not reserved if `V=0` and `menvcfg.SBCFIE` is 1 or if `V=1` and
+   `henvcfg.SBCFIE` is 1.
 
 4. Otherwise, the PTE is valid. If `pte.r = 1` or `pte.w = 1` or `pte.x = 1`,
    go to step 5. Otherwise, this PTE is a pointer to the next level of the page
