@@ -72,7 +72,7 @@ rules apply when `V=1`.
 * The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
 * The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
 * The `pte.xwr=010b` encoding in VS-stage page tables is reserved.
-* The `sstatus.UBCFIE` field is read-only zero.
+* The `sstatus.UBCFIE` (really `vsstatus.UBCFIE`) field is read-only zero.
 
 Zicfilp extension introduces the `SFCFIE` field (bit 59) in `henvcfg`. When
 `SFCFIE` field is 1, the Zicfilp extension is active in VS-mode. When `SFCFIE`
