@@ -689,6 +689,10 @@ cannot be stored to by instructions other than `sspush`, `c.sspush`, and
 `ssamoswap`. The `ssload`, `sspopchk`, and `c.sspopchk` instructions can only
 load from shadow stack memory.
 
+The `sspush` and `c.sspush` instructions perform a store. The `ssamoswap`
+instruction performs an AMO. The `ssload`, `sspopchk`, and `c.sspopchk`
+instructions perfom a load.
+
 The shadow stack can be read using all instructions that load from memory.
 
 Attempting to fetch an instruction from a shadow stack page raises an
