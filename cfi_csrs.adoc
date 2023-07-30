@@ -235,8 +235,8 @@ VU-mode and the following rules apply to VU-mode.
   state is always `NO_LP_EXPECTED`.
 * The `lpad` instruction executes as a no-op.
 
-The `SPELP` (bit 25) are field that hold the previous `ELP`, and is updated as
-specified in <<FORWARD_TRAPS>>. The `SPELP` field is encoded as follows:
+The `SPELP` (bit 25) field holds the previous `ELP`, and is updated as specified
+in <<FORWARD_TRAPS>>. The `SPELP` field is encoded as follows:
 
 * 0 - `NO_LP_EXPECTED` - no landing pad instruction expected.
 * 1 - `LP_EXPECTED` - a landing pad instruction is expected.
