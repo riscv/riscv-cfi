@@ -279,3 +279,36 @@ apply to M-mode.
   state is always `NO_LP_EXPECTED`.
 * The `lpad` instruction executes as a no-op.
 
+=== Debug Control and Status (`dcsr`)
+
+.Debug Control and Status (`dcsr`)
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  2, name: 'prv'},
+  {bits:  1, name: 'step'},
+  {bits:  1, name: 'nmip'},
+  {bits:  1, name: 'mprven'},
+  {bits:  1, name: 'v'},
+  {bits:  3, name: 'cause'},
+  {bits:  1, name: 'stoptime'},
+  {bits:  1, name: 'stopcount'},
+  {bits:  1, name: 'stepie'},
+  {bits:  1, name: 'ebreaku'},
+  {bits:  1, name: 'ebreaks'},
+  {bits:  1, name: '0'},
+  {bits:  1, name: 'ebreakm'},
+  {bits:  1, name: 'ebreakvu'},
+  {bits:  1, name: 'ebreakvs'},
+  {bits:  1, name: 'pelp'},
+  {bits:  9, name: '0'},
+  {bits:  4, name: 'debugver'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+The Zicfilp extension introduces the `pelp` (bit 18) in `dcsr`. The `pelp` field
+holds the previous `ELP`, and is updated as specified in <<FORWARD_TRAPS>>. The
+`pelp` field is encoded as follows:
+
+* 0 - `NO_LP_EXPECTED` - no landing pad instruction expected.
+* 1 - `LP_EXPECTED` - a landing pad instruction is expected.
