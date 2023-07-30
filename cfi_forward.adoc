@@ -196,7 +196,8 @@ bit is provided in the `mstatus` CSR. To store the previous `ELP` state on trap
 delivery to S/HS-mode, a `SPELP` bit is provided in the `mstatus` CSR. The
 `SPELP` bit in `mstatus` can be accessed through the `sstatus` CSR. To store
 the previous `ELP` state on traps to VS-mode, a `SPELP` bit is defined in the
-`vsstatus` (VS-modes version of `sstatus`).
+`vsstatus` (VS-modes version of `sstatus`). To store the previous `ELP` state on
+transition to Debug Mode, a `pelp` bit is defined in the `dcsr` register.
 
 When a trap is taken into privilege mode `x`, the `xPELP` is set to `ELP` and
 `ELP` is set to `NO_LP_EXPECTED`.
@@ -204,6 +205,11 @@ When a trap is taken into privilege mode `x`, the `xPELP` is set to `ELP` and
 An `MRET` or `SRET` instruction is used to return from a trap in M-mode or
 S-mode, respectively. An `xRET` instruction sets the `ELP` to `xPELP`, and sets
 `xPELP` to `NO_LP_EXPECTED`.
+
+Upon entry into Debug Mode, the `pelp` bit in `dcsr` is updated with the `ELP`
+at the privilege level the hart was previously in and the `ELP` is set to
+`NO_LP_EXPECTED`. When a hart resumes from Debug Mode, the `ELP` is changed to
+that specified by `pelp` in `dcsr`.
 
 [NOTE]
 ====
