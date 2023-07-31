@@ -25,14 +25,12 @@ indirect jump must land on a landing pad, as specified in <<IND_CALL_JMP>>. If
 .Landing pad expected determination
 [listing]
 ----
-    is_indirect_call_jump = ( (JALR || C.JR || C.JALR) &&
-                              (rs1 != x1) && (rs1 != x5) ) ? 1 : 0;
-    is_sw_guarded_jump = (JALR || C.JR) && (rd == x0 && rs1 == x6) ? 1 : 0;
-    is_lp_expected = is_indirect_call_jump & ~is_sw_guarded_jump;
+  is_lp_expected = ( (JALR || C.JR || C.JALR) &&
+                     (rs1 != x1) && (rs1 != x5) && (rs1 != x7) ) ? 1 : 0;
 ----
 
-An indirect branch using `JALR` or `C.JR` with `rd` as `x0` and `rs1` as `x6`
-is termed a software guarded branch. Such branches do not need to land on a
+An indirect branch using `JALR`, `C.JALR`, or `C.JR` with `rs1` as `x7` is
+termed a software guarded branch. Such branches do not need to land on a
 `lpad` instruction and thus do not set `ELP` to `LP_EXPECTED`.
 
 [NOTE]
@@ -53,11 +51,11 @@ semantically-direct calls only if when the `rs1` was computed as a PC-relative
 or an absolute offset to the symbol.
 
 The `tail offset` pseudoinstruction used to tail call a far-away procedure may
-also expand to a two instruction sequence composed of a `lui x6, imm20` or
-`auipc x6, imm20` followed by a `jalr x0, x6` cite:[ASM-MANUAL]. Since the
-address of the procedure was not explicitly taken and the computed address is
-not obtained from mutable memory, such semantically-direct tail-calls do not
-require a landing pad to be placed at the target.
+also be expanded to a two instruction sequence composed of a `lui x7, imm20` or
+`auipc x7, imm20` followed by a `jalr x0, x7`. Since the address of the
+procedure was not explicitly taken and the computed address is not obtained from
+mutable memory, such semantically-direct tail-calls do not require a landing pad
+to be placed at the target.
 
 Software guarded branches may also be used by compilers to generate code for
 constructs like switch-cases. When using the software guarded branches, the
@@ -198,7 +196,8 @@ bit is provided in the `mstatus` CSR. To store the previous `ELP` state on trap
 delivery to S/HS-mode, a `SPELP` bit is provided in the `mstatus` CSR. The
 `SPELP` bit in `mstatus` can be accessed through the `sstatus` CSR. To store
 the previous `ELP` state on traps to VS-mode, a `SPELP` bit is defined in the
-`vsstatus` (VS-modes version of `sstatus`).
+`vsstatus` (VS-modes version of `sstatus`). To store the previous `ELP` state on
+transition to Debug Mode, a `pelp` bit is defined in the `dcsr` register.
 
 When a trap is taken into privilege mode `x`, the `xPELP` is set to `ELP` and
 `ELP` is set to `NO_LP_EXPECTED`.
@@ -206,6 +205,11 @@ When a trap is taken into privilege mode `x`, the `xPELP` is set to `ELP` and
 An `MRET` or `SRET` instruction is used to return from a trap in M-mode or
 S-mode, respectively. An `xRET` instruction sets the `ELP` to `xPELP`, and sets
 `xPELP` to `NO_LP_EXPECTED`.
+
+Upon entry into Debug Mode, the `pelp` bit in `dcsr` is updated with the `ELP`
+at the privilege level the hart was previously in and the `ELP` is set to
+`NO_LP_EXPECTED`. When a hart resumes from Debug Mode, the `ELP` is changed to
+that specified by `pelp` in `dcsr`.
 
 [NOTE]
 ====
