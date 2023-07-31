@@ -699,8 +699,8 @@ Attempting to fetch an instruction from a shadow stack page raises an
 instruction page-fault exception.
 
 The encoding `R=0`, `W=1`, and `X=0`, is defined to represent a shadow stack
-page.  When `menvcfg.CFIE=0`, this encoding remains reserved. When `V=1` and
-`henvcfg.CFIE=0`, this encoding remains reserved at `VS` and `VU`.
+page.  When `menvcfg.SBCFIE=0`, this encoding remains reserved. When `V=1` and
+`henvcfg.SBCFIE=0`, this encoding remains reserved at `VS` and `VU`.
 
 The following faults may occur:
 
