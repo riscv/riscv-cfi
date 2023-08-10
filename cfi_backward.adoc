@@ -11,7 +11,7 @@ addresses to lower addresses. Each entry on the shadow stack is `XLEN` wide and
 holds the link register value. The `ssp` points to the top of the shadow stack,
 i.e. address of the last element stored on the shadow stack.
 
-When backward-edge CFI is active, each function that needs to spill the link
+When Zicfiss is enabled, each function that needs to spill the link
 register (e.g., non-leaf functions) stores the link register value to the regular
 stack and a shadow copy of the link register value to the shadow stack when the
 function is entered (the prologue). When such a function need to return (the
@@ -48,21 +48,139 @@ the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
 When a Zimop encoding is not used by the Zicfiss extension then the
 instruction follows its Zimop defined behavior.
 
-=== Backward-edge-CFI-active state
+== Zicfiss CSRs
 
-The term `xBCFIE` is used to determine if backward-edge CFI provided by the
-Zicfiss extension is active at a privilege mode `x` and is defined as follows:
+This chapter specifies the CSR state of the Zicfiss extensions.
 
-.`xBCFIE` determination
-[listing]
-----
-if ( privilege == M-mode )
-    xBCFIE = 1
-else if ( privilege == S-mode )
-    xBCFIE = (V == 0) ? menvcfg.SBCFIE : henvcfg.SBCFIE
-else
-    xBCFIE = (V == 0) ? sstatus.UBCFIE : vsstatus.UBCFIE
-----
+=== Machine environment configuration registers (`menvcfg and menvcfgh`)
+
+.Machine environment configuration register (`menvcfg`) for MXLEN=64
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'FIOM'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  1, name: 'SSE'},
+  {bits:  2, name: 'CBIE'},
+  {bits:  1, name: 'CBCFE'},
+  {bits:  1, name: 'CBZE'},
+  {bits: 53, name: 'WPRI'},
+  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'PBMTE'},
+  {bits:  1, name: 'STCE'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+Zicfiss extension introduces the `SSE` field (bit 3) in `menvcfg`. When
+`SSE` field is 1, the Zicfiss extension is enabled in S-mode. When `SSE`
+field is 0, the Zicfiss extension is not enabled in S-mode and the following
+rules apply to privilege modes less than M.
+
+* Attempts to access the `ssp` CSR raise an illegal-instruction exception.
+* The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
+* The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
+* The `pte.xwr=010b` encoding in S-stage page tables is reserved.
+* The `henvcfg.SSE` and `senvcfg.SSE` fields are read-only zero.
+
+=== Supervisor environment configuration registers (`senvcfg`)
+
+.Supervisor environment configuration register (`senvcfg`)
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'FIOM'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  1, name: 'SSE'},
+  {bits:  2, name: 'CBIE'},
+  {bits:  1, name: 'CBCFE'},
+  {bits:  1, name: 'CBZE'},
+], config:{lanes: 1, hspace:1024}}
+....
+
+Zicfiss extension introduces the `SSE` field (bit 2) in `senvcfg`. When
+`SSE` field is 1, the Zicfiss extension is enabled in VU/U-mode. When `SSE`
+field is 0, the Zicfiss extension is not enabled in VS/U-mode and the following
+rules apply:
+
+* Attempts to access the `ssp` CSR raise an illegal-instruction exception.
+* The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
+* The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
+
+=== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
+
+.Hypervisor environment configuration register (`henvcfg`) for MXLEN=64
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'FIOM'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  1, name: 'SSE'},
+  {bits:  2, name: 'CBIE'},
+  {bits:  1, name: 'CBCFE'},
+  {bits:  1, name: 'CBZE'},
+  {bits: 53, name: 'WPRI'},
+  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'PBMTE'},
+  {bits:  1, name: 'STCE'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+Zicfiss extension introduces the `SSE` field (bit 2) in `henvcfg`. When
+`SSE` field is 1, the Zicfiss extension is enabled in VS-mode. When `SSE`
+field is 0, the Zicfiss extension is not enabled in VS-mode and the following
+rules apply when `V=1`.
+
+* Attempts to access the `ssp` CSR raise an illegal-instruction exception.
+* The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
+* The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
+* The `pte.xwr=010b` encoding in VS-stage page tables is reserved.
+* The `senvcfg.SSE` field is read-only zero.
+
+=== Shadow stack pointer (`ssp`)
+
+The `ssp` CSR is an unprivileged read-write (URW) CSR that reads and writes `XLEN`
+low order bits of the shadow stack pointer (`ssp`). There is no high CSR defined
+as the `ssp` is always as wide as the `XLEN` of the current privilege mode.
+
+=== Machine Security Configuration (`mseccfg`)
+
+.Machine security configuration register (`mseccfg`) when `MXLEN=64`
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'MML'},
+  {bits:  1, name: 'MMWP'},
+  {bits:  1, name: 'RLB'},
+  {bits:  5, name: 'WPRI'},
+  {bits:  1, name: 'USEED'},
+  {bits:  1, name: 'SSEED'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  6, name: 'SSPMP'},
+  {bits: 47, name: 'WPRI'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+The Zicfiss extension introduces the `SSPMP` WARL field in `mseccfg`. The
+`SSPMP` field identifies a PMP entry as the shadow stack memory region for
+M-mode use. The rules enforced by PMP for M-mode shadow stack memory accesses
+are specified in <<PMP_SS>>.
+
+=== Shadow-Stack-Enabled (SSE) state
+
+The term `xSSE` is used to determine if backward-edge CFI using shadow stacks
+provided by the Zicfiss extension is enabled at a privilege mode and it is
+determined as follows:
+
+.`xSSE` determination
+[width=100%]
+[%header, cols="^4,^12"]
+|===
+|Privilege Mode| xLPE
+|  M           | `1`
+|  S or HS     | `menvcfg.SSE`
+|  VS          | `henvcfg.SSE`
+|  U or VU     | `senvcfg.SSE`
+|===
 
 [NOTE]
 ====
@@ -72,18 +190,18 @@ Zicfiss allows it to invoke shared libraries that may contain Zicfiss
 instructions. The Zicfiss instructions in the shared library revert to their
 Zimop/Zcmop-defined behavior in this case.
 
-When Zicfiss is active in S-mode it is benign to use an operating system that is
+When Zicfiss is enabled in S-mode it is benign to use an operating system that is
 not compiled with Zicfiss instructions. Such an operating system that does
 not use backward-edge CFI for S-mode execution may still activate Zicfiss for
 U-mode applications.
 
-When Zicfiss is implemented, the extension is always active in M-mode. However,
+When Zicfiss is implemented, the extension is always enabled in M-mode. However,
 it is benign to use M-mode firmware that has not been compiled with Zicfiss
 instructions. Such M-mode firmware that does not use backward-edge CFI for
 M-mode execution may still enable the use of Zicfiss by lower privilege modes.
 
 When programs that use Zicfiss instructions are installed on a processor that
-supports the Zicfiss extension but the extension is not active at the privilege
+supports the Zicfiss extension but the extension is not enabled at the privilege
 mode where the program executes, the program continues to function correctly but
 without backward-edge CFI protection as the Zicfiss instructions will revert to
 their Zimop/Zcmop-defined behavior.
@@ -163,6 +281,7 @@ Zicfiss provides 16-bit versions of the `sspush x1` and `sspopchk x5`
 instructions using the Zcmop encodings. The `c.sspush x1` and the
 `c.sspopchk x5` instructions are encoded using the `C.LUI` major opcode and
 using the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
+
 
 The `c.sspush x1` expands to `sspush x1` and `c.sspopchk x5` expands to
 `sspopchk x5`.
@@ -383,7 +502,7 @@ The operation of the `sspush` and `c.sspush` instructions is as follows:
 .`sspush` and `c.sspush` operation
 [listing]
 ----
-If (xBCFIE == 1)
+If (xSSE == 1)
     mem[ssp - (XLEN/8)] = X(src)  # Store src value to ssp - XLEN/8
     ssp = ssp - (XLEN/8)          # decrement ssp by XLEN/8
 endif
@@ -394,7 +513,7 @@ The operation of the `ssload` instruction is as follows:
 .`ssload` operation
 [listing]
 ----
-if (xBCFIE == 1)
+if (xSSE == 1)
     X(dst) = mem[ssp]          # Load dst from address in ssp
                                # Only x1 and x5 may be used as dst
 else
@@ -407,8 +526,8 @@ The operation of the `sspinc` instruction is as follows:
 .`sspinc` operation
 [listing]
 ----
-if (xBCFIE == 1)
-    ssp = ssp + (nzuimm * XLEN/8)
+if (xSSE == 1)
+    ssp = ssp + XLEN/8
 endif
 ----
 
@@ -417,7 +536,7 @@ The operation of the `sspopchk` and `c.sspopchk` instructions is as follows:
 .`sspopchk` and `c.sspopchk` operation
 [listing]
 ----
-if (xBCFIE == 1)
+if (xSSE == 1)
     temp = mem[ssp]            # Load temp from address in ssp and
     if temp != X(src)          # Compare temp to value in src and
                                # cause an integrity-fault exception
@@ -560,7 +679,7 @@ The operation of the `ssprr` instructions is as follows:
 .`ssprr` operation
 [listing]
 ----
-If (xBCFIE == 1)
+If (xSSE == 1)
     X(dst) = ssp
 else
     X(dst) = 0
@@ -570,21 +689,21 @@ endif
 [NOTE]
 ====
 The property of Zimop writing 0 to the `rd` when the extension using Zimop is
-not implemented, enabled for use, or not active may be used by to determine if
-backward-edge CFI is active. For example, functions that unwind shadow stacks
-may skip over the unwind actions by dynamically detecting if the backward-edge
-CFI extension is active.
+not implemented, enabled for use, or not enabled may be used by to determine if
+Zicfiss extension is enabled. For example, functions that unwind shadow stacks
+may skip over the unwind actions by dynamically detecting if the Zicfiss
+extension is enabled.
 
 An example sequence such as the following may be used:
 
 [listing]
     ssprr t0                  # mv ssp to t0
-    beqz bcfi_not_active      # zero is not a valid shadow stack
+    beqz zicfiss_not_enabled  # zero is not a valid shadow stack
                               # pointer by convention
-    # Backward-edge CFI is active
+    # Zicfiss is enabled
     :
     :
-bcfi_not_active:
+zicfiss_not_active:
 
 Operating systems and runtimes must not locate shadow stacks at address 0 to
 assist with the use of such code sequences.
@@ -624,7 +743,7 @@ The operation of the `ssamoswap` instructions is as follows:
 .`ssamoswap` operation
 [listing]
 ----
-If (xBCFIE == 1)
+If (xSSE == 1)
     Perform the following atomically with sequential consistency
         X(dst) = mem[X(addr)]
         mem[X(addr)] = X(src)
@@ -701,8 +820,8 @@ Attempting to fetch an instruction from a shadow stack page raises an
 instruction page-fault exception.
 
 The encoding `R=0`, `W=1`, and `X=0`, is defined to represent a shadow stack
-page.  When `menvcfg.SBCFIE=0`, this encoding remains reserved. When `V=1` and
-`henvcfg.SBCFIE=0`, this encoding remains reserved at `VS` and `VU`.
+page.  When `menvcfg.SSE=0`, this encoding remains reserved. When `V=1` and
+`henvcfg.SSE=0`, this encoding remains reserved at `VS` and `VU`.
 
 The following faults may occur:
 
@@ -752,8 +871,8 @@ follows:
 3. If `pte.v = 0` or if any bits of encodings that are reserved for future
    standard use are set within `pte`, stop and raise a page-fault exception
    corresponding to the original access type. The encoding `pte.xwr = 010b`
-   is not reserved if `V=0` and `menvcfg.SBCFIE` is 1 or if `V=1` and
-   `henvcfg.SBCFIE` is 1.
+   is not reserved if `V=0` and `menvcfg.SSE` is 1 or if `V=1` and
+   `henvcfg.SSE` is 1.
 
 4. Otherwise, the PTE is valid. If `pte.r = 1` or `pte.w = 1` or `pte.x = 1`,
    go to step 5. Otherwise, this PTE is a pointer to the next level of the page
