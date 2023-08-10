@@ -19,7 +19,9 @@ epilogue), the function loads the link register from the regular stack and
 the shadow copy of the link register from the shadow stack. The link register
 value from the regular stack and the shadow link register value from the shadow
 stack are compared. A mismatch of the two values is indicative of a subversion
-of the return address control variable and causes an illegal-instruction
+of the return address control variable and causes an integrity-fault exception
+with *tval set to "shadow stack fault (code=3)". The integrity-fault exception
+caused by the shadow stack fault is lower in priority than the load access fault
 exception.
 
 The Zicfiss extension introduces the following instructions:
@@ -179,7 +181,7 @@ a link register on the shadow stack.
 The `sspopchk` instruction and its compressed form `c.sspopchk` can be used to
 pop the shadow return address value from the shadow stack and check that the
 value matches the contents of the link register and if not cause an
-illegal-instruction exception.
+integrity-fault exception with *tval set to "shadow stack fault (code=3)".
 
 The `ssload` instruction can be used to load a return address from the shadow
 stack into a link register.
@@ -418,10 +420,10 @@ The operation of the `sspopchk` and `c.sspopchk` instructions is as follows:
 if (xBCFIE == 1)
     temp = mem[ssp]            # Load temp from address in ssp and
     if temp != X(src)          # Compare temp to value in src and
-                               # cause an illegal-instruction exception
+                               # cause an integrity-fault exception
                                # if they are not bitwise equal.
                                # Only x1 and x5 may be used as src
-       Raise illegal-instruction exception
+       Raise integrity-fault exception
     else
        ssp = ssp + (XLEN/8)    # increment ssp by XLEN/8.
     endif

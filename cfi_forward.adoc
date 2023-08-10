@@ -77,8 +77,9 @@ not need to establish an expected landing pad label value in `x7`.
 When `ELP` is set to `LP_EXPECTED`, if the next instruction in the instruction
 stream is not 4-byte aligned, or is not `lpad`, or if the landing pad label
 encoded in `lpad` is not zero and does not match the expected landing pad label
-in bits 31:12 of the `x7` register, then an illegal-instruction exception is
-raised else the `ELP` is updated to `NO_LP_EXPECTED`.
+in bits 31:12 of the `x7` register, then an integrity-fault exception with *tval
+set to "landing pad fault (code=2)" is raised else the `ELP` is updated to
+`NO_LP_EXPECTED`.
 
 [NOTE]
 ====
@@ -134,15 +135,16 @@ implemented or is not active.
 When Zicfilp is active, `lpad` is the only instruction allowed to execute when
 the `ELP` state is `LP_EXPECTED`. If Zicfilp is not active then the instruction
 is a no-op. If Zicfilp is active, the `lpad` instruction causes an
-illegal-instruction exception if any of the following conditions are true:
+integrity-fault exception with *tval set to "landing pad fault (code=2)" if any
+of the following conditions are true:
 
 * The `pc` is not 4-byte aligned.
 * The `ELP` is `LP_EXPECTED` and the `LPL` is not zero and the `LPL` does not
   match the expected landing pad label in bits 31:12 of the `x7` register.
 
-If the instruction causes an illegal-instruction exception, the `ELP` does not
-change. The behavior of the trap caused by this illegal-instruction exception is
-specified in section <<FORWARD_TRAPS>>. If an illegal-instruction exception is
+If the instruction causes an integrity-fault exception, the `ELP` does not
+change. The behavior of the trap caused by this integrity-fault exception is
+specified in section <<FORWARD_TRAPS>>. If an integrity-fault exception is
 not caused then the `ELP` is updated to `NO_LP_EXPECTED`.
 
 [wavedrom, ,svg]
@@ -160,12 +162,12 @@ The operation of the `lpad` instruction is as follows:
 [listing]
 ----
 if (xFCFIE != 0)
-    // If PC not 4-byte aligned then illegal-instruction
+    // If PC not 4-byte aligned then integrity-fault
     if pc[1:0] != 0
-        Cause illegal-instruction exception
-    // If landing pad label not matched -> illegal-instruction
+        Cause integrity-fault exception
+    // If landing pad label not matched -> integrity-fault
     else if (inst.LPL != x7[31:12] && inst.LPL != 0 && ELP == LP_EXPECTED)
-        Cause illegal-instruction exception
+        Cause integrity-fault exception
     else
         ELP = NO_LP_EXPECTED
 else
@@ -181,11 +183,15 @@ completion of `JALR`/`C.JALR`/`C.JR`, but before the instruction at the target
 of indirect call/jump was decoded, due to:
 
 * Asynchronous interrupts.
-* Synchronous exceptions with priority higher than that of an illegal-instruction
-  exception (See Table 3.7 of Privileged Specification cite:[PRIV]).
+* Synchronous exceptions with priority higher than that of an integrity-fault
+  exception with *tval set to "landing pad fault (code=2)" (See Table 3.7 of
+  Privileged Specification cite:[PRIV]).
 
-The illegal-instruction exception due to the instruction not being an `lpad`
-instruction when `ELP` is `LP_EXPECTED` or an illegal-instruction exception
+The integrity-fault exception caused by Zicfilp has higher priority than an
+illegal-instruction exception but lower priority than instruction access fault.
+
+The integrity-fault exception due to the instruction not being an `lpad`
+instruction when `ELP` is `LP_EXPECTED` or an integrity-fault exception
 caused by the `lpad` instruction itself (See <<LP_INST>>) leads to a trap being
 delivered to the same or to a higher privilege mode.
 
