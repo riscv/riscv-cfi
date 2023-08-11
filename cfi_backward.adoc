@@ -36,9 +36,6 @@ The Zicfiss extension introduces the following instructions:
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
 ** `ssrdp`
 
-* Perform atomic swap from a shadow stack location (See <<SS_SWAP>>)
-** `ssamoswap`
-
 The 32-bit instructions are encoded using the `SYSTEM` major opcode and using
 the `mop.r.0`, `mop.r.1`, and `mop.rr.0` encodings defined by the Zimop
 extension.
@@ -711,49 +708,6 @@ Operating systems and runtimes must not locate shadow stacks at address 0 to
 assist with the use of such code sequences.
 ====
 
-[[SS_SWAP]]
-=== Atomic Swap from a shadow stack location
-
-The `ssamoswap` instruction performs an atomic swap operation between the `XLEN`
-bits of the `src` register and the `XLEN` bits located on the shadow stack at the
-address specified in the `addr` register. The resulting value from the swap
-operation is then stored into the register specified in the `dst` operand.
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['dst']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['addr']},
-  {bits:  5, name: 'rs2', attr:['src']},
-  {bits:  7, name: '1000001', attr:['ssamoswap']},
-], config:{lanes: 1, hspace:1024}}
-....
-
-Encoding `rd` as `x0` is not supported for `ssamoswap`.
-
-The `ssamoswap` is always sequentially consistent and cannot be reordered with
-earlier or later memory operations from the same hart.
-
-The `ssamoswap` causes a store/AMO access-fault exception if the address in
-`addr` does not have a shadow stack attribute (see <<SSMP>>), of if the address
- is not `XLEN` aligned, or if the memory reference by `ssp` is not idempotent.
-
-The operation of the `ssamoswap` instructions is as follows:
-
-.`ssamoswap` operation
-[listing]
-----
-If (xSSE == 1)
-    Perform the following atomically with sequential consistency
-        X(dst) = mem[X(addr)]
-        mem[X(addr)] = X(src)
-else
-    X(dst) = 0
-endif
-----
-
 [NOTE]
 ====
 Stack switching is a common operation in user programs as well as supervisor
@@ -771,29 +725,7 @@ checkpoint.
 An example sequence to store and restore the shadow stack pointer is as follows:
 
 [listing]
-# The a0 register holds the pointer to top of new shadow
-# to switch to. The current ssp is first pushed on the current
-# shadow stack and the ssp is restored from new shadow stack
-save_shadow_stack_pointer:
-    ssrdp  x5                   # read ssp and push value onto
-    sspush x5                   # shadow stack. The [ssp] now
-    addi   x5, x5, -(XLEN/8)    # holds ptr+XLEN/8. The [x5] now
-                                # holds ptr. Save away x5
-                                # into a context structure to
-                                # restore later.
-restore_shadow_stack_pointer:
-    ssamoswap t0, x0, (a0)      # t0=*[a0] and *[a0]=0
-                                # The [a0] should hold ptr
-                                # The [t0] should hold ptr+XLEN/8
-    addi   a0, a0, (XLEN/8)     # a0+XLEN/8 must match to t0
-    bne    t0, a0, crash        # if not crash program
-    csrw   ssp, t0              # setup new ssp
 
-Further, the program may enforce an invariant that a shadow stack can be active
-only on one hart by using the `ssamoswap` when performing the restore from the
-checkpoint such that the checkpoint data is zeroed as part of the restore
-sequence. If multiple hart attempt to restore the checkpoint data, only one
-of them succeeds.
 ====
 
 [[SSMP]]
@@ -808,13 +740,12 @@ enhanced to support a shadow stack memory region for use by M-mode.
 ==== Virtual-Memory system extension for Shadow Stack
 
 The shadow stack memory is protected using page table attributes such that it
-cannot be stored to by instructions other than `sspush`, `c.sspush`, and
-`ssamoswap`. The `sslw`, `ssld`, `sspopchk`, and `c.sspopchk` instructions can only
-load from shadow stack memory.
+cannot be stored to by instructions other than `sspush`, and `c.sspush`. The
+`sslw`, `ssld`, `sspopchk`, and `c.sspopchk` instructions can only load from
+shadow stack memory.
 
-The `sspush` and `c.sspush` instructions perform a store. The `ssamoswap`
-instruction performs an AMO. The `sslw`, `ssld`, `sspopchk`, and `c.sspopchk`
-instructions perfom a load.
+The `sspush` and `c.sspush` instructions perform a store. The `sslw`, `ssld`,
+`sspopchk`, and `c.sspopchk` instructions perfom a load.
 
 The shadow stack can be read using all instructions that load from memory.
 
@@ -828,26 +759,26 @@ page.  When `menvcfg.SSE=0`, this encoding remains reserved. When `V=1` and
 The following faults may occur:
 
 . If the accessed page is a shadow stack page:
-.. Stores other than `sspush` and `ssamoswap` cause store/AMO access-fault.
+.. Stores other than `sspush` and `c.sspush` cause store/AMO access-fault.
 .. Instruction fetches cause an instruction page-fault.
 . If the accessed page is not a shadow stack page or if the page is in
   non-idempotent memory:
-.. `ssamoswap`, `c.sspush`, and `sspush` cause a store/AMO access-fault.
+.. `c.sspush`, and `sspush` cause a store/AMO access-fault.
 .. `sslw`, `ssld`, `c.sspopchk`, and `sspopchk` cause a load access-fault.
 
 [NOTE]
 ====
-Stores to shadow stack by instructions other than `sspush`, `c.sspush`, and
-`ssamoswap` cause a store/AMO access-fault exception, rather than a store/AMO
-page-fault exception, to indicate fatality.
+Stores to shadow stack by instructions other than `sspush`, and `c.sspush`
+cause a store/AMO access-fault exception, rather than a store/AMO page-fault
+exception, to indicate fatality.
 
 If a store/AMO page-fault was triggered, it would suggest that the operating
 system should service that fault and correct the condition. Correcting the
 condition is not possible in this case. The page-fault handler would have to
 resort to decoding the opcode of the instruction that caused the page-fault to
 determine if it was caused by non-shadow-stack-stores to shadow stack pages
-(which is a fatal condition) vs. a page fault caused by an `sspush`, `c.sspush`,
-or `ssamoswap` to a non-resident page (which is a recoverable condition). Since
+(which is a fatal condition) vs. a page fault caused by an `sspush` or
+`c.sspush` to a non-resident page (which is a recoverable condition). Since
 the operating system page-fault handler is typically performance-critical,
 causing an access-fault instead of a page-fault enables the operating system to
 easily distinguish between the fatal/non-recoverable conditions and recoverable
@@ -855,8 +786,8 @@ page-faults.
 
 On implementations where address-misaligned exception is prioritized higher than
 access-fault exception, a trap handler handler that emulates misaligned stores
-must cause an access-fault exception if the store is not `sspush`, `c.sspush`,
-or, `ssamoswap`, and the store is being made to a shadow stack page.
+must cause an access-fault exception if the store is not `sspush` or `c.sspush`,
+and the store is being made to a shadow stack page.
 
 Shadow stack instructions cause an access-fault if the accessed page is not a
 shadow stack page or if the page is in non-idempotent memory to similarly
@@ -892,7 +823,7 @@ follows:
    corresponding to the original access type.
 
 The PMA checks are extended to require memory referenced by `sspush`, `sslw`,
-`ssld`, `ssamoswap`, `c.sspush`, `c.sspopchk`, and `sspopchk` to be idempotent.
+`ssld`, `c.sspush`, `c.sspopchk`, and `sspopchk` to be idempotent.
 
 The `U` and `SUM` bit enforcement is performed normally for shadow stack
 instruction initiated memory accesses. The state of the `MXR` bit does not
@@ -923,9 +854,9 @@ access-fault exception.
 ====
 
 The G-stage address translation and protections remain unaffected by Zicfiss
-extension. When G-stage page tables are active, the `ssamoswap`, `sslw`, `ssld`,
+extension. When G-stage page tables are active, the `sslw`, `ssld`,
 `c.sspopchk`, and `sspopchk` instructions require the G-stage page table to have
-read permission for the accessed memory, whereas the `ssamoswap`, `c.sspush`, and
+read permission for the accessed memory, whereas the `c.sspush`, and
 `sspush` instructions require write permission. The `xwr == 010b` encoding in
 the G-stage PTE remains reserved.
 
@@ -939,13 +870,12 @@ its guests.
 [[PMP_SS]]
 ==== PMP extension for shadow stack
 
-When privilege mode is less than M, the PMP region accessed by `sspush`,
-`c.sspush`, and `ssamoswap` must provide write permission and the PMP region
-accessed by `sslw`, `ssld`, `c.sspopchk`, and `sspopchk` must provide read
-permission.
+When privilege mode is less than M, the PMP region accessed by `sspush` and
+`c.sspush` must provide write permission and the PMP region accessed by `sslw`,
+`ssld`, `c.sspopchk`, and `sspopchk` must provide read permission.
 
-The M-mode memory accesses by `sspush`, `c.sspush` and `ssamoswap` instructions
-test for write permission in the matching PMP entry when permission checking is
+The M-mode memory accesses by `sspush` and `c.sspush` instructions test for
+write permission in the matching PMP entry when permission checking is
 required.
 
 The M-mode memory accesses by `sslw`, `ssld`, `c.sspopchk`, and `sspopchk`
@@ -960,11 +890,11 @@ When `mseccfg.MML` is 1, the `SSPMP` field is read-only else it may be written.
 When the `SSPMP` field is not zero, the following rules are additionally
 enforced for M-mode memory accesses:
 
-* `sspush`, `c.sspush`, `sslw`, `ssld`, `sspopchk`, `c.sspopchk`, and `ssamoswap`
+* `sspush`, `c.sspush`, `sslw`, `ssld`, `sspopchk`, and `c.sspopchk`
   instructions must match the PMP entry identified by `SSPMP` else an
   access-fault exception corresponding to the access type occurs.
 
-* Write by instructions other than `sspush`, `c.sspush`, and `ssamoswap` that
+* Write by instructions other than `sspush` and `c.sspush` that
   match the PMP entry identified by `SSPMP` cause an store/AMO
   access-fault exception.
 
