@@ -1,4 +1,4 @@
-[[forward]]
+4[forward]]
 == Landing pad (Zicfilp)
 
 To enforce forward-edge control-flow integrity, the Zicfilp extension introduces
@@ -103,11 +103,11 @@ not a valid landing pad or may use an alternate register allocation to prevent
 the accidental landing pad.
 ====
 
-== Zicfilp CSRs
+=== Zicfilp CSRs
 
 This chapter specifies the CSR state of the Zicfilp extension.
 
-=== Machine environment configuration registers (`menvcfg and menvcfgh`)
+==== Machine environment configuration registers (`menvcfg and menvcfgh`)
 
 .Machine environment configuration register (`menvcfg`) for MXLEN=64
 [wavedrom, ,svg]
@@ -116,7 +116,7 @@ This chapter specifies the CSR state of the Zicfilp extension.
   {bits:  1, name: 'FIOM'},
   {bits:  1, name: 'WPRI'},
   {bits:  1, name: 'LPE'},
-  {bits:  1, name: 'SSE'},
+  {bits:  1, name: 'WPRI'},
   {bits:  2, name: 'CBIE'},
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
@@ -136,20 +136,21 @@ rules apply to S-mode:
   state is always `NO_LP_EXPECTED`.
 * The `lpad` instruction executes as a no-op.
 
-=== Supervisor environment configuration registers (`senvcfg`)
+==== Supervisor environment configuration registers (`senvcfg`)
 
-.Supervisor environment configuration register (`senvcfg`)
+.Supervisor environment configuration register (`senvcfg`) when `SXLEN=64`
 [wavedrom, ,svg]
 ....
 {reg: [
   {bits:  1, name: 'FIOM'},
   {bits:  1, name: 'WPRI'},
   {bits:  1, name: 'LPE'},
-  {bits:  1, name: 'SSE'},
+  {bits:  1, name: 'WPRI'},
   {bits:  2, name: 'CBIE'},
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
-], config:{lanes: 1, hspace:1024}}
+  {bits: 56, name: 'WPRI'},
+], config:{lanes: 4, hspace:1024}}
 ....
 
 Zicfilp extension introduces the `LPE` field (bit 2) in `senvcfg`. When
@@ -161,7 +162,7 @@ following rules apply to VU/U-mode:
   state is always `NO_LP_EXPECTED`.
 * The `lpad` instruction executes as a no-op.
 
-=== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
+==== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
 
 .Hypervisor environment configuration register (`henvcfg`) for MXLEN=64
 [wavedrom, ,svg]
@@ -170,7 +171,7 @@ following rules apply to VU/U-mode:
   {bits:  1, name: 'FIOM'},
   {bits:  1, name: 'WPRI'},
   {bits:  1, name: 'LPE'},
-  {bits:  1, name: 'SSE'},
+  {bits:  1, name: 'WPRI'},
   {bits:  2, name: 'CBIE'},
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
@@ -190,7 +191,7 @@ rules apply to VS-mode:
   state is always `NO_LP_EXPECTED`.
 * The `lpad` instruction executes as a no-op.
 
-=== Machine status registers (`mstatus`)
+==== Machine status registers (`mstatus`)
 
 .Machine-mode status register (`mstatus`) for RV64
 [wavedrom, ,svg]
@@ -235,7 +236,7 @@ fields that hold the previous `ELP`, and are updated as specified in
 * 0 - `NO_LP_EXPECTED` - no landing pad instruction expected.
 * 1 - `LP_EXPECTED` - a landing pad instruction is expected.
 
-=== Supervisor status registers (`sstatus`)
+==== Supervisor status registers (`sstatus`)
 
 .Supervisor-mode status register (`sstatus`) when `SXLEN=64`
 [wavedrom, ,svg]
@@ -268,7 +269,7 @@ Access to the `SPELP` field introducecd by Zicfilp accesses the homonymous
 fields of `mstatus` when `V=0` and the homonymous fields of `vsstatus`
 when `V=1`.
 
-=== Virtual supervisor status registers (`vsstatus`)
+==== Virtual supervisor status registers (`vsstatus`)
 
 .Virtual supervisor status register (`vsstatus`) when `VSXLEN=64`
 [wavedrom, ,svg]
@@ -304,7 +305,7 @@ The `SPELP` field is encoded as follows:
 * 0 - `NO_LP_EXPECTED` - no landing pad instruction expected.
 * 1 - `LP_EXPECTED` - a landing pad instruction is expected.
 
-=== Machine Security Configuration (`mseccfg`)
+==== Machine Security Configuration (`mseccfg`)
 
 .Machine security configuration register (`mseccfg`) when `MXLEN=64`
 [wavedrom, ,svg]
@@ -330,7 +331,7 @@ apply to M-mode.
   state is always `NO_LP_EXPECTED`.
 * The `lpad` instruction executes as a no-op.
 
-=== Debug Control and Status (`dcsr`)
+==== Debug Control and Status (`dcsr`)
 
 .Debug Control and Status (`dcsr`)
 [wavedrom, ,svg]

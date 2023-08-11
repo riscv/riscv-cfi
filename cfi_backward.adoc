@@ -49,11 +49,11 @@ the `c.mop.0`, `c.mop.1` and `c.mop.2` encodings defined by the Zcmop extension.
 When a Zimop encoding is not used by the Zicfiss extension then the
 instruction follows its Zimop defined behavior.
 
-== Zicfiss CSRs
+=== Zicfiss CSRs
 
 This chapter specifies the CSR state of the Zicfiss extensions.
 
-=== Machine environment configuration registers (`menvcfg and menvcfgh`)
+==== Machine environment configuration registers (`menvcfg and menvcfgh`)
 
 .Machine environment configuration register (`menvcfg`) for MXLEN=64
 [wavedrom, ,svg]
@@ -83,9 +83,9 @@ rules apply to privilege modes less than M.
 * The `pte.xwr=010b` encoding in S-stage page tables is reserved.
 * The `henvcfg.SSE` and `senvcfg.SSE` fields are read-only zero.
 
-=== Supervisor environment configuration registers (`senvcfg`)
+==== Supervisor environment configuration registers (`senvcfg`)
 
-.Supervisor environment configuration register (`senvcfg`)
+.Supervisor environment configuration register (`senvcfg`) when `SXLEN=64`
 [wavedrom, ,svg]
 ....
 {reg: [
@@ -95,7 +95,8 @@ rules apply to privilege modes less than M.
   {bits:  2, name: 'CBIE'},
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
-], config:{lanes: 1, hspace:1024}}
+  {bits: 56, name: 'WPRI'},
+], config:{lanes: 4, hspace:1024}}
 ....
 
 Zicfiss extension introduces the `SSE` field (bit 2) in `senvcfg`. When
@@ -107,7 +108,7 @@ rules apply:
 * The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
 * The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
 
-=== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
+==== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
 
 .Hypervisor environment configuration register (`henvcfg`) for MXLEN=64
 [wavedrom, ,svg]
@@ -137,7 +138,7 @@ rules apply when `V=1`.
 * The `pte.xwr=010b` encoding in VS-stage page tables is reserved.
 * The `senvcfg.SSE` field is read-only zero.
 
-=== Shadow stack pointer (`ssp`)
+==== Shadow stack pointer (`ssp`)
 
 The `ssp` CSR is an unprivileged read-write (URW) CSR that reads and writes `XLEN`
 low order bits of the shadow stack pointer (`ssp`). There is no high CSR defined
@@ -145,7 +146,7 @@ as the `ssp` is always as wide as the `XLEN` of the current privilege mode. The
 bits 1:0 of `ssp` are read-only zero. If the UXLEN or SXLEN may never be 32,
 then the bit 2 is also read-only zero.
 
-=== Machine Security Configuration (`mseccfg`)
+==== Machine Security Configuration (`mseccfg`)
 
 .Machine security configuration register (`mseccfg`) when `MXLEN=64`
 [wavedrom, ,svg]
@@ -160,7 +161,7 @@ then the bit 2 is also read-only zero.
   {bits:  1, name: 'WPRI'},
   {bits:  6, name: 'SSPMP'},
   {bits: 47, name: 'WPRI'},
-], config:{lanes: 4, hspace:1024}}
+], config:{lanes: 1, hspace:1024}}
 ....
 
 The Zicfiss extension introduces the `SSPMP` WARL field in `mseccfg`. The
@@ -178,7 +179,7 @@ determined as follows:
 [width=100%]
 [%header, cols="^4,^12"]
 |===
-|Privilege Mode| xLPE
+|Privilege Mode| xSSE
 |  M           | `1`
 |  S or HS     | `menvcfg.SSE`
 |  VS          | `henvcfg.SSE`
@@ -234,10 +235,10 @@ current top of the shadow stack followed by an increment of the `ssp` by
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:[`00000`,'00001','00101','00001','00101', '00000','00000']},
+  {bits:  5, name: 'rd',  attr:['00000','00001','00101','00001','00101','00000','00000']},
   {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:[`00000`,'00000','00000', '00000','00000', '00001', '00101']},
-  {bits: 12, name: '100000011100', attr:[`ssincp`, 'sslw  x1','sslw  x5',`ssld x1',`ssld x5, sspopchk x1','sspopchk x5']},
+  {bits:  5, name: 'rs1', attr:['00000','00000','00000','00000','00000','00001','00101']},
+  {bits: 12, name: '100000011100', attr:['ssincp','sslw  x1','sslw  x5','ssld x1','ssld x5','sspopchk x1','sspopchk x5']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
