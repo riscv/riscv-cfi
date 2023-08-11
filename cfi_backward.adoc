@@ -29,8 +29,8 @@ The Zicfiss extension introduces the following instructions:
 * Push to and pop from the shadow stack (See <<SS_PUSH_POP>>)
 ** `sspush x1`, `c.sspush x1`, and `sspush x5`
 ** `sspopchk x1`, `sspopchk x5`, and `c.sspopchk x5`
-** `ssload x1` and `ssload x5`
-** `ssincp`
+** `ssload x1`, and `ssload x5`
+** `ssincp`, and `c.ssincp`
 
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
 ** `ssprr`
@@ -43,7 +43,7 @@ the `mop.r.0`, `mop.r.1`, and `mop.rr.0` encodings defined by the Zimop
 extension.
 
 The 16-bit instructions are encoded using the `C.LUI` major opcode and using
-the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
+the `c.mop.0`, `c.mop.1` and `c.mop.2` encodings defined by the Zcmop extension.
 
 When a Zimop encoding is not used by the Zicfiss extension then the
 instruction follows its Zimop defined behavior.
@@ -266,10 +266,9 @@ Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
 Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
 
 Zicfiss provides 16-bit versions of the `sspush x1` and `sspopchk x5`
-instructions using the Zcmop encodings. The `c.sspush x1` and the
+instructions using the Zcmop encodings. The `c.ssincp`, `c.sspush x1` and the
 `c.sspopchk x5` instructions are encoded using the `C.LUI` major opcode and
-using the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
-
+using the `c.mop.0`, `c.mop.1`, and `c.mop.2` encodings.
 
 The `c.sspush x1` expands to `sspush x1` and `c.sspopchk x5` expands to
 `sspopchk x5`.
@@ -294,7 +293,7 @@ The `ssload` instruction can be used to load a return address from the shadow
 stack into a link register.
 
 The `ssincp` instruction adds `XLEN/8` to the `ssp`. This instruction may be
-used to pop a return address from the shadow stack.
+used to remove a shadow stack frame from the shadow stack.
 
 While any register may be used as link register, conventionally the `x1` or `x5`
 registers are used. The shadow stack instructions are designed to be most
@@ -508,9 +507,9 @@ else
 endif
 ----
 
-The operation of the `ssincp` instruction is as follows:
+The operation of the `ssincp` and `c.ssincp` instructions is as follows:
 
-.`ssincp` operation
+.`ssincp` and `c.ssincp` operation
 [listing]
 ----
 if (xSSE == 1)
