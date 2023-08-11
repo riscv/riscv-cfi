@@ -502,7 +502,7 @@ stack into a link register.
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
   {bits:  5, name: 'rd',  attr:['00001','00101','00001','00101']},
   {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:[`00000','00000','00000','00000']},
+  {bits:  5, name: 'rs1', attr:['00000','00000','00000','00000']},
   {bits: 12, name: '100000011100', attr:['sslw  x1','sslw  x5','ssld x1','ssld x5']},
 ], config:{lanes: 1, hspace:1024}}
 ....
