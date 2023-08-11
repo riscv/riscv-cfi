@@ -141,7 +141,9 @@ rules apply when `V=1`.
 
 The `ssp` CSR is an unprivileged read-write (URW) CSR that reads and writes `XLEN`
 low order bits of the shadow stack pointer (`ssp`). There is no high CSR defined
-as the `ssp` is always as wide as the `XLEN` of the current privilege mode.
+as the `ssp` is always as wide as the `XLEN` of the current privilege mode. The
+bits 1:0 of `ssp` are read-only zero. If the UXLEN or SXLEN may never be 32,
+then the bit 2 is also read-only zero.
 
 === Machine Security Configuration (`mseccfg`)
 
