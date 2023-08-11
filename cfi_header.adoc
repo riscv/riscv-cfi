@@ -61,7 +61,6 @@ Copyright 2022 by RISC-V International.
 include::cfi_contributors.adoc[]
 
 include::cfi_intro.adoc[]
-include::cfi_csrs.adoc[]
 include::cfi_backward.adoc[]
 include::cfi_forward.adoc[]
 //the index must precede the bibliography

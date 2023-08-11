@@ -11,7 +11,7 @@ addresses to lower addresses. Each entry on the shadow stack is `XLEN` wide and
 holds the link register value. The `ssp` points to the top of the shadow stack,
 i.e. address of the last element stored on the shadow stack.
 
-When backward-edge CFI is active, each function that needs to spill the link
+When Zicfiss is enabled, each function that needs to spill the link
 register (e.g., non-leaf functions) stores the link register value to the regular
 stack and a shadow copy of the link register value to the shadow stack when the
 function is entered (the prologue). When such a function need to return (the
@@ -26,43 +26,168 @@ exception.
 
 The Zicfiss extension introduces the following instructions:
 
-* Push to and pop from the shadow stack (See <<SS_PUSH_POP>>)
+* Push to the shadow stack (See <<SS_PUSH>>)
 ** `sspush x1`, `c.sspush x1`, and `sspush x5`
-** `sspopchk x1`, `sspopchk x5`, and `c.sspopchk x5`
-** `ssload x1` and `ssload x5`
-** `sspinc`
+
+* Pop from the shadow stack (See <<SS_POP>>)
+** `sspopchk x1`, `c.sspopchk x5`, and `sspopchk x5`
+
+* Load from the shadow stack (See <<SS_LOAD>>)
+** `sslw x1` and `sslw x5` when effective xlen is 32
+** `ssld x1` and `ssld x5` when effective xlen is 64
+
+* Increment the shadow stack pointer (See <<SSP_INC>>)
+** `ssincp` and `c.ssincp`
 
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
-** `ssprr`
-
-* Perform atomic swap from a shadow stack location (See <<SS_SWAP>>)
-** `ssamoswap`
+** `ssrdp`
 
 The 32-bit instructions are encoded using the `SYSTEM` major opcode and using
 the `mop.r.0`, `mop.r.1`, and `mop.rr.0` encodings defined by the Zimop
 extension.
 
 The 16-bit instructions are encoded using the `C.LUI` major opcode and using
-the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
+the `c.mop.0`, `c.mop.1` and `c.mop.2` encodings defined by the Zcmop extension.
 
 When a Zimop encoding is not used by the Zicfiss extension then the
 instruction follows its Zimop defined behavior.
 
-=== Backward-edge-CFI-active state
+=== Zicfiss CSRs
 
-The term `xBCFIE` is used to determine if backward-edge CFI provided by the
-Zicfiss extension is active at a privilege mode `x` and is defined as follows:
+This chapter specifies the CSR state of the Zicfiss extensions.
 
-.`xBCFIE` determination
-[listing]
-----
-if ( privilege == M-mode )
-    xBCFIE = 1
-else if ( privilege == S-mode )
-    xBCFIE = (V == 0) ? menvcfg.SBCFIE : henvcfg.SBCFIE
-else
-    xBCFIE = (V == 0) ? sstatus.UBCFIE : vsstatus.UBCFIE
-----
+==== Machine environment configuration registers (`menvcfg and menvcfgh`)
+
+.Machine environment configuration register (`menvcfg`) for MXLEN=64
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'FIOM'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  1, name: 'SSE'},
+  {bits:  2, name: 'CBIE'},
+  {bits:  1, name: 'CBCFE'},
+  {bits:  1, name: 'CBZE'},
+  {bits: 53, name: 'WPRI'},
+  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'PBMTE'},
+  {bits:  1, name: 'STCE'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+Zicfiss extension introduces the `SSE` field (bit 3) in `menvcfg`. When
+`SSE` field is 1, the Zicfiss extension is enabled in S-mode. When `SSE`
+field is 0, the Zicfiss extension is not enabled in S-mode and the following
+rules apply to privilege modes less than M.
+
+* Attempts to access the `ssp` CSR raise an illegal-instruction exception.
+* The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
+* The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
+* The `pte.xwr=010b` encoding in S-stage page tables is reserved.
+* The `henvcfg.SSE` and `senvcfg.SSE` fields are read-only zero.
+
+==== Supervisor environment configuration registers (`senvcfg`)
+
+.Supervisor environment configuration register (`senvcfg`) when `SXLEN=64`
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'FIOM'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  1, name: 'SSE'},
+  {bits:  2, name: 'CBIE'},
+  {bits:  1, name: 'CBCFE'},
+  {bits:  1, name: 'CBZE'},
+  {bits: 56, name: 'WPRI'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+Zicfiss extension introduces the `SSE` field (bit 2) in `senvcfg`. When
+`SSE` field is 1, the Zicfiss extension is enabled in VU/U-mode. When `SSE`
+field is 0, the Zicfiss extension is not enabled in VS/U-mode and the following
+rules apply:
+
+* Attempts to access the `ssp` CSR raise an illegal-instruction exception.
+* The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
+* The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
+
+==== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
+
+.Hypervisor environment configuration register (`henvcfg`) for MXLEN=64
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'FIOM'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  1, name: 'SSE'},
+  {bits:  2, name: 'CBIE'},
+  {bits:  1, name: 'CBCFE'},
+  {bits:  1, name: 'CBZE'},
+  {bits: 53, name: 'WPRI'},
+  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'PBMTE'},
+  {bits:  1, name: 'STCE'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+Zicfiss extension introduces the `SSE` field (bit 2) in `henvcfg`. When
+`SSE` field is 1, the Zicfiss extension is enabled in VS-mode. When `SSE`
+field is 0, the Zicfiss extension is not enabled in VS-mode and the following
+rules apply when `V=1`.
+
+* Attempts to access the `ssp` CSR raise an illegal-instruction exception.
+* The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
+* The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
+* The `pte.xwr=010b` encoding in VS-stage page tables is reserved.
+* The `senvcfg.SSE` field is read-only zero.
+
+==== Shadow stack pointer (`ssp`)
+
+The `ssp` CSR is an unprivileged read-write (URW) CSR that reads and writes `XLEN`
+low order bits of the shadow stack pointer (`ssp`). There is no high CSR defined
+as the `ssp` is always as wide as the `XLEN` of the current privilege mode. The
+bits 1:0 of `ssp` are read-only zero. If the UXLEN or SXLEN may never be 32,
+then the bit 2 is also read-only zero.
+
+==== Machine Security Configuration (`mseccfg`)
+
+.Machine security configuration register (`mseccfg`) when `MXLEN=64`
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'MML'},
+  {bits:  1, name: 'MMWP'},
+  {bits:  1, name: 'RLB'},
+  {bits:  5, name: 'WPRI'},
+  {bits:  1, name: 'USEED'},
+  {bits:  1, name: 'SSEED'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  6, name: 'SSPMP'},
+  {bits: 47, name: 'WPRI'},
+], config:{lanes: 1, hspace:1024}}
+....
+
+The Zicfiss extension introduces the `SSPMP` WARL field in `mseccfg`. The
+`SSPMP` field identifies a PMP entry as the shadow stack memory region for
+M-mode use. The rules enforced by PMP for M-mode shadow stack memory accesses
+are specified in <<PMP_SS>>.
+
+=== Shadow-Stack-Enabled (SSE) state
+
+The term `xSSE` is used to determine if backward-edge CFI using shadow stacks
+provided by the Zicfiss extension is enabled at a privilege mode and it is
+determined as follows:
+
+.`xSSE` determination
+[width=100%]
+[%header, cols="^4,^12"]
+|===
+|Privilege Mode| xSSE
+|  M           | `1`
+|  S or HS     | `menvcfg.SSE`
+|  VS          | `henvcfg.SSE`
+|  U or VU     | `senvcfg.SSE`
+|===
 
 [NOTE]
 ====
@@ -72,18 +197,18 @@ Zicfiss allows it to invoke shared libraries that may contain Zicfiss
 instructions. The Zicfiss instructions in the shared library revert to their
 Zimop/Zcmop-defined behavior in this case.
 
-When Zicfiss is active in S-mode it is benign to use an operating system that is
+When Zicfiss is enabled in S-mode it is benign to use an operating system that is
 not compiled with Zicfiss instructions. Such an operating system that does
 not use backward-edge CFI for S-mode execution may still activate Zicfiss for
 U-mode applications.
 
-When Zicfiss is implemented, the extension is always active in M-mode. However,
+When Zicfiss is implemented, the extension is always enabled in M-mode. However,
 it is benign to use M-mode firmware that has not been compiled with Zicfiss
 instructions. Such M-mode firmware that does not use backward-edge CFI for
 M-mode execution may still enable the use of Zicfiss by lower privilege modes.
 
 When programs that use Zicfiss instructions are installed on a processor that
-supports the Zicfiss extension but the extension is not active at the privilege
+supports the Zicfiss extension but the extension is not enabled at the privilege
 mode where the program executes, the program continues to function correctly but
 without backward-edge CFI protection as the Zicfiss instructions will revert to
 their Zimop/Zcmop-defined behavior.
@@ -100,36 +225,10 @@ illegal-instruction exception. Execution of programs that use these
 instructions on such machines is not supported.
 ====
 
-[[SS_PUSH_POP]]
-=== Push to and Pop from the shadow stack
-
+[[SS_PUSH]]
+=== Push to shadow stack
 A shadow stack push operation is defined as decrement of the `ssp` by `XLEN`
 followed by a write of the link register at the new top of the shadow stack.
-A shadow stack pop operation is defined as a `XLEN` wide read from the
-current top of the shadow stack followed by an increment of the `ssp` by
-`XLEN`.
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['00001','00101','00000','00000']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['00000','00000', '00001', '00101']},
-  {bits: 12, name: '100000011100', attr:['ssload  x1','ssload  x5','sspopchk x1','sspopchk x5']},
-], config:{lanes: 1, hspace:1024}}
-....
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: '00000'},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'nzuimm'},
-  {bits: 12, name: '100000011101', attr:['sspinc']},
-], config:{lanes: 1, hspace:1024}}
-....
 
 [wavedrom, ,svg]
 ....
@@ -148,24 +247,72 @@ current top of the shadow stack followed by an increment of the `ssp` by
 {reg: [
   {bits:  2, name: 'op', attr:'C1'},
   {bits:  5, name: '00000'},
-  {bits:  5, name: 'rs1', attr:['00001','00101']},
+  {bits:  5, name: 'rs1', attr:['00001']},
   {bits:  1, name: '0'},
-  {bits:  3, name: '011', attr:['c.sspush x1', 'c.sspopchk x5']},
+  {bits:  3, name: '011', attr:['c.sspush x1']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-Only `x1` and `x5` encodings are supported as `rd` for `ssload`.
-Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
-Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
-Only non-zero encodings of `nzuimm` are defined for `sspinc`.
+Only `x1` and `x5` encodings are supported as `rs2` for `sspush`. Zicfiss
+provides 16-bit versions of the `sspush x1` instruction using the Zcmop
+defined `c.mop.1` encoding. The `c.sspush x1` expands to `sspush x1`.
 
-Zicfiss provides 16-bit versions of the `sspush x1` and `sspopchk x5`
-instructions using the Zcmop encodings. The `c.sspush x1` and the
-`c.sspopchk x5` instructions are encoded using the `C.LUI` major opcode and
-using the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
+The `sspush` instruction and its compressed form `c.sspush` can be used, to push
+a link register on the shadow stack. The `sspush` and `c.sspush` instructions
+performs a store identically to the existing `STORE` instruction, with the
+difference that the base is implicitly `ssp` and the width is implicitly `XLEN`.
 
-The `c.sspush x1` expands to `sspush x1` and `c.sspopchk x5` expands to
-`sspopchk x5`.
+The `sspush` and `c.sspush` instructions require the virtual address in `ssp` to
+have a shadow stack attribute (see <<SSMP>>). Correct execution of `sspush` and
+`c.sspush` requires that `ssp` refers to idempotent memory. If the memory
+referenced by `ssp` is not idempotent, then the `sspush`/`c.sspush` instructions
+cause a store/AMO access-fault exception. If the virtual address in `ssp` is not
+`XLEN` aligned, then the `sspush`/`c.sspush` instructions cause a store/AMO
+access-fault exception.
+
+The operation of the `sspush` and `c.sspush` instructions is as follows:
+
+.`sspush` and `c.sspush` operation
+[listing]
+----
+If (xSSE == 1)
+    mem[ssp - (XLEN/8)] = X(src)  # Store src value to ssp - XLEN/8
+    ssp = ssp - (XLEN/8)          # decrement ssp by XLEN/8
+endif
+----
+
+[[SS_POP]]
+=== Pop from the shadow stack
+
+A shadow stack pop operation is defined as a `XLEN` wide read from the
+current top of the shadow stack followed by an increment of the `ssp` by
+`XLEN`.
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd',  attr:['00000','00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['00001','00101']},
+  {bits: 12, name: '100000011100', attr:['sspopchk x1','sspopchk x5']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  2, name: 'op', attr:'C1'},
+  {bits:  5, name: '00000'},
+  {bits:  5, name: 'rs1', attr:['00101']},
+  {bits:  1, name: '0'},
+  {bits:  3, name: '011', attr:['c.sspopchk x5']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`. Zicfiss
+provides a 16-bit version of the `sspopchk x5` using Zcmop define `c.mop.2`
+encoding. The `c.sspopchk x5` expands to `sspopchk x5`.
 
 Usually programs with a shadow stack push the return address onto the regular
 stack as well as the shadow stack in the function prologue of non-leaf
@@ -175,20 +322,10 @@ the shadow stack. The two values are then compared. If the values do not match
 it is indicative of a corruption of the return address variable on the regular
 stack.
 
-The `sspush` instruction and its compressed form `c.sspush` can be used, to push
-a link register on the shadow stack.
-
 The `sspopchk` instruction and its compressed form `c.sspopchk` can be used to
 pop the shadow return address value from the shadow stack and check that the
 value matches the contents of the link register and if not cause an
 integrity-fault exception with *tval set to "shadow stack fault (code=3)".
-
-The `ssload` instruction can be used to load a return address from the shadow
-stack into a link register.
-
-The `sspinc` instruction adds the zero-extended non-zero immediate `nzuimm`,
-scaled by `XLEN/8`, to the `ssp`. This instruction may be used to pop up to 31
-return addresses from the shadow stack.
 
 While any register may be used as link register, conventionally the `x1` or `x5`
 registers are used. The shadow stack instructions are designed to be most
@@ -245,88 +382,19 @@ The prologue and epilogue of a non-leaf function in shadow stack mode is as
 follows:
 
 [listing]
+----
     function_entry:
         addi sp,sp,-8  # push link register x1
         sd x1,(sp)     # on data stack
-        #
-        # Let the contents of ssp register be 0x0000000121679F8 and
-        # XLEN be 64 ssp register holds the address of the top of
-        # shadow stack. Let the contents of the link register x1
-        # be 0x0000000010252000
-        #
-        # 0x00000000121679E8:[                  ]
-        # 0x00000000121679F0:[                  ]
-        # 0x00000000121679F8:[0xrrrrrrrrrrrrrrrr] <- ssp
-        #
         sspush x1      # push link register x1 on shadow stack
-        #
-        # sspush store the source register value to address
-        # (ssp - XLEN/8) and updates ssp to (ssp - XLEN/8) - does
-        # a push. Following completion of # sspush the ssp value is
-        # the new top of stack i.e. 0x0000000121679F0 and the value
-        # in x1 is stored at this location
-        #
-        # 0x00000000121679E8:[                  ]
-        # 0x00000000121679F0:[0x0000000010252000] <- ssp
-        # 0x00000000121679F8:[0xrrrrrrrrrrrrrrrr]
-        #
          :
          :
         ld x1,(sp)     # pop link register x1 from data stack
         addi sp,sp,8
         sspopchk x1    # compare link register x1 to shadow
                        # return address; faults if not same
-        #
-        # sspopchk loads the value from location addressed by ssp and
-        # compares the loaded value to the value held in the register
-        # source and if the two are identical updates ssp to
-        # (ssp + XLEN/8) - does a pop and a check. Following
-        # completion of sspopchk the ssp value is the # new top of
-        # stack i.e. 0x00000000121679F8
-        #
-        # 0x00000000121679E8:[                  ]
-        # 0x00000000121679F0:[0x0000000010252000]
-        # 0x00000000121679F8:[0xrrrrrrrrrrrrrrrr] <- ssp
-        #
         ret
-
-The prologue and epilogue of a non-leaf function when operating in control stack
-mode is as follows:
-
-[listing]
-    function_entry:
-        #
-        # Let the contents of ssp register be 0x19740428 and XLEN be 32
-        # ssp register holds the address of the top of shadow stack
-        # Let the contents of the link register x1 be 0x19791216
-        #
-        # 0x19740418:[          ]
-        # 0x19740420:[          ]
-        # 0x19740428:[0xrrrrrrrr] <- ssp
-        #
-        sspush x1      # push link register x1 on shadow stack
-        #
-        # Following sspush the shadow stack and ssp are as follows:
-        #
-        # 0x19740418:[          ]
-        # 0x19740420:[0x19791216] <- ssp
-        # 0x19740428:[0xrrrrrrrr]
-        #
-         :
-         :
-        ssload x1      # load return address from shadow stack
-        sspinc 1       # increment ssp by 1 * (XLEN/8)
-        #
-        # ssload loads the value from location addressed by ssp into
-        # destination register. sspinc updates ssp to (ssp + XLEN/8)
-        # - does a pop. Following completion of sspinc the ssp value
-        # is the new top of stack i.e. 0x19740428
-        #
-        # 0x19740418:[          ]
-        # 0x19740420:[0x19791216]
-        # 0x19740428:[0xrrrrrrrr] <- ssp
-        #
-        ret
+----
 
 These examples illustrate the use of `x1` register as the link register.
 Alternatively, the `x5` register may also be used as the link register.
@@ -338,26 +406,17 @@ be held in the link register itself for the duration of the leaf function
 execution.
 ====
 
-The `ssload`, `c.sspopchk`, and `sspopchk` instructions perform a load
-identically to the existing `LOAD` instruction, with the difference that the
-base is implicitly `ssp` and the width is implicitly `XLEN`.
-
-The `sspush` and `c.sspush` instructions performs a store identically to the
-existing `STORE` instruction, with the difference that the base is implicitly
+The `c.sspopchk`, and `sspopchk` instructions perform a load identically to the
+existing `LOAD` instruction, with the difference that the base is implicitly
 `ssp` and the width is implicitly `XLEN`.
 
-The `sspush`, `c.sspush`, `sspopchk`, `c.sspopchk`, and `ssload` require the
-virtual address in `ssp` to have a shadow stack attribute (see <<SSMP>>).
-
-Correct execution of `sspush`, `c.sspush`, `sspopchk`, `c.sspopchk`, and `ssload`
-require that `ssp` refers to idempotent memory. If the memory reference by
-`ssp` is not idempotent, then the `sspush`/`c.sspush` instructions cause a
-store/AMO access-fault exception, and the `ssload`/`sspopchk`/`c.sspopchk`
-instructions cause a load access-fault exception.
-
-If the virtual address in `ssp` is not `XLEN` aligned, then the `ssload`/
-`sspopchk`/`c.sspopchk` instructions cause a load access-fault exception, and
-the `sspush`/`c.sspush` instructions cause a store/AMO access-fault exception.
+The `sspopchk` and `c.sspopchk` instructions require the virtual address in
+`ssp` to have a shadow stack attribute (see <<SSMP>>). Correct execution of
+`sspopchk` and `c.sspopchk` requires that `ssp` refers to idempotent memory. If
+the memory reference by `ssp` is not idempotent, then the instructions cause a
+load access-fault exception. If the virtual address in `ssp` is not `XLEN`
+aligned, then `sspopchk` and `c.sspopchk` instructions cause a load access
+fault exception
 
 [NOTE]
 ====
@@ -378,46 +437,12 @@ usage, and requiring memory referenced by `ssp` to be idempotent does not pose a
 significant restriction.
 ====
 
-The operation of the `sspush` and `c.sspush` instructions is as follows:
-
-.`sspush` and `c.sspush` operation
-[listing]
-----
-If (xBCFIE == 1)
-    mem[ssp - (XLEN/8)] = X(src)  # Store src value to ssp - XLEN/8
-    ssp = ssp - (XLEN/8)          # decrement ssp by XLEN/8
-endif
-----
-
-The operation of the `ssload` instruction is as follows:
-
-.`ssload` operation
-[listing]
-----
-if (xBCFIE == 1)
-    X(dst) = mem[ssp]          # Load dst from address in ssp
-                               # Only x1 and x5 may be used as dst
-else
-    X(dst) = 0
-endif
-----
-
-The operation of the `sspinc` instruction is as follows:
-
-.`sspinc` operation
-[listing]
-----
-if (xBCFIE == 1)
-    ssp = ssp + (nzuimm * XLEN/8)
-endif
-----
-
 The operation of the `sspopchk` and `c.sspopchk` instructions is as follows:
 
 .`sspopchk` and `c.sspopchk` operation
 [listing]
 ----
-if (xBCFIE == 1)
+if (xSSE == 1)
     temp = mem[ssp]            # Load temp from address in ssp and
     if temp != X(src)          # Compare temp to value in src and
                                # cause an integrity-fault exception
@@ -462,15 +487,170 @@ jump to the return address.
 
 ====
 
+
+[[SS_LOAD]]
+=== Load from the shadow stack
+
+The `sslw` instruction can be used, when effective xlen is 32, to load a return
+address from the shadow stack into a link register. The `ssld` instruction can
+be used, when effective xlen is 64, to load a return address from the shadow
+stack into a link register.
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd',  attr:['00001','00101','00001','00101']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['00000','00000','00000','00000']},
+  {bits: 12, name: '100000011100', attr:['sslw  x1','sslw  x5','ssld x1','ssld x5']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+The `sslw` and `ssld` are both encoded identically. They have different
+mnemonics to illustrate that the instructions operates on a _word_ when
+XLEN is 32 and on a _doubleword_ when XLEN is 64.
+
+The `sslw` and `ssld` instructions require the virtual address in `ssp` to have
+a shadow stack attribute (see <<SSMP>>). Correct execution of `sslw` and `ssld`
+requires that `ssp` refers to idempotent memory. If the memory reference by
+`ssp` is not idempotent, then the instructions cause a load access fault
+exception. If the virtual address in `ssp` is not `XLEN` aligned, then `sslw`
+and `ssld` instructions cause a load access fault exception
+
+The operation of the `sslw` and `ssld` instructions is as follows:
+
+.`sslw` and `ssld` operation
+[listing]
+----
+if (xSSE == 1)
+    X(dst) = mem[ssp]          # Load dst with XLEN bits from address in ssp
+                               # Only x1 and x5 may be used as dst
+else
+    X(dst) = 0
+endif
+----
+
 [NOTE]
 ====
 Store-to-load forwarding is a common technique employed by high-performance
 processor implementations. Zicfiss implementations may prevent forwarding from
-a non-shadow-stack store to `ssload`/`sspopchk`/`c.sspopchk` instructions. A
+a non-shadow-stack store to `sslw`/`ssld`/`sspopchk`/`c.sspopchk` instructions. A
 non-shadow-stack store causes a fault if done to a page mapped as a shadow
 stack. However, such determination may be delayed till the PTE has been examined
 and thus may be used to transiently forward the data from such stores to a
-`ssload`/`sspopchk`/`c.sspopchk`.
+`sslw`/`ssld`/`sspopchk`/`c.sspopchk`.
+====
+
+[[SSP_INC]]
+=== Increment the shadow stack pointer
+
+The `ssincp` instruction adds `XLEN/8` to the `ssp`. This instruction may be
+used to remove a shadow stack frame from the shadow stack. Zicfiss provides a
+16-bit version of the `ssincp` using Zcmop define `c.mop.0` encoding. The
+`c.ssincp` expands to `ssincp`.
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd',  attr:['00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['00000']},
+  {bits: 12, name: '100000011100', attr:['ssincp']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  2, name: 'op', attr:'C1'},
+  {bits:  5, name: '00000'},
+  {bits:  5, name: 'rs1', attr:['00000']},
+  {bits:  1, name: '0'},
+  {bits:  3, name: '011', attr:['c.ssincp']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+The operation of the `ssincp` and `c.ssincp` instructions is as follows:
+
+.`ssincp` and `c.ssincp` operation
+[listing]
+----
+if (xSSE == 1)
+    ssp = ssp + XLEN/8
+endif
+----
+
+[NOTE]
+====
+The prologue and epilogue of a non-leaf function when operating in control stack
+mode is as follows:
+
+[listing]
+----
+    function_entry:
+        sspush x1      # push link register x1 on shadow stack
+         :
+         :
+        ssld x1        # load return address from shadow stack
+        ssincp         # increment ssp by (XLEN/8)
+        ret
+----
+====
+
+[[SSP_READ]]
+=== Read `ssp` into a register
+
+The `ssrdp` instruction is provided to move the contents of `ssp` to a destination
+register.
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['dst']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: '00000'},
+  {bits: 12, name: '100000011101', attr:['ssrdp']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+Encoding `rd` as `x0` is not supported for `ssrdp`.
+
+The operation of the `ssrdp` instructions is as follows:
+
+.`ssrdp` operation
+[listing]
+----
+If (xSSE == 1)
+    X(dst) = ssp
+else
+    X(dst) = 0
+endif
+----
+
+[NOTE]
+====
+The property of Zimop writing 0 to the `rd` when the extension using Zimop is
+not implemented, enabled for use, or not enabled may be used by to determine if
+Zicfiss extension is enabled. For example, functions that unwind shadow stacks
+may skip over the unwind actions by dynamically detecting if the Zicfiss
+extension is enabled.
+
+An example sequence such as the following may be used:
+
+[listing]
+    ssrdp t0                      # mv ssp to t0
+    beqz t0, zicfiss_not_enabled  # zero is not a valid shadow stack
+                                  # pointer by convention
+    # Zicfiss is enabled
+    :
+    :
+zicfiss_not_active:
+
+Operating systems and runtimes must not locate shadow stacks at address 0 to
+assist with the use of such code sequences.
 ====
 
 [NOTE]
@@ -493,7 +673,7 @@ setjmp() {
     :
     :
     // read and save the shadow stack pointer to jmp_buf
-    asm("ssprr %0" : "=r"(cur_ssp):);
+    asm("ssrdp %0" : "=r"(cur_ssp):);
     jmp_buf->saved_ssp = cur_ssp;
     :
     :
@@ -502,136 +682,23 @@ longjmp() {
     :
     // Read current shadow stack pointer and
     // compute number of call frames to unwind
-    asm("ssprr %0" : "=r"(cur_ssp):);
+    asm("ssrdp %0" : "=r"(cur_ssp):);
     // Skip the unwind if backward-edge CFI not enabled
     asm("beqz %0, back_cfi_not_enabled" : "=r"(cur_ssp):);
-    num_unwind = jmp_buf->saved_ssp - cur_ssp;
     // Unwind the frames in a loop
-    while ( num_unwind > 0 ) {
-        if ( num_unwind >= 31 ) {
-            asm("sspinc 31");
-            num_unwind -= 31;
-            continue;
-        } else if ( num_unwind >= 16 ) {
-            asm("sspinc 16");
-            num_unwind -= 16;
-            continue;
-        } else if ( num_unwind >= 8 ) {
-            asm("sspinc 8");
-            num_unwind -= 8;
-            continue;
-        } else if ( num_unwind >= 4 ) {
-            asm("sspinc 4");
-            num_unwind -= 4;
-            continue;
-        } else {
-            asm("sspinc 1");
-            num_unwind -= 1;
-        }
+    while ( jmp_buf->saved_ssp > cur_ssp ) {
+        // advance by a maximum of 4K at a time to avoid
+        // unwinding past bounds of the shadow stack
+        cur_ssp = ( (jmp_buf->saved_ssp - cur_ssp) >= 4096 ) ?
+                  (cur_ssp + 4096) : jmp_buf->saved_ssp;
+        asm("csrw ssp, %0" : :  "r" (cur_ssp));
         // Test if unwound past the shadow stack bounds
-        asm("ssload x5");
+        asm("ssld x5");
     }
 back_cfi_not_enabled:
     :
 }
 ====
-
-[[SSP_READ]]
-=== Read `ssp` into a register
-
-The `ssprr` instruction is provided to move the contents of `ssp` to a destination
-register.
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['dst']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: '00000'},
-  {bits: 12, name: '100000011101', attr:['ssprr']},
-], config:{lanes: 1, hspace:1024}}
-....
-
-Encoding `rd` as `x0` is not supported for `ssprr`.
-
-The operation of the `ssprr` instructions is as follows:
-
-.`ssprr` operation
-[listing]
-----
-If (xBCFIE == 1)
-    X(dst) = ssp
-else
-    X(dst) = 0
-endif
-----
-
-[NOTE]
-====
-The property of Zimop writing 0 to the `rd` when the extension using Zimop is
-not implemented, enabled for use, or not active may be used by to determine if
-backward-edge CFI is active. For example, functions that unwind shadow stacks
-may skip over the unwind actions by dynamically detecting if the backward-edge
-CFI extension is active.
-
-An example sequence such as the following may be used:
-
-[listing]
-    ssprr t0                  # mv ssp to t0
-    beqz bcfi_not_active      # zero is not a valid shadow stack
-                              # pointer by convention
-    # Backward-edge CFI is active
-    :
-    :
-bcfi_not_active:
-
-Operating systems and runtimes must not locate shadow stacks at address 0 to
-assist with the use of such code sequences.
-====
-
-[[SS_SWAP]]
-=== Atomic Swap from a shadow stack location
-
-The `ssamoswap` instruction performs an atomic swap operation between the `XLEN`
-bits of the `src` register and the `XLEN` bits located on the shadow stack at the
-address specified in the `addr` register. The resulting value from the swap
-operation is then stored into the register specified in the `dst` operand.
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['dst']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['addr']},
-  {bits:  5, name: 'rs2', attr:['src']},
-  {bits:  7, name: '1000001', attr:['ssamoswap']},
-], config:{lanes: 1, hspace:1024}}
-....
-
-Encoding `rd` as `x0` is not supported for `ssamoswap`.
-
-The `ssamoswap` is always sequentially consistent and cannot be reordered with
-earlier or later memory operations from the same hart.
-
-The `ssamoswap` causes a store/AMO access-fault exception if the address in
-`addr` does not have a shadow stack attribute (see <<SSMP>>), of if the address
- is not `XLEN` aligned, or if the memory reference by `ssp` is not idempotent.
-
-The operation of the `ssamoswap` instructions is as follows:
-
-.`ssamoswap` operation
-[listing]
-----
-If (xBCFIE == 1)
-    Perform the following atomically with sequential consistency
-        X(dst) = mem[X(addr)]
-        mem[X(addr)] = X(src)
-else
-    X(dst) = 0
-endif
-----
 
 [NOTE]
 ====
@@ -647,32 +714,30 @@ memory corruption vulnerabilities. To protect the pointer value, the program may
 store it at the top of the deactivated shadow stack itself and thereby create a
 checkpoint.
 
-An example sequence to store and restore the shadow stack pointer is as follows:
+An example sequence to restore the shadow stack pointer from the new shadow
+stack and save the old shadow stack pointer on the old shadow stack is as
+follows:
 
 [listing]
-# The a0 register holds the pointer to top of new shadow
-# to switch to. The current ssp is first pushed on the current
-# shadow stack and the ssp is restored from new shadow stack
-save_shadow_stack_pointer:
-    ssprr  x5                   # read ssp and push value onto
-    sspush x5                   # shadow stack. The [ssp] now
-    addi   x5, x5, -(XLEN/8)    # holds ptr+XLEN/8. The [x5] now
-                                # holds ptr. Save away x5
-                                # into a context structure to
-                                # restore later.
-restore_shadow_stack_pointer:
-    ssamoswap t0, x0, (a0)      # t0=*[a0] and *[a0]=0
-                                # The [a0] should hold ptr
-                                # The [t0] should hold ptr+XLEN/8
-    addi   a0, a0, (XLEN/8)     # a0+XLEN/8 must match to t0
-    bne    t0, a0, crash        # if not crash program
-    csrw   ssp, t0              # setup new ssp
-
-Further, the program may enforce an invariant that a shadow stack can be active
-only on one hart by using the `ssamoswap` when performing the restore from the
-checkpoint such that the checkpoint data is zeroed as part of the restore
-sequence. If multiple hart attempt to restore the checkpoint data, only one
-of them succeeds.
+# The a0 register holds the pointer to checkpoint at the top of the
+# new shadow stack. x5 at end of the sequence has the address of the
+# checkpoint created on current shadow stack. This should be saved
+# away in a context structure to restore later.
+switch_shadow_stack:
+    ssrdp t1                 # read current ssp
+    beqz t1, ss_not_enabled  # skip if shadow stacks not enabled
+    csrw ssp, a0             # ssp = checkpoint address
+    mv t0, a0                # checkpoint value == checkpoint address
+    sspopchk t0              # pop and check the checkpoint value
+    li t0, 0                 # clear the checkpoint
+    sspush t0                # by pushing zero in its place
+    addi a0, a0, (XLEN/8)    # a0 now has the top of new shadow stack
+    mv t0, t1                # t1 holds the top of old shadow stack
+    csrw ssp, t0             # point ssp to old top of old shadow stack
+    addi x5, x5, -(XLEN/8)   # checkpoint val = (ssp - XLEN/8)
+    sspush x5                # store checkpoint to (ssp - XLEN/8)
+    csrw ssp, a0             # setup new ssp
+ss_not_enabled:
 ====
 
 [[SSMP]]
@@ -687,13 +752,12 @@ enhanced to support a shadow stack memory region for use by M-mode.
 ==== Virtual-Memory system extension for Shadow Stack
 
 The shadow stack memory is protected using page table attributes such that it
-cannot be stored to by instructions other than `sspush`, `c.sspush`, and
-`ssamoswap`. The `ssload`, `sspopchk`, and `c.sspopchk` instructions can only
-load from shadow stack memory.
+cannot be stored to by instructions other than `sspush`, and `c.sspush`. The
+`sslw`, `ssld`, `sspopchk`, and `c.sspopchk` instructions can only load from
+shadow stack memory.
 
-The `sspush` and `c.sspush` instructions perform a store. The `ssamoswap`
-instruction performs an AMO. The `ssload`, `sspopchk`, and `c.sspopchk`
-instructions perfom a load.
+The `sspush` and `c.sspush` instructions perform a store. The `sslw`, `ssld`,
+`sspopchk`, and `c.sspopchk` instructions perfom a load.
 
 The shadow stack can be read using all instructions that load from memory.
 
@@ -701,32 +765,32 @@ Attempting to fetch an instruction from a shadow stack page raises an
 instruction page-fault exception.
 
 The encoding `R=0`, `W=1`, and `X=0`, is defined to represent a shadow stack
-page.  When `menvcfg.SBCFIE=0`, this encoding remains reserved. When `V=1` and
-`henvcfg.SBCFIE=0`, this encoding remains reserved at `VS` and `VU`.
+page.  When `menvcfg.SSE=0`, this encoding remains reserved. When `V=1` and
+`henvcfg.SSE=0`, this encoding remains reserved at `VS` and `VU`.
 
 The following faults may occur:
 
 . If the accessed page is a shadow stack page:
-.. Stores other than `sspush` and `ssamoswap` cause store/AMO access-fault.
+.. Stores other than `sspush` and `c.sspush` cause store/AMO access-fault.
 .. Instruction fetches cause an instruction page-fault.
 . If the accessed page is not a shadow stack page or if the page is in
   non-idempotent memory:
-.. `ssamoswap`, `c.sspush`, and `sspush` cause a store/AMO access-fault.
-.. `ssload`, `c.sspopchk`, and `sspopchk` cause a load access-fault.
+.. `c.sspush`, and `sspush` cause a store/AMO access-fault.
+.. `sslw`, `ssld`, `c.sspopchk`, and `sspopchk` cause a load access-fault.
 
 [NOTE]
 ====
-Stores to shadow stack by instructions other than `sspush`, `c.sspush`, and
-`ssamoswap` cause a store/AMO access-fault exception, rather than a store/AMO
-page-fault exception, to indicate fatality.
+Stores to shadow stack by instructions other than `sspush`, and `c.sspush`
+cause a store/AMO access-fault exception, rather than a store/AMO page-fault
+exception, to indicate fatality.
 
 If a store/AMO page-fault was triggered, it would suggest that the operating
 system should service that fault and correct the condition. Correcting the
 condition is not possible in this case. The page-fault handler would have to
 resort to decoding the opcode of the instruction that caused the page-fault to
 determine if it was caused by non-shadow-stack-stores to shadow stack pages
-(which is a fatal condition) vs. a page fault caused by an `sspush`, `c.sspush`,
-or `ssamoswap` to a non-resident page (which is a recoverable condition). Since
+(which is a fatal condition) vs. a page fault caused by an `sspush` or
+`c.sspush` to a non-resident page (which is a recoverable condition). Since
 the operating system page-fault handler is typically performance-critical,
 causing an access-fault instead of a page-fault enables the operating system to
 easily distinguish between the fatal/non-recoverable conditions and recoverable
@@ -734,8 +798,8 @@ page-faults.
 
 On implementations where address-misaligned exception is prioritized higher than
 access-fault exception, a trap handler handler that emulates misaligned stores
-must cause an access-fault exception if the store is not `sspush`, `c.sspush`,
-or, `ssamoswap`, and the store is being made to a shadow stack page.
+must cause an access-fault exception if the store is not `sspush` or `c.sspush`,
+and the store is being made to a shadow stack page.
 
 Shadow stack instructions cause an access-fault if the accessed page is not a
 shadow stack page or if the page is in non-idempotent memory to similarly
@@ -752,8 +816,8 @@ follows:
 3. If `pte.v = 0` or if any bits of encodings that are reserved for future
    standard use are set within `pte`, stop and raise a page-fault exception
    corresponding to the original access type. The encoding `pte.xwr = 010b`
-   is not reserved if `V=0` and `menvcfg.SBCFIE` is 1 or if `V=1` and
-   `henvcfg.SBCFIE` is 1.
+   is not reserved if `V=0` and `menvcfg.SSE` is 1 or if `V=1` and
+   `henvcfg.SSE` is 1.
 
 4. Otherwise, the PTE is valid. If `pte.r = 1` or `pte.w = 1` or `pte.x = 1`,
    go to step 5. Otherwise, this PTE is a pointer to the next level of the page
@@ -770,8 +834,8 @@ follows:
    fields of the `mstatus` register, stop and raise a page-fault exception
    corresponding to the original access type.
 
-The PMA checks are extended to require memory referenced by `sspush`, `ssload`,
-`ssamoswap`, `c.sspush`, `c.sspopchk`, and `sspopchk` to be idempotent.
+The PMA checks are extended to require memory referenced by `sspush`, `sslw`,
+`ssld`, `c.sspush`, `c.sspopchk`, and `sspopchk` to be idempotent.
 
 The `U` and `SUM` bit enforcement is performed normally for shadow stack
 instruction initiated memory accesses. The state of the `MXR` bit does not
@@ -802,9 +866,9 @@ access-fault exception.
 ====
 
 The G-stage address translation and protections remain unaffected by Zicfiss
-extension. When G-stage page tables are active, the `ssamoswap`, `ssload`,
+extension. When G-stage page tables are active, the `sslw`, `ssld`,
 `c.sspopchk`, and `sspopchk` instructions require the G-stage page table to have
-read permission for the accessed memory, whereas the `ssamoswap`, `c.sspush`, and
+read permission for the accessed memory, whereas the `c.sspush`, and
 `sspush` instructions require write permission. The `xwr == 010b` encoding in
 the G-stage PTE remains reserved.
 
@@ -818,17 +882,17 @@ its guests.
 [[PMP_SS]]
 ==== PMP extension for shadow stack
 
-When privilege mode is less than M, the PMP region accessed by `sspush`,
-`c.sspush`, and `ssamoswap` must provide write permission and the PMP region
-accessed by `ssload`, `c.sspopchk`, and `sspopchk` must provide read permission.
+When privilege mode is less than M, the PMP region accessed by `sspush` and
+`c.sspush` must provide write permission and the PMP region accessed by `sslw`,
+`ssld`, `c.sspopchk`, and `sspopchk` must provide read permission.
 
-The M-mode memory accesses by `sspush`, `c.sspush` and `ssamoswap` instructions
-test for write permission in the matching PMP entry when permission checking is
+The M-mode memory accesses by `sspush` and `c.sspush` instructions test for
+write permission in the matching PMP entry when permission checking is
 required.
 
-The M-mode memory accesses by `ssload`, `c.sspopchk`, and `sspopchk` instructions
-test for read permission in the matching PMP entry when permission checking is
-required.
+The M-mode memory accesses by `sslw`, `ssld`, `c.sspopchk`, and `sspopchk`
+instructions test for read permission in the matching PMP entry when permission
+checking is required.
 
 A new WARL field `SSPMP` is defined in the `mseccfg` CSR to identify a PMP entry
 as the shadow stack memory region for M-mode accesses.
@@ -838,11 +902,11 @@ When `mseccfg.MML` is 1, the `SSPMP` field is read-only else it may be written.
 When the `SSPMP` field is not zero, the following rules are additionally
 enforced for M-mode memory accesses:
 
-* `sspush`, `c.sspush`, `ssload`, `sspopchk`, `c.sspopchk`, and `ssamoswap`
+* `sspush`, `c.sspush`, `sslw`, `ssld`, `sspopchk`, and `c.sspopchk`
   instructions must match the PMP entry identified by `SSPMP` else an
   access-fault exception corresponding to the access type occurs.
 
-* Write by instructions other than `sspush`, `c.sspush`, and `ssamoswap` that
+* Write by instructions other than `sspush` and `c.sspush` that
   match the PMP entry identified by `SSPMP` cause an store/AMO
   access-fault exception.
 
@@ -853,3 +917,4 @@ inaccessible for U-mode and S-mode read and write accesses. Allowing write
 access violates the integrity of the shadow stack, and allowing read access may
 lead to disclosure of M-mode return addresses.
 ====
+
