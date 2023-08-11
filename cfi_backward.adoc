@@ -34,7 +34,7 @@ The Zicfiss extension introduces the following instructions:
 ** `ssincp`, and `c.ssincp`
 
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
-** `ssprr`
+** `ssrdp`
 
 * Perform atomic swap from a shadow stack location (See <<SS_SWAP>>)
 ** `ssamoswap`
@@ -630,7 +630,7 @@ setjmp() {
     :
     :
     // read and save the shadow stack pointer to jmp_buf
-    asm("ssprr %0" : "=r"(cur_ssp):);
+    asm("ssrdp %0" : "=r"(cur_ssp):);
     jmp_buf->saved_ssp = cur_ssp;
     :
     :
@@ -639,7 +639,7 @@ longjmp() {
     :
     // Read current shadow stack pointer and
     // compute number of call frames to unwind
-    asm("ssprr %0" : "=r"(cur_ssp):);
+    asm("ssrdp %0" : "=r"(cur_ssp):);
     // Skip the unwind if backward-edge CFI not enabled
     asm("beqz %0, back_cfi_not_enabled" : "=r"(cur_ssp):);
     // Unwind the frames in a loop
@@ -660,7 +660,7 @@ back_cfi_not_enabled:
 [[SSP_READ]]
 === Read `ssp` into a register
 
-The `ssprr` instruction is provided to move the contents of `ssp` to a destination
+The `ssrdp` instruction is provided to move the contents of `ssp` to a destination
 register.
 
 [wavedrom, ,svg]
@@ -670,15 +670,15 @@ register.
   {bits:  5, name: 'rd', attr:['dst']},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: '00000'},
-  {bits: 12, name: '100000011101', attr:['ssprr']},
+  {bits: 12, name: '100000011101', attr:['ssrdp']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-Encoding `rd` as `x0` is not supported for `ssprr`.
+Encoding `rd` as `x0` is not supported for `ssrdp`.
 
-The operation of the `ssprr` instructions is as follows:
+The operation of the `ssrdp` instructions is as follows:
 
-.`ssprr` operation
+.`ssrdp` operation
 [listing]
 ----
 If (xSSE == 1)
@@ -699,7 +699,7 @@ extension is enabled.
 An example sequence such as the following may be used:
 
 [listing]
-    ssprr t0                  # mv ssp to t0
+    ssrdp t0                  # mv ssp to t0
     beqz zicfiss_not_enabled  # zero is not a valid shadow stack
                               # pointer by convention
     # Zicfiss is enabled
@@ -775,7 +775,7 @@ An example sequence to store and restore the shadow stack pointer is as follows:
 # to switch to. The current ssp is first pushed on the current
 # shadow stack and the ssp is restored from new shadow stack
 save_shadow_stack_pointer:
-    ssprr  x5                   # read ssp and push value onto
+    ssrdp  x5                   # read ssp and push value onto
     sspush x5                   # shadow stack. The [ssp] now
     addi   x5, x5, -(XLEN/8)    # holds ptr+XLEN/8. The [x5] now
                                 # holds ptr. Save away x5
