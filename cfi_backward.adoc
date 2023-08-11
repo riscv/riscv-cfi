@@ -26,12 +26,18 @@ exception.
 
 The Zicfiss extension introduces the following instructions:
 
-* Push to and pop from the shadow stack (See <<SS_PUSH_POP>>)
+* Push to the shadow stack (See <<SS_PUSH>>)
 ** `sspush x1`, `c.sspush x1`, and `sspush x5`
-** `sspopchk x1`, `sspopchk x5`, and `c.sspopchk x5`
-** `sslw x1`, and `sslw x5` when effective xlen is 32
-** `ssld x1`, and `ssld x5` when effective xlen is 64
-** `ssincp`, and `c.ssincp`
+
+* Pop from the shadow stack (See <<SS_POP>>)
+** `sspopchk x1`, `c.sspopchk x5`, and `sspopchk x5`
+
+* Load from the shadow stack (See <<SS_LOAD>>)
+** `sslw x1` and `sslw x5` when effective xlen is 32
+** `ssld x1` and `ssld x5` when effective xlen is 64
+
+* Increment the shadow stack pointer (See <<SSP_INC>>)
+** `ssincp` and `c.ssincp`
 
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
 ** `ssrdp`
@@ -219,25 +225,10 @@ illegal-instruction exception. Execution of programs that use these
 instructions on such machines is not supported.
 ====
 
-[[SS_PUSH_POP]]
-=== Push to and Pop from the shadow stack
-
+[[SS_PUSH]]
+=== Push to shadow stack
 A shadow stack push operation is defined as decrement of the `ssp` by `XLEN`
 followed by a write of the link register at the new top of the shadow stack.
-A shadow stack pop operation is defined as a `XLEN` wide read from the
-current top of the shadow stack followed by an increment of the `ssp` by
-`XLEN`.
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd',  attr:['00000','00001','00101','00001','00101','00000','00000']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['00000','00000','00000','00000','00000','00001','00101']},
-  {bits: 12, name: '100000011100', attr:['ssincp','sslw  x1','sslw  x5','ssld x1','ssld x5','sspopchk x1','sspopchk x5']},
-], config:{lanes: 1, hspace:1024}}
-....
 
 [wavedrom, ,svg]
 ....
@@ -256,23 +247,72 @@ current top of the shadow stack followed by an increment of the `ssp` by
 {reg: [
   {bits:  2, name: 'op', attr:'C1'},
   {bits:  5, name: '00000'},
-  {bits:  5, name: 'rs1', attr:['00001','00101']},
+  {bits:  5, name: 'rs1', attr:['00001']},
   {bits:  1, name: '0'},
-  {bits:  3, name: '011', attr:['c.sspush x1', 'c.sspopchk x5']},
+  {bits:  3, name: '011', attr:['c.sspush x1']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-Only `x1` and `x5` encodings are supported as `rd` for `sslw` and `ssld`.
-Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
-Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
+Only `x1` and `x5` encodings are supported as `rs2` for `sspush`. Zicfiss
+provides 16-bit versions of the `sspush x1` instruction using the Zcmop
+defined `c.mop.1` encoding. The `c.sspush x1` expands to `sspush x1`.
 
-Zicfiss provides 16-bit versions of the `sspush x1` and `sspopchk x5`
-instructions using the Zcmop encodings. The `c.ssincp`, `c.sspush x1` and the
-`c.sspopchk x5` instructions are encoded using the `C.LUI` major opcode and
-using the `c.mop.0`, `c.mop.1`, and `c.mop.2` encodings.
+The `sspush` instruction and its compressed form `c.sspush` can be used, to push
+a link register on the shadow stack. The `sspush` and `c.sspush` instructions
+performs a store identically to the existing `STORE` instruction, with the
+difference that the base is implicitly `ssp` and the width is implicitly `XLEN`.
 
-The `c.sspush x1` expands to `sspush x1` and `c.sspopchk x5` expands to
-`sspopchk x5`.
+The `sspush` and `c.sspush` instructions require the virtual address in `ssp` to
+have a shadow stack attribute (see <<SSMP>>). Correct execution of `sspush` and
+`c.sspush` requires that `ssp` refers to idempotent memory. If the memory
+referenced by `ssp` is not idempotent, then the `sspush`/`c.sspush` instructions
+cause a store/AMO access-fault exception. If the virtual address in `ssp` is not
+`XLEN` aligned, then the `sspush`/`c.sspush` instructions cause a store/AMO
+access-fault exception.
+
+The operation of the `sspush` and `c.sspush` instructions is as follows:
+
+.`sspush` and `c.sspush` operation
+[listing]
+----
+If (xSSE == 1)
+    mem[ssp - (XLEN/8)] = X(src)  # Store src value to ssp - XLEN/8
+    ssp = ssp - (XLEN/8)          # decrement ssp by XLEN/8
+endif
+----
+
+[[SS_POP]]
+=== Pop from the shadow stack
+
+A shadow stack pop operation is defined as a `XLEN` wide read from the
+current top of the shadow stack followed by an increment of the `ssp` by
+`XLEN`.
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd',  attr:['00000','00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['00001','00101']},
+  {bits: 12, name: '100000011100', attr:['sspopchk x1','sspopchk x5']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  2, name: 'op', attr:'C1'},
+  {bits:  5, name: '00000'},
+  {bits:  5, name: 'rs1', attr:['00101']},
+  {bits:  1, name: '0'},
+  {bits:  3, name: '011', attr:['c.sspopchk x5']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`. Zicfiss
+provides a 16-bit version of the `sspopchk x5` using Zcmop define `c.mop.2`
+encoding. The `c.sspopchk x5` expands to `sspopchk x5`.
 
 Usually programs with a shadow stack push the return address onto the regular
 stack as well as the shadow stack in the function prologue of non-leaf
@@ -282,26 +322,10 @@ the shadow stack. The two values are then compared. If the values do not match
 it is indicative of a corruption of the return address variable on the regular
 stack.
 
-The `sspush` instruction and its compressed form `c.sspush` can be used, to push
-a link register on the shadow stack.
-
 The `sspopchk` instruction and its compressed form `c.sspopchk` can be used to
 pop the shadow return address value from the shadow stack and check that the
 value matches the contents of the link register and if not cause an
 integrity-fault exception with *tval set to "shadow stack fault (code=3)".
-
-The `sslw` instruction can be used, when effective xlen is 32, to load a return
-address from the shadow stack into a link register.
-
-The `ssld` instruction can be used, when effective xlen is 64, to load a return
-address from the shadow stack into a link register.
-
-The `sslw` and `ssld` are both encoded identically. They have different mnemonics
-to illustrate that the instructions operates on a _word_ when XLEN is 32 and on
-a _doubleword_ when XLEN is 64.
-
-The `ssincp` instruction adds `XLEN/8` to the `ssp`. This instruction may be
-used to remove a shadow stack frame from the shadow stack.
 
 While any register may be used as link register, conventionally the `x1` or `x5`
 registers are used. The shadow stack instructions are designed to be most
@@ -358,88 +382,19 @@ The prologue and epilogue of a non-leaf function in shadow stack mode is as
 follows:
 
 [listing]
+----
     function_entry:
         addi sp,sp,-8  # push link register x1
         sd x1,(sp)     # on data stack
-        #
-        # Let the contents of ssp register be 0x0000000121679F8 and
-        # XLEN be 64 ssp register holds the address of the top of
-        # shadow stack. Let the contents of the link register x1
-        # be 0x0000000010252000
-        #
-        # 0x00000000121679E8:[                  ]
-        # 0x00000000121679F0:[                  ]
-        # 0x00000000121679F8:[0xrrrrrrrrrrrrrrrr] <- ssp
-        #
         sspush x1      # push link register x1 on shadow stack
-        #
-        # sspush store the source register value to address
-        # (ssp - XLEN/8) and updates ssp to (ssp - XLEN/8) - does
-        # a push. Following completion of # sspush the ssp value is
-        # the new top of stack i.e. 0x0000000121679F0 and the value
-        # in x1 is stored at this location
-        #
-        # 0x00000000121679E8:[                  ]
-        # 0x00000000121679F0:[0x0000000010252000] <- ssp
-        # 0x00000000121679F8:[0xrrrrrrrrrrrrrrrr]
-        #
          :
          :
         ld x1,(sp)     # pop link register x1 from data stack
         addi sp,sp,8
         sspopchk x1    # compare link register x1 to shadow
                        # return address; faults if not same
-        #
-        # sspopchk loads the value from location addressed by ssp and
-        # compares the loaded value to the value held in the register
-        # source and if the two are identical updates ssp to
-        # (ssp + XLEN/8) - does a pop and a check. Following
-        # completion of sspopchk the ssp value is the # new top of
-        # stack i.e. 0x00000000121679F8
-        #
-        # 0x00000000121679E8:[                  ]
-        # 0x00000000121679F0:[0x0000000010252000]
-        # 0x00000000121679F8:[0xrrrrrrrrrrrrrrrr] <- ssp
-        #
         ret
-
-The prologue and epilogue of a non-leaf function when operating in control stack
-mode is as follows:
-
-[listing]
-    function_entry:
-        #
-        # Let the contents of ssp register be 0x19740428 and XLEN be 32
-        # ssp register holds the address of the top of shadow stack
-        # Let the contents of the link register x1 be 0x19791216
-        #
-        # 0x19740418:[          ]
-        # 0x19740420:[          ]
-        # 0x19740428:[0xrrrrrrrr] <- ssp
-        #
-        sspush x1      # push link register x1 on shadow stack
-        #
-        # Following sspush the shadow stack and ssp are as follows:
-        #
-        # 0x19740418:[          ]
-        # 0x19740420:[0x19791216] <- ssp
-        # 0x19740428:[0xrrrrrrrr]
-        #
-         :
-         :
-        ssld x1        # load return address from shadow stack
-        ssincp         # increment ssp by (XLEN/8)
-        #
-        # ssld loads the value from location addressed by ssp into
-        # destination register. ssincp updates ssp to (ssp + XLEN/8)
-        # - does a pop. Following completion of ssincp the ssp value
-        # is the new top of stack i.e. 0x19740428
-        #
-        # 0x19740418:[          ]
-        # 0x19740420:[0x19791216]
-        # 0x19740428:[0xrrrrrrrr] <- ssp
-        #
-        ret
+----
 
 These examples illustrate the use of `x1` register as the link register.
 Alternatively, the `x5` register may also be used as the link register.
@@ -451,34 +406,17 @@ be held in the link register itself for the duration of the leaf function
 execution.
 ====
 
-The `c.sspopchk`, and `sspopchk` instructions perform a load
-identically to the existing `LOAD` instruction, with the difference that the
-base is implicitly `ssp` and the width is implicitly `XLEN`.
-
-The `sslw` instruction perform a load identically to the existing `LOAD`
-instruction, with the difference that the base is implicitly `ssp` and the width
-is implicitly a _word_.
-
-The `ssld` instruction perform a load identically to the existing `LOAD`
-instruction, with the difference that the base is implicitly `ssp` and the width
-is implicitly a _doubleword_.
-
-The `sspush` and `c.sspush` instructions performs a store identically to the
-existing `STORE` instruction, with the difference that the base is implicitly
+The `c.sspopchk`, and `sspopchk` instructions perform a load identically to the
+existing `LOAD` instruction, with the difference that the base is implicitly
 `ssp` and the width is implicitly `XLEN`.
 
-The `sspush`, `c.sspush`, `sspopchk`, `c.sspopchk`, `sslw`, and `ssld` require the
-virtual address in `ssp` to have a shadow stack attribute (see <<SSMP>>).
-
-Correct execution of `sspush`, `c.sspush`, `sspopchk`, `c.sspopchk`, `sslw`, and `ssld`
-require that `ssp` refers to idempotent memory. If the memory reference by
-`ssp` is not idempotent, then the `sspush`/`c.sspush` instructions cause a
-store/AMO access-fault exception, and the `sslw`/`ssld`/`sspopchk`/`c.sspopchk`
-instructions cause a load access-fault exception.
-
-If the virtual address in `ssp` is not `XLEN` aligned, then the `sslw`/`ssld`/
-`sspopchk`/`c.sspopchk` instructions cause a load access-fault exception, and
-the `sspush`/`c.sspush` instructions cause a store/AMO access-fault exception.
+The `sspopchk` and `c.sspopchk` instructions require the virtual address in
+`ssp` to have a shadow stack attribute (see <<SSMP>>). Correct execution of
+`sspopchk` and `c.sspopchk` requires that `ssp` refers to idempotent memory. If
+the memory reference by `ssp` is not idempotent, then the instructions cause a
+load access-fault exception. If the virtual address in `ssp` is not `XLEN`
+aligned, then `sspopchk` and `c.sspopchk` instructions cause a load access
+fault exception
 
 [NOTE]
 ====
@@ -498,53 +436,6 @@ non-idempotent memory, such as non-idempotent device memory, is not an expected
 usage, and requiring memory referenced by `ssp` to be idempotent does not pose a
 significant restriction.
 ====
-
-The operation of the `sspush` and `c.sspush` instructions is as follows:
-
-.`sspush` and `c.sspush` operation
-[listing]
-----
-If (xSSE == 1)
-    mem[ssp - (XLEN/8)] = X(src)  # Store src value to ssp - XLEN/8
-    ssp = ssp - (XLEN/8)          # decrement ssp by XLEN/8
-endif
-----
-
-The operation of the `sslw` instruction is as follows:
-
-.`sslw` operation
-[listing]
-----
-if (xSSE == 1)
-    X(dst) = mem[ssp]          # Load dst with 32-bits from address in ssp
-                               # Only x1 and x5 may be used as dst
-else
-    X(dst) = 0
-endif
-----
-
-The operation of the `ssld` instruction is as follows:
-
-.`ssld` operation
-[listing]
-----
-if (xSSE == 1)
-    X(dst) = mem[ssp]          # Load dst with 64-bits from address in ssp
-                               # Only x1 and x5 may be used as dst
-else
-    X(dst) = 0
-endif
-----
-
-The operation of the `ssincp` and `c.ssincp` instructions is as follows:
-
-.`ssincp` and `c.ssincp` operation
-[listing]
-----
-if (xSSE == 1)
-    ssp = ssp + XLEN/8
-endif
-----
 
 The operation of the `sspopchk` and `c.sspopchk` instructions is as follows:
 
@@ -596,6 +487,50 @@ jump to the return address.
 
 ====
 
+
+[[SS_LOAD]]
+=== Load from the shadow stack
+
+The `sslw` instruction can be used, when effective xlen is 32, to load a return
+address from the shadow stack into a link register. The `ssld` instruction can
+be used, when effective xlen is 64, to load a return address from the shadow
+stack into a link register.
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd',  attr:['00001','00101','00001','00101']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:[`00000','00000','00000','00000']},
+  {bits: 12, name: '100000011100', attr:['sslw  x1','sslw  x5','ssld x1','ssld x5']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+The `sslw` and `ssld` are both encoded identically. They have different
+mnemonics to illustrate that the instructions operates on a _word_ when
+XLEN is 32 and on a _doubleword_ when XLEN is 64.
+
+The `sslw` and `ssld` instructions require the virtual address in `ssp` to have
+a shadow stack attribute (see <<SSMP>>). Correct execution of `sslw` and `ssld`
+requires that `ssp` refers to idempotent memory. If the memory reference by
+`ssp` is not idempotent, then the instructions cause a load access fault
+exception. If the virtual address in `ssp` is not `XLEN` aligned, then `sslw`
+and `ssld` instructions cause a load access fault exception
+
+The operation of the `sslw` and `ssld` instructions is as follows:
+
+.`sslw` and `ssld` operation
+[listing]
+----
+if (xSSE == 1)
+    X(dst) = mem[ssp]          # Load dst with XLEN bits from address in ssp
+                               # Only x1 and x5 may be used as dst
+else
+    X(dst) = 0
+endif
+----
+
 [NOTE]
 ====
 Store-to-load forwarding is a common technique employed by high-performance
@@ -607,51 +542,61 @@ and thus may be used to transiently forward the data from such stores to a
 `sslw`/`ssld`/`sspopchk`/`c.sspopchk`.
 ====
 
+[[SSP_INC]]
+=== Increment the shadow stack pointer
+
+The `ssincp` instruction adds `XLEN/8` to the `ssp`. This instruction may be
+used to remove a shadow stack frame from the shadow stack. Zicfiss provides a
+16-bit version of the `ssincp` using Zcmop define `c.mop.0` encoding. The
+`c.ssincp` expands to `ssincp`.
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd',  attr:['00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['00000']},
+  {bits: 12, name: '100000011100', attr:['ssincp']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  2, name: 'op', attr:'C1'},
+  {bits:  5, name: '00000'},
+  {bits:  5, name: 'rs1', attr:['00000']},
+  {bits:  1, name: '0'},
+  {bits:  3, name: '011', attr:['c.ssincp']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+The operation of the `ssincp` and `c.ssincp` instructions is as follows:
+
+.`ssincp` and `c.ssincp` operation
+[listing]
+----
+if (xSSE == 1)
+    ssp = ssp + XLEN/8
+endif
+----
+
 [NOTE]
 ====
-A common operation performed on stacks is to unwind them to support constructs
-like `setjmp`/`longjmp`, C++ exception handling, etc. A program that uses shadow
-stacks must unwind the shadow stack in addition to the stack used to store data.
-The unwind function must verify that it does not accidentally unwind past the
-bounds of the shadow stack. Shadow stacks are expected to be bounded on each end
-using guard pages, i.e. pages that do not have a shadow stack attribute. To
-detect if the unwind occurs past the bounds of the shadow stack, the unwind may
-be done in maximal increments of 4 KiB and testing for the `ssp` to be still
-pointing to a shadow stack page or has unwound into the guard page. The
-following examples illustrate the use of shadow stack instructions to
-unwind a shadow stack. This example assumes that the `setjmp` function itself does
-not push on to the shadow stack (being a leaf function, it is not required to).
+The prologue and epilogue of a non-leaf function when operating in control stack
+mode is as follows:
 
 [listing]
-setjmp() {
-    :
-    :
-    // read and save the shadow stack pointer to jmp_buf
-    asm("ssrdp %0" : "=r"(cur_ssp):);
-    jmp_buf->saved_ssp = cur_ssp;
-    :
-    :
-}
-longjmp() {
-    :
-    // Read current shadow stack pointer and
-    // compute number of call frames to unwind
-    asm("ssrdp %0" : "=r"(cur_ssp):);
-    // Skip the unwind if backward-edge CFI not enabled
-    asm("beqz %0, back_cfi_not_enabled" : "=r"(cur_ssp):);
-    // Unwind the frames in a loop
-    while ( jmp_buf->saved_ssp > cur_ssp ) {
-        // advance by a maximum of 4K at a time to avoid
-        // unwinding past bounds of the shadow stack
-        cur_ssp = ( (jmp_buf->saved_ssp - cur_ssp) >= 4096 ) ?
-                  (cur_ssp + 4096) : jmp_buf->saved_ssp;
-        asm("csrw ssp, %0" : :  "r" (cur_ssp));
-        // Test if unwound past the shadow stack bounds
-        asm("ssld x5");
-    }
-back_cfi_not_enabled:
-    :
-}
+----
+    function_entry:
+        sspush x1      # push link register x1 on shadow stack
+         :
+         :
+        ssld x1        # load return address from shadow stack
+        ssincp         # increment ssp by (XLEN/8)
+        ret
+----
 ====
 
 [[SSP_READ]]
@@ -710,6 +655,53 @@ assist with the use of such code sequences.
 
 [NOTE]
 ====
+A common operation performed on stacks is to unwind them to support constructs
+like `setjmp`/`longjmp`, C++ exception handling, etc. A program that uses shadow
+stacks must unwind the shadow stack in addition to the stack used to store data.
+The unwind function must verify that it does not accidentally unwind past the
+bounds of the shadow stack. Shadow stacks are expected to be bounded on each end
+using guard pages, i.e. pages that do not have a shadow stack attribute. To
+detect if the unwind occurs past the bounds of the shadow stack, the unwind may
+be done in maximal increments of 4 KiB and testing for the `ssp` to be still
+pointing to a shadow stack page or has unwound into the guard page. The
+following examples illustrate the use of shadow stack instructions to
+unwind a shadow stack. This example assumes that the `setjmp` function itself does
+not push on to the shadow stack (being a leaf function, it is not required to).
+
+[listing]
+setjmp() {
+    :
+    :
+    // read and save the shadow stack pointer to jmp_buf
+    asm("ssrdp %0" : "=r"(cur_ssp):);
+    jmp_buf->saved_ssp = cur_ssp;
+    :
+    :
+}
+longjmp() {
+    :
+    // Read current shadow stack pointer and
+    // compute number of call frames to unwind
+    asm("ssrdp %0" : "=r"(cur_ssp):);
+    // Skip the unwind if backward-edge CFI not enabled
+    asm("beqz %0, back_cfi_not_enabled" : "=r"(cur_ssp):);
+    // Unwind the frames in a loop
+    while ( jmp_buf->saved_ssp > cur_ssp ) {
+        // advance by a maximum of 4K at a time to avoid
+        // unwinding past bounds of the shadow stack
+        cur_ssp = ( (jmp_buf->saved_ssp - cur_ssp) >= 4096 ) ?
+                  (cur_ssp + 4096) : jmp_buf->saved_ssp;
+        asm("csrw ssp, %0" : :  "r" (cur_ssp));
+        // Test if unwound past the shadow stack bounds
+        asm("ssld x5");
+    }
+back_cfi_not_enabled:
+    :
+}
+====
+
+[NOTE]
+====
 Stack switching is a common operation in user programs as well as supervisor
 programs. When a stack switch is performed the stack pointer of the currently
 active stack is saved into a context data structure and the new stack is made
@@ -727,10 +719,10 @@ stack and save the old shadow stack pointer on the old shadow stack is as
 follows:
 
 [listing]
-# The a0 register holds the pointer to checkpoint at the top of the new shadow
-# stack. x5 at end of the sequence has the address of the checkpoint created on
-# current shadow stack. This should be saved away in a context structure to
-# restore later.
+# The a0 register holds the pointer to checkpoint at the top of the
+# new shadow stack. x5 at end of the sequence has the address of the
+# checkpoint created on current shadow stack. This should be saved
+# away in a context structure to restore later.
 switch_shadow_stack:
     ssrdp t1                 # read current ssp
     beqz t1, ss_not_enabled  # skip if shadow stacks not enabled
@@ -925,3 +917,4 @@ inaccessible for U-mode and S-mode read and write accesses. Allowing write
 access violates the integrity of the shadow stack, and allowing read access may
 lead to disclosure of M-mode return addresses.
 ====
+

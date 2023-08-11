@@ -1,4 +1,4 @@
-4[forward]]
+[[forward]]
 == Landing pad (Zicfilp)
 
 To enforce forward-edge control-flow integrity, the Zicfilp extension introduces
