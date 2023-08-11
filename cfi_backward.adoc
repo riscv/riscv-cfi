@@ -30,7 +30,7 @@ The Zicfiss extension introduces the following instructions:
 ** `sspush x1`, `c.sspush x1`, and `sspush x5`
 ** `sspopchk x1`, `sspopchk x5`, and `c.sspopchk x5`
 ** `ssload x1` and `ssload x5`
-** `sspinc`
+** `ssincp`
 
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
 ** `ssprr`
@@ -245,7 +245,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
   {bits:  5, name: '00000'},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: 'nzuimm'},
-  {bits: 12, name: '100000011101', attr:['sspinc']},
+  {bits: 12, name: '100000011101', attr:['ssincp']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
@@ -275,7 +275,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
 Only `x1` and `x5` encodings are supported as `rd` for `ssload`.
 Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
 Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
-Only non-zero encodings of `nzuimm` are defined for `sspinc`.
+Only non-zero encodings of `nzuimm` are defined for `ssincp`.
 
 Zicfiss provides 16-bit versions of the `sspush x1` and `sspopchk x5`
 instructions using the Zcmop encodings. The `c.sspush x1` and the
@@ -305,7 +305,7 @@ integrity-fault exception with *tval set to "shadow stack fault (code=3)".
 The `ssload` instruction can be used to load a return address from the shadow
 stack into a link register.
 
-The `sspinc` instruction adds the zero-extended non-zero immediate `nzuimm`,
+The `ssincp` instruction adds the zero-extended non-zero immediate `nzuimm`,
 scaled by `XLEN/8`, to the `ssp`. This instruction may be used to pop up to 31
 return addresses from the shadow stack.
 
@@ -434,11 +434,11 @@ mode is as follows:
          :
          :
         ssload x1      # load return address from shadow stack
-        sspinc 1       # increment ssp by 1 * (XLEN/8)
+        ssincp 1       # increment ssp by 1 * (XLEN/8)
         #
         # ssload loads the value from location addressed by ssp into
-        # destination register. sspinc updates ssp to (ssp + XLEN/8)
-        # - does a pop. Following completion of sspinc the ssp value
+        # destination register. ssincp updates ssp to (ssp + XLEN/8)
+        # - does a pop. Following completion of ssincp the ssp value
         # is the new top of stack i.e. 0x19740428
         #
         # 0x19740418:[          ]
@@ -521,9 +521,9 @@ else
 endif
 ----
 
-The operation of the `sspinc` instruction is as follows:
+The operation of the `ssincp` instruction is as follows:
 
-.`sspinc` operation
+.`ssincp` operation
 [listing]
 ----
 if (xSSE == 1)
@@ -628,23 +628,23 @@ longjmp() {
     // Unwind the frames in a loop
     while ( num_unwind > 0 ) {
         if ( num_unwind >= 31 ) {
-            asm("sspinc 31");
+            asm("ssincp 31");
             num_unwind -= 31;
             continue;
         } else if ( num_unwind >= 16 ) {
-            asm("sspinc 16");
+            asm("ssincp 16");
             num_unwind -= 16;
             continue;
         } else if ( num_unwind >= 8 ) {
-            asm("sspinc 8");
+            asm("ssincp 8");
             num_unwind -= 8;
             continue;
         } else if ( num_unwind >= 4 ) {
-            asm("sspinc 4");
+            asm("ssincp 4");
             num_unwind -= 4;
             continue;
         } else {
-            asm("sspinc 1");
+            asm("ssincp 1");
             num_unwind -= 1;
         }
         // Test if unwound past the shadow stack bounds
