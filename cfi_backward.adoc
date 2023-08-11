@@ -231,21 +231,10 @@ current top of the shadow stack followed by an increment of the `ssp` by
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['00001','00101','00000','00000']},
+  {bits:  5, name: 'rd', attr:[`00000`,'00001','00101','00000','00000']},
   {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['00000','00000', '00001', '00101']},
-  {bits: 12, name: '100000011100', attr:['ssload  x1','ssload  x5','sspopchk x1','sspopchk x5']},
-], config:{lanes: 1, hspace:1024}}
-....
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: '00000'},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'nzuimm'},
-  {bits: 12, name: '100000011101', attr:['ssincp']},
+  {bits:  5, name: 'rs1', attr:[`00000`,'00000','00000', '00001', '00101']},
+  {bits: 12, name: '100000011100', attr:[`ssincp`, 'ssload  x1','ssload  x5','sspopchk x1','sspopchk x5']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
@@ -275,7 +264,6 @@ current top of the shadow stack followed by an increment of the `ssp` by
 Only `x1` and `x5` encodings are supported as `rd` for `ssload`.
 Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`.
 Only `x1` and `x5` encodings are supported as `rs2` for `sspush`.
-Only non-zero encodings of `nzuimm` are defined for `ssincp`.
 
 Zicfiss provides 16-bit versions of the `sspush x1` and `sspopchk x5`
 instructions using the Zcmop encodings. The `c.sspush x1` and the
@@ -305,9 +293,8 @@ integrity-fault exception with *tval set to "shadow stack fault (code=3)".
 The `ssload` instruction can be used to load a return address from the shadow
 stack into a link register.
 
-The `ssincp` instruction adds the zero-extended non-zero immediate `nzuimm`,
-scaled by `XLEN/8`, to the `ssp`. This instruction may be used to pop up to 31
-return addresses from the shadow stack.
+The `ssincp` instruction adds `XLEN/8` to the `ssp`. This instruction may be
+used to pop a return address from the shadow stack.
 
 While any register may be used as link register, conventionally the `x1` or `x5`
 registers are used. The shadow stack instructions are designed to be most
@@ -434,7 +421,7 @@ mode is as follows:
          :
          :
         ssload x1      # load return address from shadow stack
-        ssincp 1       # increment ssp by 1 * (XLEN/8)
+        ssincp         # increment ssp by (XLEN/8)
         #
         # ssload loads the value from location addressed by ssp into
         # destination register. ssincp updates ssp to (ssp + XLEN/8)
@@ -624,29 +611,13 @@ longjmp() {
     asm("ssprr %0" : "=r"(cur_ssp):);
     // Skip the unwind if backward-edge CFI not enabled
     asm("beqz %0, back_cfi_not_enabled" : "=r"(cur_ssp):);
-    num_unwind = jmp_buf->saved_ssp - cur_ssp;
     // Unwind the frames in a loop
-    while ( num_unwind > 0 ) {
-        if ( num_unwind >= 31 ) {
-            asm("ssincp 31");
-            num_unwind -= 31;
-            continue;
-        } else if ( num_unwind >= 16 ) {
-            asm("ssincp 16");
-            num_unwind -= 16;
-            continue;
-        } else if ( num_unwind >= 8 ) {
-            asm("ssincp 8");
-            num_unwind -= 8;
-            continue;
-        } else if ( num_unwind >= 4 ) {
-            asm("ssincp 4");
-            num_unwind -= 4;
-            continue;
-        } else {
-            asm("ssincp 1");
-            num_unwind -= 1;
-        }
+    while ( jmp_buf->saved_ssp > cur_ssp ) {
+        // advance by a maximum of 4K at a time to avoid
+        // unwinding past bounds of the shadow stack
+        cur_ssp = ( (jmp_buf->saved_ssp - cur_ssp) >= 4096 ) ?
+                  (cur_ssp + 4096) : jmp_buf->saved_ssp;
+        asm("csrw ssp, %0" : :  "r" (cur_ssp));
         // Test if unwound past the shadow stack bounds
         asm("ssload x5");
     }
