@@ -102,7 +102,7 @@ rules apply to privilege modes less than M.
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-Zicfiss extension introduces the `SSE` field (bit 2) in `senvcfg`. When
+Zicfiss extension introduces the `SSE` field (bit 3) in `senvcfg`. When
 `SSE` field is 1, the Zicfiss extension is enabled in VU/U-mode. When `SSE`
 field is 0, the Zicfiss extension is not enabled in VS/U-mode and the following
 rules apply:
@@ -130,7 +130,7 @@ rules apply:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-Zicfiss extension introduces the `SSE` field (bit 2) in `henvcfg`. When
+Zicfiss extension introduces the `SSE` field (bit 3) in `henvcfg`. When
 `SSE` field is 1, the Zicfiss extension is enabled in VS-mode. When `SSE`
 field is 0, the Zicfiss extension is not enabled in VS-mode and the following
 rules apply when `V=1`.
