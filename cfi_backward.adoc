@@ -102,7 +102,7 @@ rules apply to privilege modes less than M.
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-Zicfiss extension introduces the `SSE` field (bit 2) in `senvcfg`. When
+Zicfiss extension introduces the `SSE` field (bit 3) in `senvcfg`. When
 `SSE` field is 1, the Zicfiss extension is enabled in VU/U-mode. When `SSE`
 field is 0, the Zicfiss extension is not enabled in VS/U-mode and the following
 rules apply:
@@ -130,7 +130,7 @@ rules apply:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-Zicfiss extension introduces the `SSE` field (bit 2) in `henvcfg`. When
+Zicfiss extension introduces the `SSE` field (bit 3) in `henvcfg`. When
 `SSE` field is 1, the Zicfiss extension is enabled in VS-mode. When `SSE`
 field is 0, the Zicfiss extension is not enabled in VS-mode and the following
 rules apply when `V=1`.
@@ -247,7 +247,7 @@ followed by a write of the link register at the new top of the shadow stack.
 {reg: [
   {bits:  2, name: 'op', attr:'C1'},
   {bits:  5, name: '00000'},
-  {bits:  5, name: 'rs1', attr:['00001']},
+  {bits:  5, name: 'rd', attr:['00001']},
   {bits:  1, name: '0'},
   {bits:  3, name: '011', attr:['c.sspush x1']},
 ], config:{lanes: 1, hspace:1024}}
@@ -255,7 +255,7 @@ followed by a write of the link register at the new top of the shadow stack.
 
 Only `x1` and `x5` encodings are supported as `rs2` for `sspush`. Zicfiss
 provides 16-bit versions of the `sspush x1` instruction using the Zcmop
-defined `c.mop.1` encoding. The `c.sspush x1` expands to `sspush x1`.
+defined `c.mop.0` encoding. The `c.sspush x1` expands to `sspush x1`.
 
 The `sspush` instruction and its compressed form `c.sspush` can be used, to push
 a link register on the shadow stack. The `sspush` and `c.sspush` instructions
@@ -304,7 +304,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
 {reg: [
   {bits:  2, name: 'op', attr:'C1'},
   {bits:  5, name: '00000'},
-  {bits:  5, name: 'rs1', attr:['00101']},
+  {bits:  5, name: 'rd', attr:['00101']},
   {bits:  1, name: '0'},
   {bits:  3, name: '011', attr:['c.sspopchk x5']},
 ], config:{lanes: 1, hspace:1024}}
@@ -547,7 +547,7 @@ and thus may be used to transiently forward the data from such stores to a
 
 The `ssincp` instruction adds `XLEN/8` to the `ssp`. This instruction may be
 used to remove a shadow stack frame from the shadow stack. Zicfiss provides a
-16-bit version of the `ssincp` using Zcmop define `c.mop.0` encoding. The
+16-bit version of the `ssincp` using Zcmop define `c.mop.1` encoding. The
 `c.ssincp` expands to `ssincp`.
 
 [wavedrom, ,svg]
@@ -566,7 +566,7 @@ used to remove a shadow stack frame from the shadow stack. Zicfiss provides a
 {reg: [
   {bits:  2, name: 'op', attr:'C1'},
   {bits:  5, name: '00000'},
-  {bits:  5, name: 'rs1', attr:['00000']},
+  {bits:  5, name: 'rd', attr:['00011']},
   {bits:  1, name: '0'},
   {bits:  3, name: '011', attr:['c.ssincp']},
 ], config:{lanes: 1, hspace:1024}}
