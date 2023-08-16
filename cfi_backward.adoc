@@ -19,10 +19,10 @@ epilogue), the function loads the link register from the regular stack and
 the shadow copy of the link register from the shadow stack. The link register
 value from the regular stack and the shadow link register value from the shadow
 stack are compared. A mismatch of the two values is indicative of a subversion
-of the return address control variable and causes an integrity-fault exception
-with *tval set to "shadow stack fault (code=3)". The integrity-fault exception
-caused by the shadow stack fault is lower in priority than the load access fault
-exception.
+of the return address control variable and causes an software integrity fault
+exception (cause=18) with *tval set to "shadow stack fault (code=2)". The 
+software integrity fault exception caused by the shadow stack fault is lower in
+priority than the load access fault exception.
 
 The Zicfiss extension introduces the following instructions:
 
@@ -80,7 +80,7 @@ Zicfiss extension introduces the `SSE` field (bit 3) in `menvcfg`. When
 field is 0, the Zicfiss extension is not enabled in S-mode and the following
 rules apply to privilege modes less than M.
 
-* Attempts to access the `ssp` CSR raise an illegal-instruction exception.
+* Attempts to access the `ssp` CSR raise an illegal instruction exception.
 * The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
 * The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
 * The `pte.xwr=010b` encoding in S-stage page tables is reserved.
@@ -107,7 +107,7 @@ Zicfiss extension introduces the `SSE` field (bit 3) in `senvcfg`. When
 field is 0, the Zicfiss extension is not enabled in VS/U-mode and the following
 rules apply:
 
-* Attempts to access the `ssp` CSR raise an illegal-instruction exception.
+* Attempts to access the `ssp` CSR raise an illegal instruction exception.
 * The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
 * The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
 
@@ -135,7 +135,7 @@ Zicfiss extension introduces the `SSE` field (bit 3) in `henvcfg`. When
 field is 0, the Zicfiss extension is not enabled in VS-mode and the following
 rules apply when `V=1`.
 
-* Attempts to access the `ssp` CSR raise an illegal-instruction exception.
+* Attempts to access the `ssp` CSR raise an illegal instruction exception.
 * The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
 * The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
 * The `pte.xwr=010b` encoding in VS-stage page tables is reserved.
@@ -221,7 +221,7 @@ Zimop/Zcmop-defined behavior.
 
 On processors that do not support Zimop/Zcmop extensions, all Zimop/Zcmop code
 points including those used for Zicfiss instructions may cause an
-illegal-instruction exception. Execution of programs that use these
+illegal instruction exception. Execution of programs that use these
 instructions on such machines is not supported.
 ====
 
@@ -266,9 +266,9 @@ The `sspush` and `c.sspush` instructions require the virtual address in `ssp` to
 have a shadow stack attribute (see <<SSMP>>). Correct execution of `sspush` and
 `c.sspush` requires that `ssp` refers to idempotent memory. If the memory
 referenced by `ssp` is not idempotent, then the `sspush`/`c.sspush` instructions
-cause a store/AMO access-fault exception. If the virtual address in `ssp` is not
+cause a store/AMO access fault exception. If the virtual address in `ssp` is not
 `XLEN` aligned, then the `sspush`/`c.sspush` instructions cause a store/AMO
-access-fault exception.
+access fault exception.
 
 The operation of the `sspush` and `c.sspush` instructions is as follows:
 
@@ -324,8 +324,8 @@ stack.
 
 The `sspopchk` instruction and its compressed form `c.sspopchk` can be used to
 pop the shadow return address value from the shadow stack and check that the
-value matches the contents of the link register and if not cause an
-integrity-fault exception with *tval set to "shadow stack fault (code=3)".
+value matches the contents of the link register and if not cause a software
+integrity fault exception with *tval set to "shadow stack fault (code=2)".
 
 While any register may be used as link register, conventionally the `x1` or `x5`
 registers are used. The shadow stack instructions are designed to be most
@@ -414,15 +414,15 @@ The `sspopchk` and `c.sspopchk` instructions require the virtual address in
 `ssp` to have a shadow stack attribute (see <<SSMP>>). Correct execution of
 `sspopchk` and `c.sspopchk` requires that `ssp` refers to idempotent memory. If
 the memory reference by `ssp` is not idempotent, then the instructions cause a
-load access-fault exception. If the virtual address in `ssp` is not `XLEN`
+load access fault exception. If the virtual address in `ssp` is not `XLEN`
 aligned, then `sspopchk` and `c.sspopchk` instructions cause a load access
 fault exception
 
 [NOTE]
 ====
 Misaligned accesses to shadow stack are not required and enforcing alignment is
-more secure to detect errors in the program. An access-fault exception is raised
-instead of address-misaligned exception in such cases to indicate fatality and
+more secure to detect errors in the program. An access fault exception is raised
+instead of address misaligned exception in such cases to indicate fatality and
 that the instruction must not be emulated by a trap handler.
 
 The `sspopchk` instruction performs a load followed by a check of the loaded
@@ -445,10 +445,10 @@ The operation of the `sspopchk` and `c.sspopchk` instructions is as follows:
 if (xSSE == 1)
     temp = mem[ssp]            # Load temp from address in ssp and
     if temp != X(src)          # Compare temp to value in src and
-                               # cause an integrity-fault exception
+                               # cause an SW integrity fault exception
                                # if they are not bitwise equal.
                                # Only x1 and x5 may be used as src
-       Raise integrity-fault exception
+       Raise software integrity fault exception
     else
        ssp = ssp + (XLEN/8)    # increment ssp by XLEN/8.
     endif
@@ -762,7 +762,7 @@ The `sspush` and `c.sspush` instructions perform a store. The `sslw`, `ssld`,
 The shadow stack can be read using all instructions that load from memory.
 
 Attempting to fetch an instruction from a shadow stack page raises an
-instruction page-fault exception.
+instruction page fault exception.
 
 The encoding `R=0`, `W=1`, and `X=0`, is defined to represent a shadow stack
 page.  When `menvcfg.SSE=0`, this encoding remains reserved. When `V=1` and
@@ -771,41 +771,41 @@ page.  When `menvcfg.SSE=0`, this encoding remains reserved. When `V=1` and
 The following faults may occur:
 
 . If the accessed page is a shadow stack page:
-.. Stores other than `sspush` and `c.sspush` cause store/AMO access-fault.
-.. Instruction fetches cause an instruction page-fault.
+.. Stores other than `sspush` and `c.sspush` cause store/AMO access fault.
+.. Instruction fetches cause an instruction page fault.
 . If the accessed page is not a shadow stack page or if the page is in
   non-idempotent memory:
-.. `c.sspush`, and `sspush` cause a store/AMO access-fault.
-.. `sslw`, `ssld`, `c.sspopchk`, and `sspopchk` cause a load access-fault.
+.. `c.sspush`, and `sspush` cause a store/AMO access fault.
+.. `sslw`, `ssld`, `c.sspopchk`, and `sspopchk` cause a load access fault.
 
 [NOTE]
 ====
 Stores to shadow stack by instructions other than `sspush`, and `c.sspush`
-cause a store/AMO access-fault exception, rather than a store/AMO page-fault
+cause a store/AMO access fault exception, rather than a store/AMO page fault
 exception, to indicate fatality.
 
-If a store/AMO page-fault was triggered, it would suggest that the operating
+If a store/AMO page fault was triggered, it would suggest that the operating
 system should service that fault and correct the condition. Correcting the
-condition is not possible in this case. The page-fault handler would have to
-resort to decoding the opcode of the instruction that caused the page-fault to
+condition is not possible in this case. The page fault handler would have to
+resort to decoding the opcode of the instruction that caused the page fault to
 determine if it was caused by non-shadow-stack-stores to shadow stack pages
 (which is a fatal condition) vs. a page fault caused by an `sspush` or
 `c.sspush` to a non-resident page (which is a recoverable condition). Since
-the operating system page-fault handler is typically performance-critical,
-causing an access-fault instead of a page-fault enables the operating system to
+the operating system page fault handler is typically performance-critical,
+causing an access fault instead of a page fault enables the operating system to
 easily distinguish between the fatal/non-recoverable conditions and recoverable
-page-faults.
+page faults.
 
-On implementations where address-misaligned exception is prioritized higher than
-access-fault exception, a trap handler handler that emulates misaligned stores
-must cause an access-fault exception if the store is not `sspush` or `c.sspush`,
+On implementations where address misaligned exception is prioritized higher than
+access fault exception, a trap handler handler that emulates misaligned stores
+must cause an access fault exception if the store is not `sspush` or `c.sspush`,
 and the store is being made to a shadow stack page.
 
-Shadow stack instructions cause an access-fault if the accessed page is not a
+Shadow stack instructions cause an access fault if the accessed page is not a
 shadow stack page or if the page is in non-idempotent memory to similarly
 indicate fatality.
 
-Instruction fetch from a shadow stack page causes a page-fault because this
+Instruction fetch from a shadow stack page causes a page fault because this
 condition is clearly distinguished by a unique cause code and is non-recoverable.
 ====
 
@@ -814,14 +814,14 @@ section 4.3.2 of the Privileged Specification cite:[PRIV] is modified as
 follows:
 [start=3]
 3. If `pte.v = 0` or if any bits of encodings that are reserved for future
-   standard use are set within `pte`, stop and raise a page-fault exception
+   standard use are set within `pte`, stop and raise a page fault exception
    corresponding to the original access type. The encoding `pte.xwr = 010b`
    is not reserved if `V=0` and `menvcfg.SSE` is 1 or if `V=1` and
    `henvcfg.SSE` is 1.
 
 4. Otherwise, the PTE is valid. If `pte.r = 1` or `pte.w = 1` or `pte.x = 1`,
    go to step 5. Otherwise, this PTE is a pointer to the next level of the page
-   table. Let `i = i - 1`. If `i < 0`, store and raise a page-fault exception
+   table. Let `i = i - 1`. If `i < 0`, store and raise a page fault exception
    corresponding to the original access type. Otherwise, let `a = pte.ppn x
    PAGESIZE` and go to step 2.
 
@@ -831,7 +831,7 @@ follows:
    `pte.xwr == 010b`, then cause a store/AMO access-violation. If the requested
    memory access is not allowed by the `pte.r`, `pte.w`, `pte.x`, and `pte.u`
    bits, given the current privilege mode and the value of the `SUM` and `MXR`
-   fields of the `mstatus` register, stop and raise a page-fault exception
+   fields of the `mstatus` register, stop and raise a page fault exception
    corresponding to the original access type.
 
 The PMA checks are extended to require memory referenced by `sspush`, `sslw`,
@@ -862,7 +862,7 @@ a guard page for a stack is a page that is inaccessible to the process owning
 the stack. For shadow stacks, the guard page may also be a non-shadow-stack
 page that is otherwise accessible to the process owning the shadow stack
 because shadow stack loads and stores to non-shadow-stack pages cause an
-access-fault exception.
+access fault exception.
 ====
 
 The G-stage address translation and protections remain unaffected by Zicfiss
@@ -904,11 +904,11 @@ enforced for M-mode memory accesses:
 
 * `sspush`, `c.sspush`, `sslw`, `ssld`, `sspopchk`, and `c.sspopchk`
   instructions must match the PMP entry identified by `SSPMP` else an
-  access-fault exception corresponding to the access type occurs.
+  access fault exception corresponding to the access type occurs.
 
 * Write by instructions other than `sspush` and `c.sspush` that
   match the PMP entry identified by `SSPMP` cause an store/AMO
-  access-fault exception.
+  access fault exception.
 
 [NOTE]
 ====
