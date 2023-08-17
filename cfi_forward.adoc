@@ -78,7 +78,7 @@ When `ELP` is set to `LP_EXPECTED`, if the next instruction in the instruction
 stream is not 4-byte aligned, or is not `lpad`, or if the landing pad label
 encoded in `lpad` is not zero and does not match the expected landing pad label
 in bits 31:12 of the `x7` register, then a software integrity fault exception
-(cause=18) with *tval set to "landing pad fault (code=1)" is raised else the
+(cause=18) with `*tval` set to "landing pad fault (code=2)" is raised else the
 `ELP` is updated to `NO_LP_EXPECTED`.
 
 [NOTE]
@@ -398,7 +398,7 @@ implemented or is not enabled.
 When Zicfilp is enabled, `lpad` is the only instruction allowed to execute when
 the `ELP` state is `LP_EXPECTED`. If Zicfilp is not enabled then the instruction
 is a no-op. If Zicfilp is enabled, the `lpad` instruction causes a software
-integrity fault exception with *tval set to "landing pad fault (code=1)" if any
+integrity fault exception with `*tval` set to "landing pad fault (code=2)" if any
 of the following conditions are true:
 
 * The `pc` is not 4-byte aligned.
@@ -447,7 +447,7 @@ of indirect call/jump was decoded, due to:
 
 * Asynchronous interrupts.
 * Synchronous exceptions with priority higher than that of an software
-  integrity fault exception with *tval set to "landing pad fault (code=1)"
+  integrity fault exception with `*tval` set to "landing pad fault (code=2)"
   (See Table 3.7 of Privileged Specification cite:[PRIV]).
 
 The software integrity fault exception caused by Zicfilp has higher priority

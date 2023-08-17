@@ -20,7 +20,7 @@ the shadow copy of the link register from the shadow stack. The link register
 value from the regular stack and the shadow link register value from the shadow
 stack are compared. A mismatch of the two values is indicative of a subversion
 of the return address control variable and causes an software integrity fault
-exception (cause=18) with *tval set to "shadow stack fault (code=2)". The 
+exception (cause=18) with `*tval` set to "shadow stack fault (code=3)". The 
 software integrity fault exception caused by the shadow stack fault is lower in
 priority than the load access fault exception.
 
@@ -325,7 +325,7 @@ stack.
 The `sspopchk` instruction and its compressed form `c.sspopchk` can be used to
 pop the shadow return address value from the shadow stack and check that the
 value matches the contents of the link register and if not cause a software
-integrity fault exception with *tval set to "shadow stack fault (code=2)".
+integrity fault exception with `*tval` set to "shadow stack fault (code=3)".
 
 While any register may be used as link register, conventionally the `x1` or `x5`
 registers are used. The shadow stack instructions are designed to be most
