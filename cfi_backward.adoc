@@ -19,10 +19,10 @@ epilogue), the function loads the link register from the regular stack and
 the shadow copy of the link register from the shadow stack. The link register
 value from the regular stack and the shadow link register value from the shadow
 stack are compared. A mismatch of the two values is indicative of a subversion
-of the return address control variable and causes an software integrity fault
-exception (cause=18) with `*tval` set to "shadow stack fault (code=3)". The 
-software integrity fault exception caused by the shadow stack fault is lower in
-priority than the load access fault exception.
+of the return address control variable and causes an software error exception
+(cause=18) with `*tval` set to "shadow stack fault (code=3)". The software error
+exception caused by the shadow stack fault is lower in priority than the load
+access fault exception.
 
 The Zicfiss extension introduces the following instructions:
 
@@ -448,7 +448,7 @@ if (xSSE == 1)
                                # cause an SW integrity fault exception
                                # if they are not bitwise equal.
                                # Only x1 and x5 may be used as src
-       Raise software integrity fault exception
+       Raise software error exception
     else
        ssp = ssp + (XLEN/8)    # increment ssp by XLEN/8.
     endif

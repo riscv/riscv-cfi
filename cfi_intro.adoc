@@ -140,8 +140,8 @@ using indirect call and jumps, and this is referred to as forward-edge
 protection. When the Zicfilp is active, the hart tracks an expected landing pad
 (`ELP`) state that is updated by an _indirect_call_ or _indirect_jump_ to
 require a landing pad instruction at the target of the branch. If the
-instruction at the target is not a landing pad, then a software integrity fault
-exception is raised.
+instruction at the target is not a landing pad, then a software error exception
+is raised.
 
 A landing pad may be optionally associated with a 20-bit label. With labeling
 enabled, the number of landing pads that can be reached from an indirect call
