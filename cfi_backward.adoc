@@ -164,7 +164,7 @@ then the bit 2 is also read-only zero.
   {bits:  1, name: 'WPRI'},
   {bits:  6, name: 'SSPMP'},
   {bits: 47, name: 'WPRI'},
-], config:{lanes: 1, hspace:1024}}
+], config:{lanes: 4, hspace:1024}}
 ....
 
 The Zicfiss extension introduces the `SSPMP` WARL field in `mseccfg`. The
