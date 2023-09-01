@@ -75,16 +75,20 @@ This chapter specifies the CSR state of the Zicfiss extensions.
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-Zicfiss extension introduces the `SSE` field (bit 3) in `menvcfg`. When
-`SSE` field is 1, the Zicfiss extension is enabled in S-mode. When `SSE`
-field is 0, the Zicfiss extension is not enabled in S-mode and the following
-rules apply to privilege modes less than M.
+The Zicfiss extension adds the `SSE` field (bit 3) to `menvcfg`. When the `SSE`
+field is set to 1 and S-mode is supported, the Zicfiss extension is enabled in
+S-mode. If S-mode isn't supported but U-mode is, then with the SSE field set to
+1, the Zicfiss extension is enabled in U-mode.
 
-* Attempts to access the `ssp` CSR raise an illegal instruction exception.
-* The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
-* The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
-* The `pte.xwr=010b` encoding in S-stage page tables is reserved.
-* The `henvcfg.SSE` and `senvcfg.SSE` fields are read-only zero.
+When `SSE` field is 0, the following rules apply to privilege modes that are
+less than M:
+
+* Any attempt to access the `ssp` CSR will result in an illegal instruction
+  exception.
+* 32-bit Zicfiss instructions will revert to their behavior as defined by Zimop.
+* 16-bit Zicfiss instructions will revert to their behavior as defined by Zcmop.
+* The `pte.xwr=010b` encoding in S-stage page tables becomes reserved.
+* The `henvcfg.SSE` and `senvcfg.SSE` fields will read as zero and are read-only.
 
 ==== Supervisor environment configuration registers (`senvcfg`)
 
@@ -102,14 +106,15 @@ rules apply to privilege modes less than M.
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-Zicfiss extension introduces the `SSE` field (bit 3) in `senvcfg`. When
-`SSE` field is 1, the Zicfiss extension is enabled in VU/U-mode. When `SSE`
-field is 0, the Zicfiss extension is not enabled in VS/U-mode and the following
-rules apply:
+Zicfiss extension introduces the `SSE` field (bit 3) in `senvcfg`. If the
+`SSE` field is set to 1, the Zicfiss extension is activated in VU/U-mode. When
+the `SSE` field is 0, the Zicfiss extension remains inactive in VS/U-mode, and
+the following rules apply:
 
-* Attempts to access the `ssp` CSR raise an illegal instruction exception.
-* The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
-* The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
+* Any attempts to access the `ssp` CSR will result in an illegal instruction
+  exception.
+* 32-bit Zicfiss instructions will revert to their behavior as defined by Zimop.
+* 16-bit Zicfiss instructions will revert to their behavior as defined by Zcmop.
 
 ==== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
 
@@ -130,16 +135,17 @@ rules apply:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-Zicfiss extension introduces the `SSE` field (bit 3) in `henvcfg`. When
-`SSE` field is 1, the Zicfiss extension is enabled in VS-mode. When `SSE`
-field is 0, the Zicfiss extension is not enabled in VS-mode and the following
-rules apply when `V=1`.
+Zicfiss extension introduces the `SSE` field (bit 3) in `henvcfg`. If the
+`SSE` field is set to 1, the Zicfiss extension is activated in VS-mode. When
+the `SSE` field is 0, the Zicfiss extension remains inactive in VS-mode, and
+the following rules apply when `V=1`:
 
-* Attempts to access the `ssp` CSR raise an illegal instruction exception.
-* The 32-bit Zicfiss instructions revert to their Zimop defined behavior.
-* The 16-bit Zicfiss instructions revert to their Zcmop defined behavior.
-* The `pte.xwr=010b` encoding in VS-stage page tables is reserved.
-* The `senvcfg.SSE` field is read-only zero.
+* Any attempts to access the `ssp` CSR will result in an illegal instruction
+  exception.
+* 32-bit Zicfiss instructions will revert to their behavior as defined by Zimop.
+* 16-bit Zicfiss instructions will revert to their behavior as defined by Zcmop.
+* The `pte.xwr=010b` encoding in VS-stage page tables becomes reserved.
+* The `senvcfg.SSE` field will read as zero and is read-only.
 
 ==== Shadow stack pointer (`ssp`)
 
@@ -175,10 +181,11 @@ are specified in <<PMP_SS>>.
 === Shadow-Stack-Enabled (SSE) state
 
 The term `xSSE` is used to determine if backward-edge CFI using shadow stacks
-provided by the Zicfiss extension is enabled at a privilege mode and it is
-determined as follows:
+provided by the Zicfiss extension is enabled at a privilege mode.
 
-.`xSSE` determination
+When S-mode is supported, it is determined as follows:
+
+.`xSSE` determination when S-mode is supported
 [width=100%]
 [%header, cols="^4,^12"]
 |===
@@ -187,6 +194,17 @@ determined as follows:
 |  S or HS     | `menvcfg.SSE`
 |  VS          | `henvcfg.SSE`
 |  U or VU     | `senvcfg.SSE`
+|===
+
+When S-mode is not supported, it is determined as follows:
+
+.`xSSE` determination when S-mode is not supported
+[width=100%]
+[%header, cols="^4,^12"]
+|===
+|Privilege Mode| xSSE
+|  M           | `1`
+|  U           | `menvcfg.SSE`
 |===
 
 [NOTE]
