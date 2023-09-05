@@ -112,9 +112,9 @@ An application that has the Zicfiss extension active may request the dynamic
 loader at runtime to load a new dynamic shared object (using dlopen() for
 example). If the requested object does not have the Zicfiss attribute then
 the dynamic loader, based on its policy (e.g, established by the operating
-system or the administrator) configuration, either deny the request or
-deactivate the Zicfiss extension for the application. It is recommended that
-the policy enforces a strict security posture and denies the request.
+system or the administrator) configuration, could either deny the request or
+deactivate the Zicfiss extension for the application. It is strongly recommended
+that the policy enforces a strict security posture and denies the request.
 
 When the Zicfiss extension is not active or not implemented, the Zicfiss
 instructions revert to their Zimop/Zcmop defined behavior. This allows a
