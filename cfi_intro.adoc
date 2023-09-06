@@ -122,8 +122,8 @@ compiled with Zicfiss instructions to operate correctly but without
 backward-edge control-flow integrity.
 
 The Zicfiss extension is specified in <<backward>> and the CSR state introduced
-is specified in <<CSRs>>. The Zicfiss extension depends on the Zicsr, A, Zimop,
-and Zcmop extensions.
+is specified in <<CSRs>>. The Zicfiss extension depends on the Zicsr, Zimop, and
+Zcmop extensions.
 
 === Forward-edge control-flow integrity
 
