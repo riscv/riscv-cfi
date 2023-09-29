@@ -39,11 +39,10 @@ The Zicfiss extension introduces the following instructions:
 ** `ssamoswap`
 
 The 32-bit instructions are encoded using the `SYSTEM` major opcode and using
-the `mop.r.0`, `mop.r.1`, and `mop.rr.0` encodings defined by the Zimop
-extension.
+the `mop.r.0` and `mop.rr.0` encodings defined by the Zimop extension.
 
 The 16-bit instructions are encoded using the `C.LUI` major opcode and using
-the `c.mop.0`, `c.mop.1` and `c.mop.2` encodings defined by the Zcmop extension.
+the `c.mop.0` and `c.mop.1` encodings defined by the Zcmop extension.
 
 When a Zimop encoding is not used by the Zicfiss extension then the
 instruction follows its Zimop defined behavior.
