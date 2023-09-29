@@ -32,10 +32,6 @@ The Zicfiss extension introduces the following instructions:
 * Pop from the shadow stack (See <<SS_POP>>)
 ** `sspopchk x1`, `c.sspopchk x5`, and `sspopchk x5`
 
-* Load from the shadow stack (See <<SS_LOAD>>)
-** `sslw x1` and `sslw x5` when effective xlen is 32
-** `ssld x1` and `ssld x5` when effective xlen is 64
-
 * Increment the shadow stack pointer (See <<SSP_INC>>)
 ** `ssincp` and `c.ssincp`
 
@@ -506,58 +502,15 @@ jump to the return address.
 ====
 
 
-[[SS_LOAD]]
-=== Load from the shadow stack
-
-The `sslw` instruction can be used, when effective xlen is 32, to load a return
-address from the shadow stack into a link register. The `ssld` instruction can
-be used, when effective xlen is 64, to load a return address from the shadow
-stack into a link register.
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd',  attr:['00001','00101','00001','00101']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['00000','00000','00000','00000']},
-  {bits: 12, name: '100000011100', attr:['sslw  x1','sslw  x5','ssld x1','ssld x5']},
-], config:{lanes: 1, hspace:1024}}
-....
-
-The `sslw` and `ssld` are both encoded identically. They have different
-mnemonics to illustrate that the instructions operates on a _word_ when
-XLEN is 32 and on a _doubleword_ when XLEN is 64.
-
-The `sslw` and `ssld` instructions require the virtual address in `ssp` to have
-a shadow stack attribute (see <<SSMP>>). Correct execution of `sslw` and `ssld`
-requires that `ssp` refers to idempotent memory. If the memory reference by
-`ssp` is not idempotent, then the instructions cause a load access fault
-exception. If the virtual address in `ssp` is not `XLEN` aligned, then `sslw`
-and `ssld` instructions cause a load access fault exception
-
-The operation of the `sslw` and `ssld` instructions is as follows:
-
-.`sslw` and `ssld` operation
-[listing]
-----
-if (xSSE == 1)
-    X(dst) = mem[ssp]          # Load dst with XLEN bits from address in ssp
-                               # Only x1 and x5 may be used as dst
-else
-    X(dst) = 0
-endif
-----
-
 [NOTE]
 ====
 Store-to-load forwarding is a common technique employed by high-performance
 processor implementations. Zicfiss implementations may prevent forwarding from
-a non-shadow-stack store to `sslw`/`ssld`/`sspopchk`/`c.sspopchk` instructions. A
+a non-shadow-stack store to the `sspopchk` or the `c.sspopchk` instructions. A
 non-shadow-stack store causes a fault if done to a page mapped as a shadow
 stack. However, such determination may be delayed till the PTE has been examined
-and thus may be used to transiently forward the data from such stores to a
-`sslw`/`ssld`/`sspopchk`/`c.sspopchk`.
+and thus may be used to transiently forward the data from such stores to
+`sspopchk` or to `c.sspopchk`.
 ====
 
 [[SSP_INC]]
@@ -771,11 +724,10 @@ enhanced to support a shadow stack memory region for use by M-mode.
 
 The shadow stack memory is protected using page table attributes such that it
 cannot be stored to by instructions other than `sspush`, and `c.sspush`. The
-`sslw`, `ssld`, `sspopchk`, and `c.sspopchk` instructions can only load from
-shadow stack memory.
+`sspopchk` and `c.sspopchk` instructions can only load from shadow stack memory.
 
-The `sspush` and `c.sspush` instructions perform a store. The `sslw`, `ssld`,
-`sspopchk`, and `c.sspopchk` instructions perfom a load.
+The `sspush` and `c.sspush` instructions perform a store. The `sspopchk` and
+`c.sspopchk` instructions perfom a load.
 
 The shadow stack can be read using all instructions that load from memory.
 
@@ -794,7 +746,7 @@ The following faults may occur:
 . If the accessed page is not a shadow stack page or if the page is in
   non-idempotent memory:
 .. `c.sspush`, and `sspush` cause a store/AMO access fault.
-.. `sslw`, `ssld`, `c.sspopchk`, and `sspopchk` cause a load access fault.
+.. `c.sspopchk` and `sspopchk` cause a load access fault.
 
 [NOTE]
 ====
@@ -852,8 +804,8 @@ follows:
    fields of the `mstatus` register, stop and raise a page fault exception
    corresponding to the original access type.
 
-The PMA checks are extended to require memory referenced by `sspush`, `sslw`,
-`ssld`, `c.sspush`, `c.sspopchk`, and `sspopchk` to be idempotent.
+The PMA checks are extended to require memory referenced by `sspush`,
+`c.sspush`, `c.sspopchk`, and `sspopchk` to be idempotent.
 
 The `U` and `SUM` bit enforcement is performed normally for shadow stack
 instruction initiated memory accesses. The state of the `MXR` bit does not
@@ -884,11 +836,10 @@ access fault exception.
 ====
 
 The G-stage address translation and protections remain unaffected by Zicfiss
-extension. When G-stage page tables are active, the `sslw`, `ssld`,
-`c.sspopchk`, and `sspopchk` instructions require the G-stage page table to have
-read permission for the accessed memory, whereas the `c.sspush`, and
-`sspush` instructions require write permission. The `xwr == 010b` encoding in
-the G-stage PTE remains reserved.
+extension. When G-stage page tables are active, the `c.sspopchk` and `sspopchk`
+instructions require the G-stage page table to have read permission for the
+accessed memory, whereas the `c.sspush`, and `sspush` instructions require write
+permission. The `xwr == 010b` encoding in the G-stage PTE remains reserved.
 
 [NOTE]
 ====
@@ -901,16 +852,15 @@ its guests.
 ==== PMP extension for shadow stack
 
 When privilege mode is less than M, the PMP region accessed by `sspush` and
-`c.sspush` must provide write permission and the PMP region accessed by `sslw`,
-`ssld`, `c.sspopchk`, and `sspopchk` must provide read permission.
+`c.sspush` must provide write permission and the PMP region accessed by
+`c.sspopchk` and `sspopchk` must provide read permission.
 
 The M-mode memory accesses by `sspush` and `c.sspush` instructions test for
 write permission in the matching PMP entry when permission checking is
 required.
 
-The M-mode memory accesses by `sslw`, `ssld`, `c.sspopchk`, and `sspopchk`
-instructions test for read permission in the matching PMP entry when permission
-checking is required.
+The M-mode memory accesses by `c.sspopchk` and `sspopchk` instructions test for
+read permission in the matching PMP entry when permission checking is required.
 
 A new WARL field `SSPMP` is defined in the `mseccfg` CSR to identify a PMP entry
 as the shadow stack memory region for M-mode accesses.
@@ -920,9 +870,9 @@ When `mseccfg.MML` is 1, the `SSPMP` field is read-only else it may be written.
 When the `SSPMP` field is not zero, the following rules are additionally
 enforced for M-mode memory accesses:
 
-* `sspush`, `c.sspush`, `sslw`, `ssld`, `sspopchk`, and `c.sspopchk`
-  instructions must match the PMP entry identified by `SSPMP` else an
-  access fault exception corresponding to the access type occurs.
+* `sspush`, `c.sspush`, `sspopchk`, and `c.sspopchk` instructions must match the
+  PMP entry identified by `SSPMP` else an access fault exception corresponding
+  to the access type occurs.
 
 * Write by instructions other than `sspush` and `c.sspush` that
   match the PMP entry identified by `SSPMP` cause an store/AMO
