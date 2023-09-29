@@ -35,6 +35,9 @@ The Zicfiss extension introduces the following instructions:
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
 ** `ssrdp`
 
+* Perform an atomic swap from a shadow stack location (See <<SSAMOSWAP>>)
+** `ssamoswap`
+
 The 32-bit instructions are encoded using the `SYSTEM` major opcode and using
 the `mop.r.0`, `mop.r.1`, and `mop.rr.0` encodings defined by the Zimop
 extension.
@@ -649,6 +652,84 @@ switch_shadow_stack:
     sspush x5                # store checkpoint to (ssp - XLEN/8)
     csrw ssp, a0             # setup new ssp
 ss_not_enabled:
+====
+
+[[SSAMOSWAP]]
+=== Atomic Swap from a shadow stack location
+
+The `ssamoswap` instruction performs an atomic swap operation between the XLEN
+bits of the `src` register and the XLEN bits located on the shadow stack at the
+address specified in the `addr` register.  The resulting value from the swap
+operation is then stored into the register specified in the `dst` operand.
+
+[wavedrom, , ]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'AMO'},
+  {bits:  5, name: 'rd', attr:'dest'},
+  {bits:  3, name: 'funct3', attr:['010', '011']},
+  {bits:  5, name: 'rs1', attr:'addr'},
+  {bits:  5, name: 'rs2', attr:'src'},
+  {bits:  1, name: 'rl'},
+  {bits:  1, name: 'aq'},
+  {bits:  5, name: '00101', attr:['ssamoswap.w', 'ssamoswap.d']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+The `ssamoswap` instruction requires the virtual address in `addr` to have a
+shadow stack attribute (see <<SSMP>>). If the virtual address is not XLEN
+aligned, then `ssamoswap` causes a store/AMO access fault exception. If the
+memory reference by the `ssp` is not idempotent, then `ssamoswap` causes a
+store/AMO access fault exception. The operation of the `ssamoswap` instructions
+is as follows:
+
+.`ssamoswap` operation
+[listing]
+----
+  X(rd) = mem[X(rs1)]
+  mem[X(rs1)] = X(rs2)
+----
+
+[NOTE]
+====
+Stack switching is a common operation in user programs as well as supervisor
+programs. When a stack switch is performed the stack pointer of the currently
+active stack is saved into a context data structure and the new stack is made
+active by loading a new stack pointer from a context data structure.
+
+When shadow stacks are active for a program, the program needs to additionally
+switch the shadow stack pointer. If the pointer to the top of the deactivated
+shadow stack is held in a context data structure, then it  may be susceptible to
+memory corruption vulnerabilities. To protect the pointer value, the program may
+store it at the top of the deactivated shadow stack itself and thereby create a
+checkpoint.
+
+An example sequence to restore the shadow stack pointer from the new shadow
+stack and save the old shadow stack pointer on the old shadow stack is as
+follows:
+
+[listing]
+----
+# a0 hold pointer to top of new shadow stack to switch to
+stack_switch:
+   ssrdp ra
+   beqz ra, 2f                  # skip if Zicfiss not active
+   ssamoswap ra, x0,  (a0)      # ra=*[a0] and *[a0]=0
+   beq       ra, a0,  1f        # [a0] must be == [ra]
+   unimp                        # else crash
+1: addi      ra, ra,  XLEN/8    # pop the checkpoint
+   csrrw     ra, ssp, ra        # swap ssp: ra=ssp, ssp=ra
+   addi      ra, ra,  -(XLEN/8) # checkpoint = "old ssp - XLEN/8"
+   ssamoswap x0, ra,  (ra)      # Save checkpoint at "old ssp - XLEN/8" 
+2:
+----
+
+A legal checkpoint is defined as one that holds a value of `X` where `X` is
+the address at which it is positioned on the shadow stack. The sequence uses
+`ra` as the register since if the sequence gets interrupted at any point, the
+interrupt service routine saves the `ra` on the shadow stack itself where it
+is guarded from tamper.
+
 ====
 
 [[SSMP]]
