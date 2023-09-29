@@ -32,9 +32,6 @@ The Zicfiss extension introduces the following instructions:
 * Pop from the shadow stack (See <<SS_POP>>)
 ** `sspopchk x1`, `c.sspopchk x5`, and `sspopchk x5`
 
-* Increment the shadow stack pointer (See <<SSP_INC>>)
-** `ssincp` and `c.ssincp`
-
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
 ** `ssrdp`
 
@@ -511,63 +508,6 @@ non-shadow-stack store causes a fault if done to a page mapped as a shadow
 stack. However, such determination may be delayed till the PTE has been examined
 and thus may be used to transiently forward the data from such stores to
 `sspopchk` or to `c.sspopchk`.
-====
-
-[[SSP_INC]]
-=== Increment the shadow stack pointer
-
-The `ssincp` instruction adds `XLEN/8` to the `ssp`. This instruction may be
-used to remove a shadow stack frame from the shadow stack. Zicfiss provides a
-16-bit version of the `ssincp` using Zcmop define `c.mop.1` encoding. The
-`c.ssincp` expands to `ssincp`.
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd',  attr:['00000']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['00000']},
-  {bits: 12, name: '100000011100', attr:['ssincp']},
-], config:{lanes: 1, hspace:1024}}
-....
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  2, name: 'op', attr:'C1'},
-  {bits:  5, name: '00000'},
-  {bits:  5, name: 'rd', attr:['00011']},
-  {bits:  1, name: '0'},
-  {bits:  3, name: '011', attr:['c.ssincp']},
-], config:{lanes: 1, hspace:1024}}
-....
-
-The operation of the `ssincp` and `c.ssincp` instructions is as follows:
-
-.`ssincp` and `c.ssincp` operation
-[listing]
-----
-if (xSSE == 1)
-    ssp = ssp + XLEN/8
-endif
-----
-
-[NOTE]
-====
-The prologue and epilogue of a non-leaf function when operating in control stack
-mode is as follows:
-
-[listing]
-----
-    function_entry:
-        sspush x1      # push link register x1 on shadow stack
-         :
-         :
-        ssld x1        # load return address from shadow stack
-        ssincp         # increment ssp by (XLEN/8)
-        ret
-----
 ====
 
 [[SSP_READ]]
