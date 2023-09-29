@@ -614,46 +614,6 @@ back_cfi_not_enabled:
 }
 ====
 
-[NOTE]
-====
-Stack switching is a common operation in user programs as well as supervisor
-programs. When a stack switch is performed the stack pointer of the currently
-active stack is saved into a context data structure and the new stack is made
-active by loading a new stack pointer from a context data structure.
-
-When shadow stacks are active for a program, the program needs to additionally
-switch the shadow stack pointer. If the pointer to the top of the deactivated
-shadow stack is held in a context data structure, then it  may be susceptible to
-memory corruption vulnerabilities. To protect the pointer value, the program may
-store it at the top of the deactivated shadow stack itself and thereby create a
-checkpoint.
-
-An example sequence to restore the shadow stack pointer from the new shadow
-stack and save the old shadow stack pointer on the old shadow stack is as
-follows:
-
-[listing]
-# The a0 register holds the pointer to checkpoint at the top of the
-# new shadow stack. x5 at end of the sequence has the address of the
-# checkpoint created on current shadow stack. This should be saved
-# away in a context structure to restore later.
-switch_shadow_stack:
-    ssrdp t1                 # read current ssp
-    beqz t1, ss_not_enabled  # skip if shadow stacks not enabled
-    csrw ssp, a0             # ssp = checkpoint address
-    mv t0, a0                # checkpoint value == checkpoint address
-    sspopchk t0              # pop and check the checkpoint value
-    li t0, 0                 # clear the checkpoint
-    sspush t0                # by pushing zero in its place
-    addi a0, a0, (XLEN/8)    # a0 now has the top of new shadow stack
-    mv t0, t1                # t1 holds the top of old shadow stack
-    csrw ssp, t0             # point ssp to old top of old shadow stack
-    addi x5, x5, -(XLEN/8)   # checkpoint val = (ssp - XLEN/8)
-    sspush x5                # store checkpoint to (ssp - XLEN/8)
-    csrw ssp, a0             # setup new ssp
-ss_not_enabled:
-====
-
 [[SSAMOSWAP]]
 === Atomic Swap from a shadow stack location
 
