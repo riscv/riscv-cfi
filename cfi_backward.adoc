@@ -683,11 +683,20 @@ stack_switch:
 2:
 ----
 
-A legal checkpoint is defined as one that holds a value of `X` where `X` is
-the address at which it is positioned on the shadow stack. The sequence uses
-`ra` as the register since if the sequence gets interrupted at any point, the
-interrupt service routine saves the `ra` on the shadow stack itself where it
-is guarded from tamper.
+A legal checkpoint is defined as one that holds a value of `X`, where `X` is the
+address at which the checkpoint is positioned on the shadow stack.
+
+The sequence uses the `ra` register. If the privilege mode at which this
+sequence is executed can be interrupted then the trap handler should save the
+`ra` on the shadow stack itself, where it is guarded against tampering and
+restore it prior to returning from the trap.
+
+When a new shadow stack is created by the supervisor, it needs to store a
+checkpoint at the highest address on that stack. This enables the shadow stack
+pointer to be switched using the process outlined in this note. The `ssamoswap`
+instruction can be used to store this checkpoint. When the old value at the
+memory location operated on by `ssamoswap` is not required, `rd` can be set to
+`x0`.
 
 ====
 
