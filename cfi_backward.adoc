@@ -50,7 +50,7 @@ instruction follows its Zimop defined behavior.
 
 === Zicfiss CSRs
 
-This chapter specifies the CSR state of the Zicfiss extensions.
+This section specifies the CSR state of the Zicfiss extensions.
 
 ==== Machine environment configuration registers (`menvcfg and menvcfgh`)
 
