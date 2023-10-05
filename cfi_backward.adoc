@@ -27,23 +27,18 @@ access fault exception.
 The Zicfiss extension introduces the following instructions:
 
 * Push to the shadow stack (See <<SS_PUSH>>)
-** `sspush x1`, `c.sspush x1`, and `sspush x5`
+** `sspush x1` and `sspush x5` - encoded using `mop.r.7`
+** `c.sspush x1` - encoded using `c.mop.0`
 
 * Pop from the shadow stack (See <<SS_POP>>)
-** `sspopchk x1`, `c.sspopchk x5`, and `sspopchk x5`
+** `sspopchk x1` and `sspopchk x5` - encoded using `mop.rr.28`
+** `c.sspopchk x5` - encoded using `c.mop.2`
 
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
-** `ssrdp`
+** `ssrdp` - encoded using `mop.r.0`
 
 * Perform an atomic swap from a shadow stack location (See <<SSAMOSWAP>>)
 ** `ssamoswap`
-
-The 32-bit instructions are encoded using the `SYSTEM` major opcode and using
-the `mop.r.0`, `mop.r.28`, and `mop.rr.7` encodings defined by the Zimop
-extension.
-
-The 16-bit instructions are encoded using the `C.LUI` major opcode and using
-the `c.mop.0` and `c.mop.2` encodings defined by the Zcmop extension.
 
 When a Zimop encoding is not used by the Zicfiss extension then the
 instruction follows its Zimop defined behavior.
