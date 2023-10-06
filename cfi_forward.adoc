@@ -2,10 +2,88 @@
 == Landing pad (Zicfilp)
 
 To enforce forward-edge control-flow integrity, the Zicfilp extension introduces
-a landing pad (`lpad`) instruction. The `lpad` instruction that must be placed
+a landing pad (`LPAD`) instruction. The `LPAD` instruction that must be placed
 at the program locations that are valid targets of indirect jumps or calls. The
-`lpad` instruction (See <<LP_INST>>) is encoded using the `AUIPC` major opcode
+`LPAD` instruction (See <<LP_INST>>) is encoded using the `AUIPC` major opcode
 with `rd=x0`.
+
+Compilers emit a landing pad instruction as the first instruction of an
+address-taken functions, as well as at any indirect jump targets. A landing pad
+instruction is not required in functions that are only reached using a direct
+call or direct jump.
+
+The landing pad is designed to provide integrity to control transfers performed
+using indirect call and jumps, and this is referred to as forward-edge
+protection. When the Zicfilp is active, the hart tracks an expected landing pad
+(`ELP`) state that is updated by an _indirect_call_ or _indirect_jump_ to
+require a landing pad instruction at the target of the branch. If the
+instruction at the target is not a landing pad, then a software error exception
+is raised.
+
+A landing pad may be optionally associated with a 20-bit label. With labeling
+enabled, the number of landing pads that can be reached from an indirect call
+or jump site can be defined using programming language-based policies. Labeling
+of the landing pads enables software to achieve greater precision in pairing up
+indirect call/jump sites with valid targets. When labeling of landing pads
+is used, indirect call or indirect jump site can specify the expected label of
+the landing pad and thereby constrain the set of landing pads that may be
+reached from each indirect call or indirect jump site in the program.
+
+In the simplest form, a program can be built with a single label value to
+implement a coarse-grained version of forward-edge control-flow integrity. By
+constraining gadgets to be preceded by a landing pad instruction that marks
+the start of indirect callable functions, the program can significantly reduce
+the available gadget space. A second form of label generation may generate a
+signature, such as a MAC, using the prototype of the function. Programs that use
+this approach would further constrain the gadgets accessible from a call site to
+only indirect callable functions that match the prototype of the called
+functions. Another approach to label generation involves analyzing the
+control-flow-graph (CFG) of the program, which can lead to even more stringent
+constraints on the set of reachable gadgets. Such programs may further use
+multiple labels per function, which means that if a function is called from two
+or more call sites, the functions can be labeled as reachable from each of the
+call sites. For instance, consider two call sites A and B, where A calls the
+functions X and Y, and B calls the functions Y and Z. In a single label scheme,
+functions X, Y, and Z would need to be assigned the same label so that both call
+sites A and B can invoke the common function Y. This scheme would allow call
+site A to also call function Z and call site B to also call function X. However,
+if function Y was assigned two labels - one corresponding to call site A and the
+other to call site B, then Y can be invoked by both call sites, but X can only be
+invoked by call site A and Z can only be invoked by call site B. To support
+multiple labels, the compiler could generate a call-site-specific entry point
+for shared functions, with each entry point having its own landing pad
+instruction followed by a direct branch to the start of the function. This would
+allow the function to be labeled with multiple labels, each corresponding to a
+specific call site. A portion of the label space may be dedicated to labeled
+landing pads that are only valid targets of an indirect jump (and not an
+indirect call).
+
+The `LPAD` instruction uses the code points defined as HINTs for the `AUIPC`
+opcode. When Zicfilp is not active at a privilege level or when the extension
+is not implemented, the landing pad instruction executes as a no-op. A program
+that is built with `LPAD` instruction can thus continue to operate correctly,
+but without forward-edge control-flow integrity, on processors that do not
+support the Zicfilp extension or if the Zicfilp extension is not active.
+
+Compilers and linkers should provided an attribute flag to indicate if the
+program has been compiled with the Zicfilp extension and use that to determine
+if the Zicfilp extension should be activated. The dynamic loader should activate
+the use of Zicfilp extension for an application only if all executables (the
+application and the dependent dynamically linked libraries) used by that
+application use the Zicfiss extension.
+
+When Zicfilp extension is not active or not implemented, that hart does not
+required landing pad instructions at targets of indirect calls/jumps and the
+landing instructions revert to being a no-op. This allows a program compiled
+with landing pad instructions to operate correctly but without forward-edge
+control-flow integrity.
+
+The Zicfilp extensions may be activated for use individually and independently
+for each privilege mode.
+
+The Zicfilp extension depends on the Zicsr extension.
+
+=== Landing pad enforceement
 
 To enforce that the target of an indirect call or indirect jump must be a valid
 landing pad instruction, the hart maintains an expected landing pad (`ELP`) state
@@ -31,7 +109,7 @@ indirect jump must land on a landing pad, as specified in <<IND_CALL_JMP>>. If
 
 An indirect branch using `JALR`, `C.JALR`, or `C.JR` with `rs1` as `x7` is
 termed a software guarded branch. Such branches do not need to land on a
-`lpad` instruction and thus do not set `ELP` to `LP_EXPECTED`.
+`LPAD` instruction and thus do not set `ELP` to `LP_EXPECTED`.
 
 [NOTE]
 ====
@@ -67,16 +145,16 @@ performing bounds checking on the index into the table, etc.).
 The landing pad may be labeled. Zicfilp extension designates the register `x7`
 for use as the landing pad label register. To support labeled landing pads, the
 indirect call/jump sites establish an expected landing pad label (e.g., using
-the `lui` instruction) in the bits 31:12 of the `x7` register. The `lpad`
+the `lui` instruction) in the bits 31:12 of the `x7` register. The `LPAD`
 instruction is encoded with a 20-bit immediate value called the landing-pad-label
 (`LPL`) that is matched to the expected landing pad label. When `LPL` is encoded
-as zero, the `lpad` instruction does not perform the label check and in programs
+as zero, the `LPAD` instruction does not perform the label check and in programs
 built with this single label mode of operation the indirect call/jump sites do
 not need to establish an expected landing pad label value in `x7`.
 
 When `ELP` is set to `LP_EXPECTED`, if the next instruction in the instruction
-stream is not 4-byte aligned, or is not `lpad`, or if the landing pad label
-encoded in `lpad` is not zero and does not match the expected landing pad label
+stream is not 4-byte aligned, or is not `LPAD`, or if the landing pad label
+encoded in `LPAD` is not zero and does not match the expected landing pad label
 in bits 31:12 of the `x7` register, then a software error exception (cause=18) with
 `*tval` set to "landing pad fault (code=2)" is raised else the `ELP` is updated to
 `NO_LP_EXPECTED`.
@@ -91,14 +169,14 @@ and increases the difficulty of using techniques such as branch-target-injection
 also known as Spectre variant 2, which use speculative execution to leak data
 through side channels.
 
-The `lpad` requires a 4-byte alignment to address the concatenation of two
+The `LPAD` requires a 4-byte alignment to address the concatenation of two
 instructions `A` and `B` accidentally forming an unintended landing pad in the
 program. For example, consider a 32-bit instruction where the bytes 3 and 2 have
 a pattern of `?017h` (for example, the immediate fields of a `lui`, `auipc`, or
 a `jal` instruction), followed by a 16-bit or a 32-bit instruction. When
 patterns that can accidentally form a valid landing pad are detected, the
 assembler or linker can force instruction `A` to be aligned to a 4-byte
-boundary to force the unintended `lpad` pattern to become misaligned and thus
+boundary to force the unintended `LPAD` pattern to become misaligned and thus
 not a valid landing pad or may use an alternate register allocation to prevent
 the accidental landing pad.
 ====
@@ -137,7 +215,7 @@ following rules apply to S-mode:
 
 * The hart does not update the expected landing pad (`ELP`) state, and the `ELP`
   state remains `NO_LP_EXPECTED`.
-* The `lpad` instruction operates as a no-op.
+* The `LPAD` instruction operates as a no-op.
 
 If the `LPE` field is 0 and S-mode is not supported, these rules apply to U-mode.
 
@@ -165,7 +243,7 @@ following rules apply to VU/U-mode:
 
 * The hart does not update the expected landing pad (`ELP`) state and the `ELP`
   state remains `NO_LP_EXPECTED`.
-* The `lpad` instruction operates as a no-op.
+* The `LPAD` instruction operates as a no-op.
 
 ==== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
 
@@ -194,7 +272,7 @@ rules apply to VS-mode:
 
 * The hart does not update the expected landing pad (`ELP`) state and the `ELP`
   state remains `NO_LP_EXPECTED`.
-* The `lpad` instruction operates as a no-op.
+* The `LPAD` instruction operates as a no-op.
 
 ==== Machine status registers (`mstatus`)
 
@@ -334,7 +412,7 @@ apply to M-mode.
 
 * The hart does not update the expected landing pad (`ELP`) state and the `ELP`
   state remains `NO_LP_EXPECTED`.
-* The `lpad` instruction operates as a no-op.
+* The `LPAD` instruction operates as a no-op.
 
 ==== Debug Control and Status (`dcsr`)
 
@@ -404,7 +482,7 @@ When S-mode is not supported, it is determined as follows:
 ====
 The Zicfilp must be explicitly enabled for use at each privilege mode.
 
-Programs compiled with the `lpad` instruction continue to function correctly,
+Programs compiled with the `LPAD` instruction continue to function correctly,
 but without forward-edge CFI protection, when the Zicfilp extension is not
 implemented or is not enabled.
 ====
@@ -412,9 +490,9 @@ implemented or is not enabled.
 [[LP_INST]]
 === Landing pad instruction
 
-When Zicfilp is enabled, `lpad` is the only instruction allowed to execute when
+When Zicfilp is enabled, `LPAD` is the only instruction allowed to execute when
 the `ELP` state is `LP_EXPECTED`. If Zicfilp is not enabled then the instruction
-is a no-op. If Zicfilp is enabled, the `lpad` instruction causes a software
+is a no-op. If Zicfilp is enabled, the `LPAD` instruction causes a software
 error exception with `*tval` set to "landing pad fault (code=2)" if any of the
 following conditions are true:
 
@@ -436,9 +514,9 @@ caused then the `ELP` is updated to `NO_LP_EXPECTED`.
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-The operation of the `lpad` instruction is as follows:
+The operation of the `LPAD` instruction is as follows:
 
-.`lpad` operation
+.`LPAD` operation
 [listing]
 ----
 if (xLPE != 0)
@@ -470,9 +548,9 @@ of indirect call/jump was decoded, due to:
 The software error exception caused by Zicfilp has higher priority than an
 illegal instruction exception but lower priority than instruction access fault.
 
-The software error exception due to the instruction not being an `lpad`
+The software error exception due to the instruction not being an `LPAD`
 instruction when `ELP` is `LP_EXPECTED` or an software error exception caused by
-the `lpad` instruction itself (See <<LP_INST>>) leads to a trap being delivered
+the `LPAD` instruction itself (See <<LP_INST>>) leads to a trap being delivered
 to the same or to a higher privilege mode.
 
 In such cases, the `ELP` prior to the trap, the previous `ELP`, must be
