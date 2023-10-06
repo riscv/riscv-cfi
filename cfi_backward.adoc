@@ -85,15 +85,15 @@ The Zicfiss extension depends on the A, Zicsr, Zimop, and Zcmop extensions.
 The Zicfiss extension introduces the following instructions:
 
 * Push to the shadow stack (See <<SS_PUSH>>)
-** `SSPUSH x1` and `SSPUSH x5` - encoded using `MOP.R.7`
-** `C.SSPUSH x1` - encoded using `C.MOP.0`
+** `SSPUSH x1` and `SSPUSH x5` - encoded using `MOP.RR.7`
+** `C.SSPUSH x1` - encoded using `C.MOP.1`
 
 * Pop from the shadow stack (See <<SS_POP>>)
-** `SSPOPCHK x1` and `SSPOPCHK x5` - encoded using `mop.rr.28`
-** `C.SSPOPCHK x5` - encoded using `c.mop.2`
+** `SSPOPCHK x1` and `SSPOPCHK x5` - encoded using `MOP.R.28`
+** `C.SSPOPCHK x5` - encoded using `C.MOP.5`
 
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
-** `SSRDP` - encoded using `mop.r.0`
+** `SSRDP` - encoded using `MOP.R.28`
 
 * Perform an atomic swap from a shadow stack location (See <<SSAMOSWAP>>)
 ** `SSAMOSWAP`
@@ -324,7 +324,7 @@ followed by a write of the link register at the new top of the shadow stack.
 
 Only `x1` and `x5` encodings are supported as `rs2` for `SSPUSH`. Zicfiss
 provides 16-bit versions of the `SSPUSH x1` instruction using the Zcmop
-defined `c.mop.0` encoding. The `C.SSPUSH x1` expands to `SSPUSH x1`.
+defined `C.MOP.1` encoding. The `C.SSPUSH x1` expands to `SSPUSH x1`.
 
 The `SSPUSH` instruction and its compressed form `C.SSPUSH` can be used, to push
 a link register on the shadow stack. The `SSPUSH` and `C.SSPUSH` instructions
@@ -385,7 +385,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
 ....
 
 Only `x1` and `x5` encodings are supported as `rs1` for `SSPOPCHK`. Zicfiss
-provides a 16-bit version of the `SSPOPCHK x5` using Zcmop define `c.mop.2`
+provides a 16-bit version of the `SSPOPCHK x5` using Zcmop define `C.MOP.5`
 encoding. The `C.SSPOPCHK x5` expands to `SSPOPCHK x5`.
 
 Usually programs with a shadow stack push the return address onto the regular
@@ -590,7 +590,7 @@ register.
   {bits:  5, name: 'rd', attr:['dst']},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: '00000'},
-  {bits: 12, name: '100000011100', attr:['SSRDP']},
+  {bits: 12, name: '110011011100', attr:['SSRDP']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
