@@ -27,18 +27,18 @@ access fault exception.
 The Zicfiss extension introduces the following instructions:
 
 * Push to the shadow stack (See <<SS_PUSH>>)
-** `sspush x1` and `sspush x5` - encoded using `mop.r.7`
-** `c.sspush x1` - encoded using `c.mop.0`
+** `SSPUSH x1` and `SSPUSH x5` - encoded using `MOP.R.7`
+** `C.SSPUSH x1` - encoded using `C.MOP.0`
 
 * Pop from the shadow stack (See <<SS_POP>>)
-** `sspopchk x1` and `sspopchk x5` - encoded using `mop.rr.28`
-** `c.sspopchk x5` - encoded using `c.mop.2`
+** `SSPOPCHK x1` and `SSPOPCHK x5` - encoded using `mop.rr.28`
+** `C.SSPOPCHK x5` - encoded using `c.mop.2`
 
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
-** `ssrdp` - encoded using `mop.r.0`
+** `SSRDP` - encoded using `mop.r.0`
 
 * Perform an atomic swap from a shadow stack location (See <<SSAMOSWAP>>)
-** `ssamoswap`
+** `SSAMOSWAP`
 
 When a Zimop encoding is not used by the Zicfiss extension then the
 instruction follows its Zimop defined behavior.
@@ -247,7 +247,7 @@ followed by a write of the link register at the new top of the shadow stack.
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: 'rs1', attr:['00000']},
   {bits:  5, name: 'rs2', attr:['00001', '00101']},
-  {bits:  7, name: '1100111', attr:['sspush x1','sspush x5']},
+  {bits:  7, name: '1100111', attr:['SSPUSH x1','SSPUSH x5']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
@@ -260,33 +260,33 @@ followed by a write of the link register at the new top of the shadow stack.
   {bits:  3, name: 'n[2:0]', attr:['000']},
   {bits:  1, name: '0'},
   {bits:  1, name: '0'},
-  {bits:  3, name: '011', attr:['c.sspush x1']},
+  {bits:  3, name: '011', attr:['C.SSPUSH x1']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-Only `x1` and `x5` encodings are supported as `rs2` for `sspush`. Zicfiss
-provides 16-bit versions of the `sspush x1` instruction using the Zcmop
-defined `c.mop.0` encoding. The `c.sspush x1` expands to `sspush x1`.
+Only `x1` and `x5` encodings are supported as `rs2` for `SSPUSH`. Zicfiss
+provides 16-bit versions of the `SSPUSH x1` instruction using the Zcmop
+defined `c.mop.0` encoding. The `C.SSPUSH x1` expands to `SSPUSH x1`.
 
-The `sspush` instruction and its compressed form `c.sspush` can be used, to push
-a link register on the shadow stack. The `sspush` and `c.sspush` instructions
+The `SSPUSH` instruction and its compressed form `C.SSPUSH` can be used, to push
+a link register on the shadow stack. The `SSPUSH` and `C.SSPUSH` instructions
 performs a store identically to the existing `STORE` instruction, with the
 difference that the base is implicitly `ssp` and the width is implicitly `XLEN`.
 
-The `sspush` and `c.sspush` instructions require the virtual address in `ssp` to
-have a shadow stack attribute (see <<SSMP>>). Correct execution of `sspush` and
-`c.sspush` requires that `ssp` refers to idempotent memory. If the memory
-referenced by `ssp` is not idempotent, then the `sspush`/`c.sspush` instructions
+The `SSPUSH` and `C.SSPUSH` instructions require the virtual address in `ssp` to
+have a shadow stack attribute (see <<SSMP>>). Correct execution of `SSPUSH` and
+`C.SSPUSH` requires that `ssp` refers to idempotent memory. If the memory
+referenced by `ssp` is not idempotent, then the `SSPUSH`/`C.SSPUSH` instructions
 cause a store/AMO access fault exception. If the virtual address in `ssp` is not
-`XLEN` aligned, then the `sspush`/`c.sspush` instructions cause a store/AMO
+`XLEN` aligned, then the `SSPUSH`/`C.SSPUSH` instructions cause a store/AMO
 access fault exception.
 
-The operation of the `sspush` and `c.sspush` instructions is as follows:
+The operation of the `SSPUSH` and `C.SSPUSH` instructions is as follows:
 
-.`sspush` and `c.sspush` operation
+.`SSPUSH` and `C.SSPUSH` operation
 [listing]
 ----
-If (xSSE == 1)
+if (xSSE == 1)
     mem[ssp - (XLEN/8)] = X(src)  # Store src value to ssp - XLEN/8
     ssp = ssp - (XLEN/8)          # decrement ssp by XLEN/8
 endif
@@ -306,7 +306,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
   {bits:  5, name: 'rd',  attr:['00000','00000']},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: 'rs1', attr:['00001','00101']},
-  {bits: 12, name: '110011011100', attr:['sspopchk x1','sspopchk x5']},
+  {bits: 12, name: '110011011100', attr:['SSPOPCHK x1','SSPOPCHK x5']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
@@ -319,13 +319,13 @@ current top of the shadow stack followed by an increment of the `ssp` by
   {bits:  3, name: 'n[2:0]', attr:['010']},
   {bits:  1, name: '0'},
   {bits:  1, name: '0'},
-  {bits:  3, name: '011', attr:['c.sspopchk x5']},
+  {bits:  3, name: '011', attr:['C.SSPOPCHK x5']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-Only `x1` and `x5` encodings are supported as `rs1` for `sspopchk`. Zicfiss
-provides a 16-bit version of the `sspopchk x5` using Zcmop define `c.mop.2`
-encoding. The `c.sspopchk x5` expands to `sspopchk x5`.
+Only `x1` and `x5` encodings are supported as `rs1` for `SSPOPCHK`. Zicfiss
+provides a 16-bit version of the `SSPOPCHK x5` using Zcmop define `c.mop.2`
+encoding. The `C.SSPOPCHK x5` expands to `SSPOPCHK x5`.
 
 Usually programs with a shadow stack push the return address onto the regular
 stack as well as the shadow stack in the function prologue of non-leaf
@@ -335,7 +335,7 @@ the shadow stack. The two values are then compared. If the values do not match
 it is indicative of a corruption of the return address variable on the regular
 stack.
 
-The `sspopchk` instruction and its compressed form `c.sspopchk` can be used to
+The `SSPOPCHK` instruction and its compressed form `C.SSPOPCHK` can be used to
 pop the shadow return address value from the shadow stack and check that the
 value matches the contents of the link register and if not cause a software
 integrity fault exception with `*tval` set to "shadow stack fault (code=3)".
@@ -419,16 +419,16 @@ be held in the link register itself for the duration of the leaf function
 execution.
 ====
 
-The `c.sspopchk`, and `sspopchk` instructions perform a load identically to the
+The `C.SSPOPCHK`, and `SSPOPCHK` instructions perform a load identically to the
 existing `LOAD` instruction, with the difference that the base is implicitly
 `ssp` and the width is implicitly `XLEN`.
 
-The `sspopchk` and `c.sspopchk` instructions require the virtual address in
+The `SSPOPCHK` and `C.SSPOPCHK` instructions require the virtual address in
 `ssp` to have a shadow stack attribute (see <<SSMP>>). Correct execution of
-`sspopchk` and `c.sspopchk` requires that `ssp` refers to idempotent memory. If
+`SSPOPCHK` and `C.SSPOPCHK` requires that `ssp` refers to idempotent memory. If
 the memory reference by `ssp` is not idempotent, then the instructions cause a
 load access fault exception. If the virtual address in `ssp` is not `XLEN`
-aligned, then `sspopchk` and `c.sspopchk` instructions cause a load access
+aligned, then `SSPOPCHK` and `C.SSPOPCHK` instructions cause a load access
 fault exception
 
 [NOTE]
@@ -438,7 +438,7 @@ more secure to detect errors in the program. An access fault exception is raised
 instead of address misaligned exception in such cases to indicate fatality and
 that the instruction must not be emulated by a trap handler.
 
-The `sspopchk` instruction performs a load followed by a check of the loaded
+The `SSPOPCHK` instruction performs a load followed by a check of the loaded
 data value with the link register as source. If the check against the link register
 faults, and the instruction is restarted by the trap handler, then the instruction
 will perform a load again. If the memory from which the load is performed is
@@ -450,9 +450,9 @@ usage, and requiring memory referenced by `ssp` to be idempotent does not pose a
 significant restriction.
 ====
 
-The operation of the `sspopchk` and `c.sspopchk` instructions is as follows:
+The operation of the `SSPOPCHK` and `C.SSPOPCHK` instructions is as follows:
 
-.`sspopchk` and `c.sspopchk` operation
+.`SSPOPCHK` and `C.SSPOPCHK` operation
 [listing]
 ----
 if (xSSE == 1)
@@ -468,18 +468,18 @@ if (xSSE == 1)
 endif
 ----
 
-The `ssp` is incremented by `sspopchk` and `c.sspopchk` only if the load from
-the shadow stack completes successfully. The `ssp` is decremented by `sspush`
-and `c.sspush` only if the store to the shadow stack completes successfully.
+The `ssp` is incremented by `SSPOPCHK` and `C.SSPOPCHK` only if the load from
+the shadow stack completes successfully. The `ssp` is decremented by `SSPUSH`
+and `C.SSPUSH` only if the store to the shadow stack completes successfully.
 
 [NOTE]
 ====
-The use of the compressed instruction `c.sspush x1` to push on the shadow stack
+The use of the compressed instruction `C.SSPUSH x1` to push on the shadow stack
 is most efficient when the ABI uses `x1` as the link register, as the link
 register may then be pushed without needing a register-to-register move in the
-function prologue. To use the compressed instruction `c.sspopchk x5`, the
+function prologue. To use the compressed instruction `C.SSPOPCHK x5`, the
 function should pop the return address from regular stack into the alternate
-link register `x5` and use the `c.sspopchk x5` to compare the return address to
+link register `x5` and use the `C.SSPOPCHK x5` to compare the return address to
 the shadow copy stored on the shadow stack. The function then uses `c.jr x5` to
 jump to the return address.
 
@@ -504,17 +504,17 @@ jump to the return address.
 ====
 Store-to-load forwarding is a common technique employed by high-performance
 processor implementations. Zicfiss implementations may prevent forwarding from
-a non-shadow-stack store to the `sspopchk` or the `c.sspopchk` instructions. A
+a non-shadow-stack store to the `SSPOPCHK` or the `C.SSPOPCHK` instructions. A
 non-shadow-stack store causes a fault if done to a page mapped as a shadow
 stack. However, such determination may be delayed till the PTE has been examined
 and thus may be used to transiently forward the data from such stores to
-`sspopchk` or to `c.sspopchk`.
+`SSPOPCHK` or to `C.SSPOPCHK`.
 ====
 
 [[SSP_READ]]
 === Read `ssp` into a register
 
-The `ssrdp` instruction is provided to move the contents of `ssp` to a destination
+The `SSRDP` instruction is provided to move the contents of `ssp` to a destination
 register.
 
 [wavedrom, ,svg]
@@ -524,18 +524,18 @@ register.
   {bits:  5, name: 'rd', attr:['dst']},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: '00000'},
-  {bits: 12, name: '100000011100', attr:['ssrdp']},
+  {bits: 12, name: '100000011100', attr:['SSRDP']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-Encoding `rd` as `x0` is not supported for `ssrdp`.
+Encoding `rd` as `x0` is not supported for `SSRDP`.
 
-The operation of the `ssrdp` instructions is as follows:
+The operation of the `SSRDP` instructions is as follows:
 
-.`ssrdp` operation
+.`SSRDP` operation
 [listing]
 ----
-If (xSSE == 1)
+if (xSSE == 1)
     X(dst) = ssp
 else
     X(dst) = 0
@@ -616,7 +616,7 @@ back_cfi_not_enabled:
 [[SSAMOSWAP]]
 === Atomic Swap from a shadow stack location
 
-The `ssamoswap` instruction performs an atomic swap operation between the XLEN
+The `SSAMOSWAP` instruction performs an atomic swap operation between the XLEN
 bits of the `src` register and the XLEN bits located on the shadow stack at the
 address specified in the `addr` register.  The resulting value from the swap
 operation is then stored into the register specified in the `dst` operand.
@@ -631,18 +631,18 @@ operation is then stored into the register specified in the `dst` operand.
   {bits:  5, name: 'rs2', attr:'src'},
   {bits:  1, name: 'rl'},
   {bits:  1, name: 'aq'},
-  {bits:  5, name: '00101', attr:['ssamoswap.w', 'ssamoswap.d']},
+  {bits:  5, name: '00101', attr:['SSAMOSWAP.W', 'SSAMOSWAP.D']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-The `ssamoswap` instruction requires the virtual address in `addr` to have a
+The `SSAMOSWAP` instruction requires the virtual address in `addr` to have a
 shadow stack attribute (see <<SSMP>>). If the virtual address is not XLEN
-aligned, then `ssamoswap` causes a store/AMO access fault exception. If the
-memory reference by the `ssp` is not idempotent, then `ssamoswap` causes a
-store/AMO access fault exception. The operation of the `ssamoswap` instructions
+aligned, then `SSAMOSWAP` causes a store/AMO access fault exception. If the
+memory reference by the `ssp` is not idempotent, then `SSAMOSWAP` causes a
+store/AMO access fault exception. The operation of the `SSAMOSWAP` instructions
 is as follows:
 
-.`ssamoswap` operation
+.`SSAMOSWAP` operation
 [listing]
 ----
   X(rd) = mem[X(rs1)]
@@ -693,9 +693,9 @@ restore it prior to returning from the trap.
 
 When a new shadow stack is created by the supervisor, it needs to store a
 checkpoint at the highest address on that stack. This enables the shadow stack
-pointer to be switched using the process outlined in this note. The `ssamoswap`
+pointer to be switched using the process outlined in this note. The `SSAMOSWAP`
 instruction can be used to store this checkpoint. When the old value at the
-memory location operated on by `ssamoswap` is not required, `rd` can be set to
+memory location operated on by `SSAMOSWAP` is not required, `rd` can be set to
 `x0`.
 
 ====
@@ -712,11 +712,11 @@ enhanced to support a shadow stack memory region for use by M-mode.
 ==== Virtual-Memory system extension for Shadow Stack
 
 The shadow stack memory is protected using page table attributes such that it
-cannot be stored to by instructions other than `sspush`, and `c.sspush`. The
-`sspopchk` and `c.sspopchk` instructions can only load from shadow stack memory.
+cannot be stored to by instructions other than `SSPUSH`, and `C.SSPUSH`. The
+`SSPOPCHK` and `C.SSPOPCHk` instructions can only load from shadow stack memory.
 
-The `sspush` and `c.sspush` instructions perform a store. The `sspopchk` and
-`c.sspopchk` instructions perfom a load.
+The `SSPUSH` and `C.SSPUSH` instructions perform a store. The `SSPOPCHK` and
+`C.SSPOPCHK` instructions perfom a load.
 
 The shadow stack can be read using all instructions that load from memory.
 
@@ -730,16 +730,16 @@ page.  When `menvcfg.SSE=0`, this encoding remains reserved. When `V=1` and
 The following faults may occur:
 
 . If the accessed page is a shadow stack page:
-.. Stores other than `sspush` and `c.sspush` cause store/AMO access fault.
+.. Stores other than `SSPUSH` and `C.SSPUSH` cause store/AMO access fault.
 .. Instruction fetches cause an instruction page fault.
 . If the accessed page is not a shadow stack page or if the page is in
   non-idempotent memory:
-.. `c.sspush` and `sspush` cause a store/AMO access fault.
-.. `c.sspopchk` and `sspopchk` cause a load access fault.
+.. `C.SSPUSH` and `SSPUSH` cause a store/AMO access fault.
+.. `C.SSPOPCHK` and `SSPOPCHK` cause a load access fault.
 
 [NOTE]
 ====
-Stores to shadow stack by instructions other than `sspush`, and `c.sspush`
+Stores to shadow stack by instructions other than `SSPUSH`, and `C.SSPUSH`
 cause a store/AMO access fault exception, rather than a store/AMO page fault
 exception, to indicate fatality.
 
@@ -748,8 +748,8 @@ system should service that fault and correct the condition. Correcting the
 condition is not possible in this case. The page fault handler would have to
 resort to decoding the opcode of the instruction that caused the page fault to
 determine if it was caused by non-shadow-stack-stores to shadow stack pages
-(which is a fatal condition) vs. a page fault caused by an `sspush` or
-`c.sspush` to a non-resident page (which is a recoverable condition). Since
+(which is a fatal condition) vs. a page fault caused by an `SSPUSH` or
+`C.SSPUSH` to a non-resident page (which is a recoverable condition). Since
 the operating system page fault handler is typically performance-critical,
 causing an access fault instead of a page fault enables the operating system to
 easily distinguish between the fatal/non-recoverable conditions and recoverable
@@ -757,7 +757,7 @@ page faults.
 
 On implementations where address misaligned exception is prioritized higher than
 access fault exception, a trap handler handler that emulates misaligned stores
-must cause an access fault exception if the store is not `sspush` or `c.sspush`,
+must cause an access fault exception if the store is not `SSPUSH` or `C.SSPUSH`,
 and the store is being made to a shadow stack page.
 
 Shadow stack instructions cause an access fault if the accessed page is not a
@@ -793,8 +793,8 @@ follows:
    fields of the `mstatus` register, stop and raise a page fault exception
    corresponding to the original access type.
 
-The PMA checks are extended to require memory referenced by `sspush`,
-`c.sspush`, `c.sspopchk`, and `sspopchk` to be idempotent.
+The PMA checks are extended to require memory referenced by `SSPUSH`,
+`C.SSPUSH`, `C.SSPOPCHK`, and `SSPOPCHK` to be idempotent.
 
 The `U` and `SUM` bit enforcement is performed normally for shadow stack
 instruction initiated memory accesses. The state of the `MXR` bit does not
@@ -825,9 +825,9 @@ access fault exception.
 ====
 
 The G-stage address translation and protections remain unaffected by Zicfiss
-extension. When G-stage page tables are active, the `c.sspopchk` and `sspopchk`
+extension. When G-stage page tables are active, the `C.SSPOPCHK` and `SSPOPCHK`
 instructions require the G-stage page table to have read permission for the
-accessed memory, whereas the `c.sspush` and `sspush` instructions require write
+accessed memory, whereas the `C.SSPUSH` and `SSPUSH` instructions require write
 permission. The `xwr == 010b` encoding in the G-stage PTE remains reserved.
 
 [NOTE]
@@ -840,15 +840,15 @@ its guests.
 [[PMP_SS]]
 ==== PMP extension for shadow stack
 
-When privilege mode is less than M, the PMP region accessed by `sspush` and
-`c.sspush` must provide write permission and the PMP region accessed by
-`c.sspopchk` and `sspopchk` must provide read permission.
+When privilege mode is less than M, the PMP region accessed by `SSPUSH` and
+`C.SSPUSH` must provide write permission and the PMP region accessed by
+`C.SSPOPCHK` and `SSPOPCHK` must provide read permission.
 
-The M-mode memory accesses by `sspush` and `c.sspush` instructions test for
+The M-mode memory accesses by `SSPUSH` and `C.SSPUSH` instructions test for
 write permission in the matching PMP entry when permission checking is
 required.
 
-The M-mode memory accesses by `c.sspopchk` and `sspopchk` instructions test for
+The M-mode memory accesses by `C.SSPOPCHK` and `SSPOPCHK` instructions test for
 read permission in the matching PMP entry when permission checking is required.
 
 A new WARL field `SSPMP` is defined in the `mseccfg` CSR to identify a PMP entry
@@ -859,11 +859,11 @@ When `mseccfg.MML` is 1, the `SSPMP` field is read-only else it may be written.
 When the `SSPMP` field is not zero, the following rules are additionally
 enforced for M-mode memory accesses:
 
-* `sspush`, `c.sspush`, `sspopchk`, and `c.sspopchk` instructions must match the
+* `SSPUSH`, `C.SSPUSH`, `SSPOPCHK`, and `C.SSPOPCHK` instructions must match the
   PMP entry identified by `SSPMP` else an access fault exception corresponding
   to the access type occurs.
 
-* Write by instructions other than `sspush` and `c.sspush` that
+* Write by instructions other than `SSPUSH` and `C.SSPUSH` that
   match the PMP entry identified by `SSPMP` cause an store/AMO
   access fault exception.
 

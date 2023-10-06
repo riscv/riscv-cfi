@@ -128,7 +128,7 @@ depends on the A, Zicsr, Zimop, and Zcmop extensions.
 === Forward-edge control-flow integrity
 
 To enforce forward edge control-flow integrity, Zicfilp extension introduces
-a landing pad (`lpad`) instruction that allows software to indicate valid
+a landing pad (`LPAD`) instruction that allows software to indicate valid
 targets for indirect calls and jumps in a program.
 
 Compilers emit a landing pad instruction as the first instruction of an
@@ -182,10 +182,10 @@ specific call site. A portion of the label space may be dedicated to labeled
 landing pads that are only valid targets of an indirect jump (and not an
 indirect call).
 
-The `lpad` instruction uses the code points defined as HINTs for the `AUIPC`
+The `LPAD` instruction uses the code points defined as HINTs for the `AUIPC`
 opcode. When Zicfilp is not active at a privilege level or when the extension
 is not implemented, the landing pad instruction executes as a no-op. A program
-that is built with `lpad` instruction can thus continue to operate correctly,
+that is built with `LPAD` instruction can thus continue to operate correctly,
 but without forward-edge control-flow integrity, on processors that do not
 support the Zicfilp extension or if the Zicfilp extension is not active.
 

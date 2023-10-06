@@ -2,9 +2,9 @@
 == Landing pad (Zicfilp)
 
 To enforce forward-edge control-flow integrity, the Zicfilp extension introduces
-a landing pad (`lpad`) instruction. The `lpad` instruction that must be placed
+a landing pad (`LPAD`) instruction. The `LPAD` instruction that must be placed
 at the program locations that are valid targets of indirect jumps or calls. The
-`lpad` instruction (See <<LP_INST>>) is encoded using the `AUIPC` major opcode
+`LPAD` instruction (See <<LP_INST>>) is encoded using the `AUIPC` major opcode
 with `rd=x0`.
 
 To enforce that the target of an indirect call or indirect jump must be a valid
@@ -31,7 +31,7 @@ indirect jump must land on a landing pad, as specified in <<IND_CALL_JMP>>. If
 
 An indirect branch using `JALR`, `C.JALR`, or `C.JR` with `rs1` as `x7` is
 termed a software guarded branch. Such branches do not need to land on a
-`lpad` instruction and thus do not set `ELP` to `LP_EXPECTED`.
+`LPAD` instruction and thus do not set `ELP` to `LP_EXPECTED`.
 
 [NOTE]
 ====
@@ -67,16 +67,16 @@ performing bounds checking on the index into the table, etc.).
 The landing pad may be labeled. Zicfilp extension designates the register `x7`
 for use as the landing pad label register. To support labeled landing pads, the
 indirect call/jump sites establish an expected landing pad label (e.g., using
-the `lui` instruction) in the bits 31:12 of the `x7` register. The `lpad`
+the `lui` instruction) in the bits 31:12 of the `x7` register. The `LPAD`
 instruction is encoded with a 20-bit immediate value called the landing-pad-label
 (`LPL`) that is matched to the expected landing pad label. When `LPL` is encoded
-as zero, the `lpad` instruction does not perform the label check and in programs
+as zero, the `LPAD` instruction does not perform the label check and in programs
 built with this single label mode of operation the indirect call/jump sites do
 not need to establish an expected landing pad label value in `x7`.
 
 When `ELP` is set to `LP_EXPECTED`, if the next instruction in the instruction
-stream is not 4-byte aligned, or is not `lpad`, or if the landing pad label
-encoded in `lpad` is not zero and does not match the expected landing pad label
+stream is not 4-byte aligned, or is not `LPAD`, or if the landing pad label
+encoded in `LPAD` is not zero and does not match the expected landing pad label
 in bits 31:12 of the `x7` register, then a software error exception (cause=18) with
 `*tval` set to "landing pad fault (code=2)" is raised else the `ELP` is updated to
 `NO_LP_EXPECTED`.
@@ -91,14 +91,14 @@ and increases the difficulty of using techniques such as branch-target-injection
 also known as Spectre variant 2, which use speculative execution to leak data
 through side channels.
 
-The `lpad` requires a 4-byte alignment to address the concatenation of two
+The `LPAD` requires a 4-byte alignment to address the concatenation of two
 instructions `A` and `B` accidentally forming an unintended landing pad in the
 program. For example, consider a 32-bit instruction where the bytes 3 and 2 have
 a pattern of `?017h` (for example, the immediate fields of a `lui`, `auipc`, or
 a `jal` instruction), followed by a 16-bit or a 32-bit instruction. When
 patterns that can accidentally form a valid landing pad are detected, the
 assembler or linker can force instruction `A` to be aligned to a 4-byte
-boundary to force the unintended `lpad` pattern to become misaligned and thus
+boundary to force the unintended `LPAD` pattern to become misaligned and thus
 not a valid landing pad or may use an alternate register allocation to prevent
 the accidental landing pad.
 ====
@@ -137,7 +137,7 @@ following rules apply to S-mode:
 
 * The hart does not update the expected landing pad (`ELP`) state, and the `ELP`
   state remains `NO_LP_EXPECTED`.
-* The `lpad` instruction operates as a no-op.
+* The `LPAD` instruction operates as a no-op.
 
 If the `LPE` field is 0 and S-mode is not supported, these rules apply to U-mode.
 
@@ -165,7 +165,7 @@ following rules apply to VU/U-mode:
 
 * The hart does not update the expected landing pad (`ELP`) state and the `ELP`
   state remains `NO_LP_EXPECTED`.
-* The `lpad` instruction operates as a no-op.
+* The `LPAD` instruction operates as a no-op.
 
 ==== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
 
@@ -194,7 +194,7 @@ rules apply to VS-mode:
 
 * The hart does not update the expected landing pad (`ELP`) state and the `ELP`
   state remains `NO_LP_EXPECTED`.
-* The `lpad` instruction operates as a no-op.
+* The `LPAD` instruction operates as a no-op.
 
 ==== Machine status registers (`mstatus`)
 
@@ -334,7 +334,7 @@ apply to M-mode.
 
 * The hart does not update the expected landing pad (`ELP`) state and the `ELP`
   state remains `NO_LP_EXPECTED`.
-* The `lpad` instruction operates as a no-op.
+* The `LPAD` instruction operates as a no-op.
 
 ==== Debug Control and Status (`dcsr`)
 
@@ -404,7 +404,7 @@ When S-mode is not supported, it is determined as follows:
 ====
 The Zicfilp must be explicitly enabled for use at each privilege mode.
 
-Programs compiled with the `lpad` instruction continue to function correctly,
+Programs compiled with the `LPAD` instruction continue to function correctly,
 but without forward-edge CFI protection, when the Zicfilp extension is not
 implemented or is not enabled.
 ====
@@ -412,9 +412,9 @@ implemented or is not enabled.
 [[LP_INST]]
 === Landing pad instruction
 
-When Zicfilp is enabled, `lpad` is the only instruction allowed to execute when
+When Zicfilp is enabled, `LPAD` is the only instruction allowed to execute when
 the `ELP` state is `LP_EXPECTED`. If Zicfilp is not enabled then the instruction
-is a no-op. If Zicfilp is enabled, the `lpad` instruction causes a software
+is a no-op. If Zicfilp is enabled, the `LPAD` instruction causes a software
 error exception with `*tval` set to "landing pad fault (code=2)" if any of the
 following conditions are true:
 
@@ -436,9 +436,9 @@ caused then the `ELP` is updated to `NO_LP_EXPECTED`.
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-The operation of the `lpad` instruction is as follows:
+The operation of the `LPAD` instruction is as follows:
 
-.`lpad` operation
+.`LPAD` operation
 [listing]
 ----
 if (xLPE != 0)
@@ -470,9 +470,9 @@ of indirect call/jump was decoded, due to:
 The software error exception caused by Zicfilp has higher priority than an
 illegal instruction exception but lower priority than instruction access fault.
 
-The software error exception due to the instruction not being an `lpad`
+The software error exception due to the instruction not being an `LPAD`
 instruction when `ELP` is `LP_EXPECTED` or an software error exception caused by
-the `lpad` instruction itself (See <<LP_INST>>) leads to a trap being delivered
+the `LPAD` instruction itself (See <<LP_INST>>) leads to a trap being delivered
 to the same or to a higher privilege mode.
 
 In such cases, the `ELP` prior to the trap, the previous `ELP`, must be
