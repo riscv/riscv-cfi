@@ -1,17 +1,17 @@
 [[intro]]
 == Introduction
 
-The Zicfiss extension provides Control-flow Integrity (CFI) capabilities to
-defend against Return-Oriented Programming (ROP) and the Zicfilp extension
-provides CFI capabilities to defend against Call/Jump-Oriented Programming
-(COP/JOP) style control-flow subversion attacks. These attack methodologies use
-code sequences in authorized modules, with at least one instruction in the
-sequence being a control transfer instruction that depends on attacker-controlled
-data either in the return stack or in memory used to obtain the target address
-for a call or jump. Attackers stitch these sequences together by diverting the
-control flow instructions (e.g., `JALR`, `C.JR`, `C.JALR`), from their original
-target address to a new target via modification in the return stack or in the
-memory used to obtain the jump/call target address.
+Control-flow Integrity (CFI) capabilities help defend against Return-Oriented
+Programming (ROP) and the Zicfilp extension provides CFI capabilities to defend
+against Call/Jump-Oriented Programming (COP/JOP) style control-flow subversion
+attacks. These attack methodologies use code sequences in authorized modules,
+with at least one instruction in the sequence being a control transfer
+instruction that depends on attacker-controlled data either in the return stack
+or in memory used to obtain the target address for a call or jump. Attackers
+stitch these sequences together by diverting the control flow instructions
+(e.g., `JALR`, `C.JR`, `C.JALR`), from their original target address to a new
+target via modification in the return stack or in the memory used to obtain the
+jump/call target address.
 
 RV32/RV64 provide two types of control transfer instructions - unconditional
 jumps and conditional branches. Conditional branches encode an offset in the
@@ -86,12 +86,13 @@ extension provides instructions to support common stack maintenance operations
 such as stack unwinding and stack switching.
 
 The Zicfiss instructions are encoded using a subset of "May be op" instructions
-defined by the Zimop and Zcmop extensions. This subset of instructions revert to
-their Zimop/Zcmop defined behavior when the Zicfiss extension is not implemented
-or if the extension has not been activated at a privilege mode. A program that
-is built with Zicfiss instructions can thus continue to operate correctly, but
-without backward-edge control-flow integrity, on processors that do not support
-the Zicfiss extension or if the Zicfiss extension is not active.
+defined by the Zimop and Zcmop extensions cite:[ZIMOP]. This subset of
+instructions revert to their Zimop/Zcmop defined behavior when the Zicfiss
+extension is not implemented or if the extension has not been activated at a
+privilege mode. A program that is built with Zicfiss instructions can thus
+continue to operate correctly, but without backward-edge control-flow integrity,
+on processors that do not support the Zicfiss extension or if the Zicfiss
+extension is not active.
 
 The Zicfiss extensions may be activated for use individually and independently
 for each privilege mode.
@@ -121,9 +122,8 @@ instructions revert to their Zimop/Zcmop defined behavior. This allows a
 compiled with Zicfiss instructions to operate correctly but without
 backward-edge control-flow integrity.
 
-The Zicfiss extension is specified in <<backward>> and the CSR state introduced
-is specified in <<CSRs>>. The Zicfiss extension depends on the A, Zicsr, Zimop,
-and Zcmop extensions.
+The Zicfiss extension is specified in <<backward>>. The Zicfiss extension
+depends on the A, Zicsr, Zimop, and Zcmop extensions.
 
 === Forward-edge control-flow integrity
 
@@ -203,5 +203,5 @@ control-flow integrity.
 The Zicfilp extensions may be activated for use individually and independently
 for each privilege mode.
 
-The Zicfilp extension is specified in <<forward>> and the CSR state introduced
-is specified in <<CSRs>>. The Zicfilp extension depends on the Zicsr extension.
+The Zicfilp extension is specified in <<forward>>. The Zicfilp extension depends
+on the Zicsr extension.

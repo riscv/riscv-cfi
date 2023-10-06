@@ -105,7 +105,7 @@ the accidental landing pad.
 
 === Zicfilp CSRs
 
-This chapter specifies the CSR state of the Zicfilp extension.
+This section specifies the CSR state of the Zicfilp extension.
 
 ==== Machine environment configuration registers (`menvcfg and menvcfgh`)
 

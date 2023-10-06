@@ -27,29 +27,25 @@ access fault exception.
 The Zicfiss extension introduces the following instructions:
 
 * Push to the shadow stack (See <<SS_PUSH>>)
-** `sspush x1`, `c.sspush x1`, and `sspush x5`
+** `sspush x1` and `sspush x5` - encoded using `mop.r.7`
+** `c.sspush x1` - encoded using `c.mop.0`
 
 * Pop from the shadow stack (See <<SS_POP>>)
-** `sspopchk x1`, `c.sspopchk x5`, and `sspopchk x5`
+** `sspopchk x1` and `sspopchk x5` - encoded using `mop.rr.28`
+** `c.sspopchk x5` - encoded using `c.mop.2`
 
 * Read the value of `ssp` into a register (See <<SSP_READ>>)
-** `ssrdp`
+** `ssrdp` - encoded using `mop.r.0`
 
 * Perform an atomic swap from a shadow stack location (See <<SSAMOSWAP>>)
 ** `ssamoswap`
-
-The 32-bit instructions are encoded using the `SYSTEM` major opcode and using
-the `mop.r.0` and `mop.rr.0` encodings defined by the Zimop extension.
-
-The 16-bit instructions are encoded using the `C.LUI` major opcode and using
-the `c.mop.0` and `c.mop.1` encodings defined by the Zcmop extension.
 
 When a Zimop encoding is not used by the Zicfiss extension then the
 instruction follows its Zimop defined behavior.
 
 === Zicfiss CSRs
 
-This chapter specifies the CSR state of the Zicfiss extensions.
+This section specifies the CSR state of the Zicfiss extensions.
 
 ==== Machine environment configuration registers (`menvcfg and menvcfgh`)
 
@@ -251,7 +247,7 @@ followed by a write of the link register at the new top of the shadow stack.
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: 'rs1', attr:['00000']},
   {bits:  5, name: 'rs2', attr:['00001', '00101']},
-  {bits:  7, name: '1000001', attr:['sspush x1','sspush x5']},
+  {bits:  7, name: '1100111', attr:['sspush x1','sspush x5']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
@@ -260,7 +256,9 @@ followed by a write of the link register at the new top of the shadow stack.
 {reg: [
   {bits:  2, name: 'op', attr:'C1'},
   {bits:  5, name: '00000'},
-  {bits:  5, name: 'rd', attr:['00001']},
+  {bits:  1, name: '1'},
+  {bits:  3, name: 'n[2:0]', attr:['000']},
+  {bits:  1, name: '0'},
   {bits:  1, name: '0'},
   {bits:  3, name: '011', attr:['c.sspush x1']},
 ], config:{lanes: 1, hspace:1024}}
@@ -308,7 +306,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
   {bits:  5, name: 'rd',  attr:['00000','00000']},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: 'rs1', attr:['00001','00101']},
-  {bits: 12, name: '100000011100', attr:['sspopchk x1','sspopchk x5']},
+  {bits: 12, name: '110011011100', attr:['sspopchk x1','sspopchk x5']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
@@ -317,7 +315,9 @@ current top of the shadow stack followed by an increment of the `ssp` by
 {reg: [
   {bits:  2, name: 'op', attr:'C1'},
   {bits:  5, name: '00000'},
-  {bits:  5, name: 'rd', attr:['00101']},
+  {bits:  1, name: '1'},
+  {bits:  3, name: 'n[2:0]', attr:['010']},
+  {bits:  1, name: '0'},
   {bits:  1, name: '0'},
   {bits:  3, name: '011', attr:['c.sspopchk x5']},
 ], config:{lanes: 1, hspace:1024}}
@@ -524,7 +524,7 @@ register.
   {bits:  5, name: 'rd', attr:['dst']},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: '00000'},
-  {bits: 12, name: '100000011101', attr:['ssrdp']},
+  {bits: 12, name: '100000011100', attr:['ssrdp']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
