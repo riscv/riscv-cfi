@@ -48,10 +48,8 @@ extension is not implemented or if the extension has not been activated at a
 privilege mode. A program that is built with Zicfiss instructions can thus
 continue to operate correctly, but without backward-edge control-flow integrity,
 on processors that do not support the Zicfiss extension or if the Zicfiss
-extension is not active.
-
-The Zicfiss extensions may be activated for use individually and independently
-for each privilege mode.
+extension is not active. The Zicfiss extensions may be activated for use
+individually and independently for each privilege mode.
 
 Compilers should flag each object file (for example, using flags in the elf
 attributes) to indicate if the object file has been compiled with the Zicfiss
@@ -100,6 +98,8 @@ The Zicfiss extension introduces the following instructions:
 
 When a Zimop encoding is not used by the Zicfiss extension then the
 instruction follows its Zimop defined behavior.
+
+>>>
 
 === Zicfiss CSRs
 
@@ -227,6 +227,8 @@ The Zicfiss extension introduces the `SSPMP` WARL field in `mseccfg`. The
 M-mode use. The rules enforced by PMP for M-mode shadow stack memory accesses
 are specified in <<PMP_SS>>.
 
+>>>
+
 === Shadow-Stack-Enabled (SSE) state
 
 The term `xSSE` is used to determine if backward-edge CFI using shadow stacks
@@ -291,6 +293,8 @@ points including those used for Zicfiss instructions may cause an
 illegal instruction exception. Execution of programs that use these
 instructions on such machines is not supported.
 ====
+
+>>>
 
 [[SS_PUSH]]
 === Push to shadow stack
