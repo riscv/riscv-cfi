@@ -132,11 +132,9 @@ S-mode. If S-mode isn't supported but U-mode is, then with the SSE field set to
 When `SSE` field is 0, the following rules apply to privilege modes that are
 less than M:
 
-* Any attempt to access the `ssp` CSR will result in an illegal instruction
-  exception.
 * 32-bit Zicfiss instructions will revert to their behavior as defined by Zimop.
 * 16-bit Zicfiss instructions will revert to their behavior as defined by Zcmop.
-* The `pte.xwr=010b` encoding in S-stage page tables becomes reserved.
+* The `pte.xwr=010b` encoding in VS/S-stage page tables becomes reserved.
 * The `henvcfg.SSE` and `senvcfg.SSE` fields will read as zero and are read-only.
 
 ==== Supervisor environment configuration registers (`senvcfg`)
@@ -157,11 +155,9 @@ less than M:
 
 Zicfiss extension introduces the `SSE` field (bit 3) in `senvcfg`. If the
 `SSE` field is set to 1, the Zicfiss extension is activated in VU/U-mode. When
-the `SSE` field is 0, the Zicfiss extension remains inactive in VS/U-mode, and
+the `SSE` field is 0, the Zicfiss extension remains inactive in VU/U-mode, and
 the following rules apply:
 
-* Any attempts to access the `ssp` CSR will result in an illegal instruction
-  exception.
 * 32-bit Zicfiss instructions will revert to their behavior as defined by Zimop.
 * 16-bit Zicfiss instructions will revert to their behavior as defined by Zcmop.
 
@@ -189,8 +185,6 @@ Zicfiss extension introduces the `SSE` field (bit 3) in `henvcfg`. If the
 the `SSE` field is 0, the Zicfiss extension remains inactive in VS-mode, and
 the following rules apply when `V=1`:
 
-* Any attempts to access the `ssp` CSR will result in an illegal instruction
-  exception.
 * 32-bit Zicfiss instructions will revert to their behavior as defined by Zimop.
 * 16-bit Zicfiss instructions will revert to their behavior as defined by Zcmop.
 * The `pte.xwr=010b` encoding in VS-stage page tables becomes reserved.
@@ -203,6 +197,20 @@ The `ssp` CSR is an unprivileged read-write (URW) CSR that reads and writes
 0x011. There is no high CSR defined as the `ssp` is always as wide as the `XLEN`
 of the current privilege mode. The bits 1:0 of `ssp` are read-only zero. If the
 UXLEN or SXLEN may never be 32, then the bit 2 is also read-only zero.
+
+Attempts to access the `ssp` CSR may result in either an illegal instruction
+exception or a virtual instruction exception, contingent upon the state of the
+`__x__envcfg.SSE` fields. The conditions are specified as follows:
+
+* If the privilege mode is less than M and `menvcfg.SSE` is 0, an illegal
+  instruction exception is raised.
+* Otherwise, if in U-mode and `senvcfg.SSE` is 0, an illegal instruction
+  exception is raised.
+* Otherwise, if in VS-mode and `henvcfg.SSE` is 0, a virtual instruction
+  exception is raised.
+* Otherwise, if in VU-mode and either `henvcfg.SSE` or `senvcfg.SSE` is 0,
+  a virtual instruction exception is raised.
+* Otherwise, the access is allowed.
 
 ==== Machine Security Configuration (`mseccfg`)
 
