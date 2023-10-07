@@ -737,6 +737,18 @@ is as follows:
   endif
 ----
 
+Just as for AMOs in the A extension, `SSAMOSWAP` requires that the address
+held in `rs1` be naturally aligned to the size of the operand (i.e., 16-byte
+aligned for __quadwords__, eight-byte aligned for __doublewords__, and four-byte
+aligned for __words__). And the same exception options apply if the address is
+not naturally aligned.
+
+Just as for AMOs in the A extension, the `SSAMOSWAP` optionally provide release
+consistency semantics, using the `aq` and `rl` bits, to help implement
+multiprocessor synchronization. The memory operation performed by an
+`SSAMOSWAP`, has acquire semantics if `aq` bit is 1 and has release semantics if
+`rl` bit is 1.
+
 [NOTE]
 ====
 Stack switching is a common operation in user programs as well as supervisor
@@ -785,7 +797,6 @@ pointer to be switched using the process outlined in this note. The `SSAMOSWAP`
 instruction can be used to store this checkpoint. When the old value at the
 memory location operated on by `SSAMOSWAP` is not required, `rd` can be set to
 `x0`.
-
 ====
 
 [[SSMP]]
