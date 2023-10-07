@@ -796,6 +796,18 @@ cannot be stored to by instructions other than `SSPUSH`, and `C.SSPUSH`. The
 The `SSPUSH` and `C.SSPUSH` instructions perform a store. The `SSPOPCHK` and
 `C.SSPOPCHK` instructions perfom a load.
 
+When the value of `satp.MODE` (really `vsatp.MODE` when `V=1`) is set to `Bare`
+or if S-mode is not supported, and the effective privilege level for the access
+is below M, shadow stack memory accesses are disallowed. Under these conditions:
+* The `SSPUSH`, `SSAMOSWAP`, and `C.SSPUSH` instructions will result in a
+  store/AMO access fault exception.
+* The `SSPOPCHK` and `C.SSPOPCHK` instructions will result in a load access
+  fault exception.
+
+Implicit accesses, including an instruction fetch, to the shadow stack page are
+not allowed. Such memory accesses cause an access fault exception corresponding
+to the original access type.
+
 The shadow stack can be read using all instructions that load from memory.
 
 Attempting to fetch an instruction from a shadow stack page raises an
@@ -933,6 +945,10 @@ A new WARL field `SSPMP` is defined in the `mseccfg` CSR to identify a PMP entry
 as the shadow stack memory region for M-mode accesses.
 
 When `mseccfg.MML` is 1, the `SSPMP` field is read-only else it may be written.
+
+When the `SSPMP` field is set to zero, the `SSAMOSWAP`, `SSPUSH`, and `C.SSPUSH`
+instructions raise a store/AMO access fault exception, and the `SSPOPCHK` and
+`C.SSPOPCHK` instructions raise a load access fault exception.
 
 When the `SSPMP` field is not zero, the following rules are additionally
 enforced for M-mode memory accesses:
