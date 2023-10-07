@@ -810,9 +810,6 @@ to the original access type.
 
 The shadow stack can be read using all instructions that load from memory.
 
-Attempting to fetch an instruction from a shadow stack page raises an
-instruction page fault exception.
-
 The encoding `R=0`, `W=1`, and `X=0`, is defined to represent a shadow stack
 page.  When `menvcfg.SSE=0`, this encoding remains reserved. When `V=1` and
 `henvcfg.SSE=0`, this encoding remains reserved at `VS` and `VU`.
@@ -821,7 +818,8 @@ The following faults may occur:
 
 . If the accessed page is a shadow stack page:
 .. Stores other than `SSPUSH` and `C.SSPUSH` cause store/AMO access fault.
-.. Instruction fetches cause an instruction page fault.
+.. Implicit accesses cause an access-fault exception corresponding to the
+   original access type.
 . If the accessed page is not a shadow stack page or if the page is in
   non-idempotent memory:
 .. `C.SSPUSH` and `SSPUSH` cause a store/AMO access fault.
@@ -876,12 +874,13 @@ follows:
 
 5. A leaf PTE has been found. If the memory access is by a shadow stack
    instruction and `pte.xwr != 010b`, then cause an access-violation exception
-   corresponding to the access type. If the memory access is a store/AMO and
-   `pte.xwr == 010b`, then cause a store/AMO access-violation. If the requested
-   memory access is not allowed by the `pte.r`, `pte.w`, `pte.x`, and `pte.u`
-   bits, given the current privilege mode and the value of the `SUM` and `MXR`
-   fields of the `mstatus` register, stop and raise a page fault exception
-   corresponding to the original access type.
+   corresponding to the access type. If the memory access is either a
+   non-shadow-stack store/AMO or an implicit access, and `pte.xwr == 010b`, then
+   an access-fault exception is raised, corresponding to the original access type.
+   If the requested memory access is not allowed by the `pte.r`, `pte.w`, `pte.x`,
+   and `pte.u` bits, given the current privilege mode and the value of the `SUM`
+   and `MXR` fields of the `mstatus` register, stop and raise a page fault
+   exception corresponding to the original access type.
 
 The PMA checks are extended to require memory referenced by `SSPUSH`,
 `C.SSPUSH`, `C.SSPOPCHK`, and `SSPOPCHK` to be idempotent.
@@ -960,6 +959,9 @@ enforced for M-mode memory accesses:
 * Write by instructions other than `SSPUSH` and `C.SSPUSH` that
   match the PMP entry identified by `SSPMP` cause an store/AMO
   access fault exception.
+
+* All implicit memory accesses that match the PMP entry identified by `SSPMP`
+  cause an access-fault exception corresponding to the original access type.
 
 [NOTE]
 ====
