@@ -16,12 +16,11 @@ jump/call target address.
 RV32/RV64 provide two types of control transfer instructions - unconditional
 jumps and conditional branches. Conditional branches encode an offset in the
 immediate field of the instruction and are thus direct branches that are not
-susceptible to control-flow subversion.
-
-Unconditional direct jumps using `JAL` transfer control to a target that is in a
-+/- 1 MiB range from the current `pc`. Unconditional indirect jumps using the
-`JALR` obtain their branch target by adding the sign extended 12-bit immediate
-encoded in the instruction to the `rs1` register.
+susceptible to control-flow subversion. Unconditional direct jumps using `JAL`
+transfer control to a target that is in a +/- 1 MiB range from the current `pc`.
+Unconditional indirect jumps using the `JALR` obtain their branch target by
+adding the sign extended 12-bit immediate encoded in the instruction to the
+`rs1` register.
 
 The RV32I/RV64I does not have a dedicated instruction for calling a procedure or
 returning from a procedure. A `JAL` or `JALR` may be used to perform a procedure
@@ -36,13 +35,12 @@ specifications cite:[UNPRIV].
 The RVC standard extension for compressed instructions provides unconditional
 jump and conditional branch instructions. The `C.J` and `C.JAL` instructions
 encode an offset in the immediate field of the instruction and thus are not
-susceptible to control-flow subversion.
-
-The `C.JR` and `C.JALR` RVC instruction performs an unconditional control
-transfer to the address in register `rs1`. The `C.JALR` additionally writes the
-address of the instruction following the jump (`pc+2`) to the link register `x1`
-and is a procedure call. The `C.JR` is a return from procedure if `rs1` is a
-conventional link register (i.e. `x1` or `x5`); else it is an indirect jump.
+susceptible to control-flow subversion. The `C.JR` and `C.JALR` RVC instruction
+performs an unconditional control transfer to the address in register `rs1`. The
+`C.JALR` additionally writes the address of the instruction following the jump
+(`pc+2`) to the link register `x1` and is a procedure call. The `C.JR` is a
+return from procedure if `rs1` is a conventional link register (i.e. `x1` or
+`x5`); else it is an indirect jump.
 
 The term _call_ is used to refer to a `JAL` or `JALR` instruction with a link
 register as destination, i.e., `rd != x0`. Conventionally, the link register is

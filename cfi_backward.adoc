@@ -99,7 +99,7 @@ The Zicfiss extension introduces the following instructions:
 When a Zimop encoding is not used by the Zicfiss extension then the
 instruction follows its Zimop defined behavior.
 
->>>
+<<<
 
 === Zicfiss CSRs
 
@@ -235,7 +235,7 @@ The Zicfiss extension introduces the `SSPMP` WARL field in `mseccfg`. The
 M-mode use. The rules enforced by PMP for M-mode shadow stack memory accesses
 are specified in <<PMP_SS>>.
 
->>>
+<<<
 
 === Shadow-Stack-Enabled (SSE) state
 
@@ -302,7 +302,7 @@ illegal instruction exception. Execution of programs that use these
 instructions on such machines is not supported.
 ====
 
->>>
+<<<
 
 [[SS_PUSH]]
 === Push to shadow stack
