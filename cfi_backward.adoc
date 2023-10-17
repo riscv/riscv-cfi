@@ -76,7 +76,9 @@ instructions revert to their Zimop/Zcmop defined behavior. This allows a
 compiled with Zicfiss instructions to operate correctly but without
 backward-edge control-flow integrity.
 
-The Zicfiss extension depends on the A, Zicsr, Zimop, and Zcmop extensions.
+The Zicfiss extension has dependencies on the following extensions: A, Zicsr,
+Zimop, and Zcmop. Additionally, use of Zicfiss in U-mode requires S-mode to be
+supported.
 
 === Zicfiss Instructions Summary
 
@@ -263,7 +265,7 @@ When S-mode is not supported, it is determined as follows:
 |===
 |Privilege Mode| xSSE
 |  M           | `1`
-|  U           | `menvcfg.SSE`
+|  U           | `0`
 |===
 
 [NOTE]
