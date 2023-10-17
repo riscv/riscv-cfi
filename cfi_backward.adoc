@@ -876,6 +876,13 @@ or `C.SSPUSH`, and the store is being made to a shadow stack page.
 Shadow stack instructions cause an access-fault if the accessed page is not a
 shadow stack page or if the page is in non-idempotent memory to similarly
 indicate fatality.
+
+While the specification mandates that an access-fault exception shall be
+generated when either single-stage or VS-stage address translation is invoked
+for an implicit access targeting a shadow stack page, it is pertinent to
+highlight that, at the time of this specification's drafting, instruction
+fetches are the exclusive class of implicit accesses that are subjected to
+either single-stage or VS-stage address translation.
 ====
 
 To support these rules, the virtual address translation process specified in
