@@ -214,29 +214,6 @@ exception or a virtual instruction exception, contingent upon the state of the
   a virtual instruction exception is raised.
 * Otherwise, the access is allowed.
 
-==== Machine Security Configuration (`mseccfg`)
-
-.Machine security configuration register (`mseccfg`) when `MXLEN=64`
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  1, name: 'MML'},
-  {bits:  1, name: 'MMWP'},
-  {bits:  1, name: 'RLB'},
-  {bits:  5, name: 'WPRI'},
-  {bits:  1, name: 'USEED'},
-  {bits:  1, name: 'SSEED'},
-  {bits:  1, name: 'WPRI'},
-  {bits:  6, name: 'SSPMP'},
-  {bits: 47, name: 'WPRI'},
-], config:{lanes: 4, hspace:1024}}
-....
-
-The Zicfiss extension introduces the `SSPMP` WARL field in `mseccfg`. The
-`SSPMP` field identifies a PMP entry as the shadow stack memory region for
-M-mode use. The rules enforced by PMP for M-mode shadow stack memory accesses
-are specified in <<PMP_SS>>.
-
 <<<
 
 === Shadow-Stack-Enabled (SSE) state
@@ -251,22 +228,13 @@ When S-mode is supported, it is determined as follows:
 [%header, cols="^4,^12"]
 |===
 |Privilege Mode| xSSE
-|  M           | `1`
+|  M           | `0`
 |  S or HS     | `menvcfg.SSE`
 |  VS          | `henvcfg.SSE`
 |  U or VU     | `senvcfg.SSE`
 |===
 
-When S-mode is not supported, it is determined as follows:
-
-.`xSSE` determination when S-mode is not supported
-[width=100%]
-[%header, cols="^4,^12"]
-|===
-|Privilege Mode| xSSE
-|  M           | `1`
-|  U           | `0`
-|===
+When S-mode is not supported, then `xSSE` is 0 at both M and U privilege modes.
 
 [NOTE]
 ====
@@ -302,6 +270,10 @@ On processors that do not support Zimop/Zcmop extensions, all Zimop/Zcmop code
 points including those used for Zicfiss instructions may cause an
 illegal instruction exception. Execution of programs that use these
 instructions on such machines is not supported.
+
+Activating Zicfiss in M-mode is currently not supported. Additionally, when
+S-mode is not supported, activation in U-mode activation is also not supported.
+These functionalities may be introduced in a future standard extension.
 ====
 
 <<<
@@ -807,9 +779,6 @@ memory location operated on by `SSAMOSWAP` is not required, `rd` can be set to
 To protect shadow stack memory the memory is associated with a new page type -
 Shadow Stack (SS) page - in the page tables.
 
-When the `Smepmp` extension is supported the PMP configuration registers are
-enhanced to support a shadow stack memory region for use by M-mode.
-
 ==== Virtual-Memory system extension for Shadow Stack
 
 The shadow stack memory is protected using page table attributes such that it
@@ -956,41 +925,10 @@ to support use cases such as a hypervisor enforcing shadow stack protections for
 its guests.
 ====
 
-[[PMP_SS]]
 ==== PMP extension for shadow stack
 
-The PMP region accessed by `SSAMOSWAP`, `SSPUSH` and `C.SSPUSH` must provide
-write permission and the PMP region accessed by `C.SSPOPCHK` and `SSPOPCHK` must
-provide read permission when permission checking is required.
-
-A new WARL field `SSPMP` is defined in the `mseccfg` CSR to identify a PMP entry
-as the shadow stack memory region for M-mode accesses. When `mseccfg.MML` is 1, the
-`SSPMP` field is read-only else it may be written.
-
-When the `SSPMP` field is set to zero, the `SSAMOSWAP`, `SSPUSH`, and `C.SSPUSH`
-instructions raise a store/AMO access-fault exception, and the `SSPOPCHK` and
-`C.SSPOPCHK` instructions raise a load access-fault exception if the effective
-privilege mode is M.
-
-When the `SSPMP` field is not zero, the following rules are additionally
-enforced for memory accesses performed when effective privilege mode is M:
-
-* `SSAMOSWAP`, `SSPUSH`, `C.SSPUSH`, `SSPOPCHK`, and `C.SSPOPCHK` instructions
-  must match the PMP entry identified by `SSPMP` else an access-fault exception
-  corresponding to the access type occurs.
-
-* Write by instructions other than `SSAMOSWAP`, `SSPUSH` and `C.SSPUSH` that
-  match the PMP entry identified by `SSPMP` cause an store/AMO access-fault
-  exception.
-
-* All implicit memory accesses that match the PMP entry identified by `SSPMP`
-  cause an access-fault exception corresponding to the original access type.
-
-[NOTE]
-====
-The PMP region used for the M-mode shadow stack is expected to be made
-inaccessible for U-mode and S-mode read and write accesses. Allowing write
-access violates the integrity of the shadow stack, and allowing read access may
-lead to disclosure of M-mode return addresses.
-====
+Attempts by `SSAMOSWAP`, `SSPUSH` and `C.SSPUSH` to a PMP region that does not
+have write permission raises a store access-fault exception. Attempts by
+`C.SSPOPCHK` and `SSPOPCHK` to access a PMP region that does not have read
+permission raises a load access-fault exception.
 
