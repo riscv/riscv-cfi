@@ -847,8 +847,8 @@ The following faults may occur:
    original access type.
 . If the accessed page is not a shadow stack page or if the page is in
   non-idempotent memory:
-.. `SSAMOSWAP`, `C.SSPUSH`, and `SSPUSH` cause a store/AMO access-fault.
-.. `C.SSPOPCHK` and `SSPOPCHK` cause a load access-fault.
+.. `SSAMOSWAP`, `C.SSPUSH`, and `SSPUSH` cause a store/AMO page fault.
+.. `C.SSPOPCHK` and `SSPOPCHK` cause a load page fault.
 
 [NOTE]
 ====
@@ -902,7 +902,7 @@ follows:
    PAGESIZE` and go to step 2.
 
 5. A leaf PTE has been found. If the memory access is by a shadow stack
-   instruction and `pte.xwr != 010b`, then cause an access-violation exception
+   instruction and `pte.xwr != 010b`, then cause a page fault exception
    corresponding to the access type. If the memory access is either a
    non-shadow-stack store/AMO or an implicit access, and `pte.xwr == 010b`, then
    an access-fault exception is raised, corresponding to the original access type.
@@ -936,10 +936,7 @@ Shadow stacks are expected to be bounded on each end using guard pages, so that
 no two shadow stacks are adjacent to each other. This guards against accidentally
 underflowing or overflowing from one shadow stack to another. Traditionally,
 a guard page for a stack is a page that is inaccessible to the process owning
-the stack. For shadow stacks, the guard page may also be a non-shadow-stack
-page that is otherwise accessible to the process owning the shadow stack
-because shadow stack loads and stores to non-shadow-stack pages cause an
-access-fault exception.
+the stack.
 ====
 
 The G-stage address translation and protections remain unaffected by Zicfiss
