@@ -17,7 +17,7 @@ using indirect call and jumps, and this is referred to as forward-edge
 protection. When the Zicfilp is active, the hart tracks an expected landing pad
 (`ELP`) state that is updated by an _indirect_call_ or _indirect_jump_ to
 require a landing pad instruction at the target of the branch. If the
-instruction at the target is not a landing pad, then a software error exception
+instruction at the target is not a landing pad, then a software check exception
 is raised.
 
 A landing pad may be optionally associated with a 20-bit label. With labeling
@@ -155,7 +155,7 @@ not need to establish an expected landing pad label value in `x7`.
 When `ELP` is set to `LP_EXPECTED`, if the next instruction in the instruction
 stream is not 4-byte aligned, or is not `LPAD`, or if the landing pad label
 encoded in `LPAD` is not zero and does not match the expected landing pad label
-in bits 31:12 of the `x7` register, then a software error exception (cause=18) with
+in bits 31:12 of the `x7` register, then a software check exception (cause=18) with
 `*tval` set to "landing pad fault (code=2)" is raised else the `ELP` is updated to
 `NO_LP_EXPECTED`.
 
@@ -500,9 +500,9 @@ following conditions are true:
 * The `ELP` is `LP_EXPECTED` and the `LPL` is not zero and the `LPL` does not
   match the expected landing pad label in bits 31:12 of the `x7` register.
 
-If the instruction causes an software error exception, the `ELP` does not
-change. The behavior of the trap caused by this software error exception is
-specified in section <<FORWARD_TRAPS>>. If a software error exception is not
+If the instruction causes an software check exception, the `ELP` does not
+change. The behavior of the trap caused by this software check exception is
+specified in section <<FORWARD_TRAPS>>. If a software check exception is not
 caused then the `ELP` is updated to `NO_LP_EXPECTED`.
 
 [wavedrom, ,svg]
@@ -522,10 +522,10 @@ The operation of the `LPAD` instruction is as follows:
 if (xLPE != 0)
     // If PC not 4-byte aligned then software integrity fault
     if pc[1:0] != 0
-        Cause software error exception
+        Cause software check exception
     // If landing pad label not matched -> software integrity fault
     else if (inst.LPL != x7[31:12] && inst.LPL != 0 && ELP == LP_EXPECTED)
-        Cause software error exception
+        Cause software check exception
     else
         ELP = NO_LP_EXPECTED
 else
@@ -545,11 +545,11 @@ of indirect call/jump was decoded, due to:
   error exception with `*tval` set to "landing pad fault (code=2)"
   (See Table 3.7 of Privileged Specification cite:[PRIV]).
 
-The software error exception caused by Zicfilp has higher priority than an
+The software check exception caused by Zicfilp has higher priority than an
 illegal instruction exception but lower priority than instruction access fault.
 
-The software error exception due to the instruction not being an `LPAD`
-instruction when `ELP` is `LP_EXPECTED` or an software error exception caused by
+The software check exception due to the instruction not being an `LPAD`
+instruction when `ELP` is `LP_EXPECTED` or an software check exception caused by
 the `LPAD` instruction itself (See <<LP_INST>>) leads to a trap being delivered
 to the same or to a higher privilege mode.
 

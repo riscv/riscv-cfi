@@ -39,7 +39,7 @@ epilogue), the function loads the link register from the regular stack and
 the shadow copy of the link register from the shadow stack. Then, the link register
 value from the regular stack and the shadow link register value from the shadow
 stack are compared.  A mismatch of the two values is indicative of a subversion
-of the return address control variable and causes a software error exception.
+of the return address control variable and causes a software check exception.
 
 The Zicfiss instructions are encoded using a subset of "May be op" instructions
 defined by the Zimop and Zcmop extensions cite:[ZIMOP]. This subset of
@@ -508,7 +508,7 @@ if (xSSE == 1)
                                # cause an SW integrity fault exception
                                # if they are not bitwise equal.
                                # Only x1 and x5 may be used as src
-       Raise software error exception
+       Raise software check exception
     else
        ssp = ssp + (XLEN/8)    # increment ssp by XLEN/8.
     endif
@@ -516,12 +516,12 @@ endif
 ----
 
 If the value loaded from the address in `ssp` does not match the value in `rs1`,
-a software error exception (cause=18) is raised with `__x__tval` set to "shadow
-stack fault (code=3)". The software error exception caused by `SSPOPCHK`/
+a software check exception (cause=18) is raised with `__x__tval` set to "shadow
+stack fault (code=3)". The software check exception caused by `SSPOPCHK`/
 `C.SSPOPCHK` is lower in priority than a load access-fault exception.
 
 The `ssp` is incremented by `SSPOPCHK` and `C.SSPOPCHK` only if the load from
-the shadow stack completes successfully and no software error exception is
+the shadow stack completes successfully and no software check exception is
 raised.
 
 [NOTE]
