@@ -567,13 +567,15 @@ When a trap is taken into privilege mode `x`, the `xPELP` is set to `ELP` and
 `ELP` is set to `NO_LP_EXPECTED`.
 
 An `MRET` or `SRET` instruction is used to return from a trap in M-mode or
-S-mode, respectively. An `xRET` instruction sets the `ELP` to `xPELP`, and sets
-`xPELP` to `NO_LP_EXPECTED`.
+S-mode, respectively.  When executing an `xRET` instruction, if `xPP` holds the
+value `y`, then `ELP` is set to the value of `xPELP` if `yLPE` is 1; otherwise,
+it is set to `NO_LP_EXPECTED`; `xPELP` is set to `NO_LP_EXPECTED`.
 
 Upon entry into Debug Mode, the `pelp` bit in `dcsr` is updated with the `ELP`
-at the privilege level the hart was previously in and the `ELP` is set to
-`NO_LP_EXPECTED`. When a hart resumes from Debug Mode, the `ELP` is changed to
-that specified by `pelp` in `dcsr`.
+at the privilege level the hart was previously in, and the `ELP` is set to
+`NO_LP_EXPECTED`. When a hart resumes from Debug Mode, if `dcsr.prv` holds the
+value `y`, then `ELP` is set to the value of `pelp` if `yLPE` is 1; otherwise,
+it is set to `NO_LP_EXPECTED`.
 
 [NOTE]
 ====
