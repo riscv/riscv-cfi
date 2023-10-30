@@ -501,10 +501,9 @@ of the following conditions are true:
 * The `ELP` is `LP_EXPECTED` and the `LPL` is not zero and the `LPL` does not
   match the expected landing pad label in bits 31:12 of the `x7` register.
 
-If the instruction causes an software-check exception, the `ELP` does not
-change. The behavior of the trap caused by this software-check exception is
-specified in section <<FORWARD_TRAPS>>. If a software-check exception is not
-caused then the `ELP` is updated to `NO_LP_EXPECTED`.
+The behavior of the trap if a software-check exception is raised by this
+instruction is specified in section <<FORWARD_TRAPS>>. If a software-check
+exception is not caused then the `ELP` is updated to `NO_LP_EXPECTED`.
 
 [wavedrom, ,svg]
 ....
@@ -579,9 +578,9 @@ that specified by `pelp` in `dcsr`.
 [NOTE]
 ====
 The trap handler in privilege mode `x` must save the `xPELP` bit and the `x7`
-register before performing an indirect call/jump. If the privilege mode `x`
-can respond to interrupts, then the trap handler should also save these values
-before enabling interrupts.
+register before performing an indirect call/jump if `xLPE=1`. If the privilege
+mode `x` can respond to interrupts and `xLPE=1`, then the trap handler should
+also save these values before enabling interrupts.
 
 The trap handler in privilege mode `x` must restore the saved `xPELP` bit and
 the `x7` register before executing the `xRET` instruction to return from a
