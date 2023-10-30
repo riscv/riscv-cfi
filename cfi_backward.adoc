@@ -78,7 +78,7 @@ backward-edge control-flow integrity.
 
 The Zicfiss extension has dependencies on the following extensions: A, Zicsr,
 Zimop, and Zcmop. Additionally, use of Zicfiss in U-mode requires S-mode to be
-supported.
+implemented.
 
 === Zicfiss Instructions Summary
 
@@ -127,9 +127,9 @@ This section specifies the CSR state of the Zicfiss extensions.
 ....
 
 The Zicfiss extension adds the `SSE` field (bit 3) to `menvcfg`. When the `SSE`
-field is set to 1 and S-mode is supported, the Zicfiss extension is enabled in
-S-mode. If S-mode isn't supported but U-mode is, then with the SSE field set to
-1, the Zicfiss extension is enabled in U-mode.
+field is set to 1 and S-mode is implemented, the Zicfiss extension is enabled in
+S-mode. If S-mode isn't implemented but U-mode is, then with the SSE field set
+to 1, the Zicfiss extension is enabled in U-mode.
 
 When `SSE` field is 0, the following rules apply to privilege modes that are
 less than M:
@@ -221,9 +221,9 @@ exception or a virtual instruction exception, contingent upon the state of the
 The term `xSSE` is used to determine if backward-edge CFI using shadow stacks
 provided by the Zicfiss extension is enabled at a privilege mode.
 
-When S-mode is supported, it is determined as follows:
+When S-mode is implemented, it is determined as follows:
 
-.`xSSE` determination when S-mode is supported
+.`xSSE` determination when S-mode is implemented
 [width=100%]
 [%header, cols="^4,^12"]
 |===
@@ -234,7 +234,7 @@ When S-mode is supported, it is determined as follows:
 |  U or VU     | `senvcfg.SSE`
 |===
 
-When S-mode is not supported, then `xSSE` is 0 at both M and U privilege modes.
+When S-mode is not implemented, then `xSSE` is 0 at both M and U privilege modes.
 
 [NOTE]
 ====
@@ -272,8 +272,9 @@ illegal instruction exception. Execution of programs that use these
 instructions on such machines is not supported.
 
 Activating Zicfiss in M-mode is currently not supported. Additionally, when
-S-mode is not supported, activation in U-mode activation is also not supported.
-These functionalities may be introduced in a future standard extension.
+S-mode is not implemented, activation in U-mode activation is also not
+supported. These functionalities may be introduced in a future standard
+extension.
 ====
 
 <<<
