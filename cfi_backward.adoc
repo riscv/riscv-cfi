@@ -107,9 +107,9 @@ instruction follows its Zimop defined behavior.
 
 This section specifies the CSR state of the Zicfiss extensions.
 
-==== Machine environment configuration registers (`menvcfg and menvcfgh`)
+==== Machine environment configuration register (`menvcfg`)
 
-.Machine environment configuration register (`menvcfg`) for MXLEN=64
+.Machine environment configuration register (`menvcfg`)
 [wavedrom, ,svg]
 ....
 {reg: [
@@ -139,9 +139,9 @@ less than M:
 * The `pte.xwr=010b` encoding in VS/S-stage page tables becomes reserved.
 * The `henvcfg.SSE` and `senvcfg.SSE` fields will read as zero and are read-only.
 
-==== Supervisor environment configuration registers (`senvcfg`)
+==== Supervisor environment configuration register (`senvcfg`)
 
-.Supervisor environment configuration register (`senvcfg`) when `SXLEN=64`
+.Supervisor environment configuration register (`senvcfg`)
 [wavedrom, ,svg]
 ....
 {reg: [
@@ -163,9 +163,9 @@ the following rules apply:
 * 32-bit Zicfiss instructions will revert to their behavior as defined by Zimop.
 * 16-bit Zicfiss instructions will revert to their behavior as defined by Zcmop.
 
-==== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
+==== Hypervisor environment configuration register (`henvcfg`)
 
-.Hypervisor environment configuration register (`henvcfg`) for MXLEN=64
+.Hypervisor environment configuration register (`henvcfg`)
 [wavedrom, ,svg]
 ....
 {reg: [
