@@ -176,7 +176,7 @@ the following rules apply:
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
   {bits: 53, name: 'WPRI'},
-  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
   {bits:  1, name: 'STCE'},
 ], config:{lanes: 4, hspace:1024}}

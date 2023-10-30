@@ -199,7 +199,7 @@ This section specifies the CSR state of the Zicfilp extension.
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
   {bits: 53, name: 'WPRI'},
-  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
   {bits:  1, name: 'STCE'},
 ], config:{lanes: 4, hspace:1024}}
@@ -260,7 +260,7 @@ following rules apply to VU/U-mode:
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
   {bits: 53, name: 'WPRI'},
-  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
   {bits:  1, name: 'STCE'},
 ], config:{lanes: 4, hspace:1024}}
