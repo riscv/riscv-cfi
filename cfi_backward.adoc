@@ -98,8 +98,10 @@ The Zicfiss extension introduces the following instructions:
 * Perform an atomic swap from a shadow stack location (See <<SSAMOSWAP>>)
 ** `SSAMOSWAP`
 
-When a Zimop encoding is not used by the Zicfiss extension then the
-instruction follows its Zimop defined behavior.
+When a `MOP.RR.7` or `MOP.R.28` encoding is not utilized by the Zicfiss
+extension, the instruction adheres to its Zimop-defined behavior, unless it is
+employed by another extension. In such cases, the instruction follows the
+behavior specified by that other extension.
 
 <<<
 
@@ -128,8 +130,7 @@ This section specifies the CSR state of the Zicfiss extensions.
 
 The Zicfiss extension adds the `SSE` field (bit 3) to `menvcfg`. When the `SSE`
 field is set to 1 and S-mode is implemented, the Zicfiss extension is enabled in
-S-mode. If S-mode isn't implemented but U-mode is, then with the SSE field set
-to 1, the Zicfiss extension is enabled in U-mode.
+S-mode.
 
 When `SSE` field is 0, the following rules apply to privilege modes that are
 less than M:
@@ -249,11 +250,6 @@ not compiled with Zicfiss instructions. Such an operating system that does
 not use backward-edge CFI for S-mode execution may still activate Zicfiss for
 U-mode applications.
 
-When Zicfiss is implemented, the extension is always enabled in M-mode. However,
-it is benign to use M-mode firmware that has not been compiled with Zicfiss
-instructions. Such M-mode firmware that does not use backward-edge CFI for
-M-mode execution may still enable the use of Zicfiss by lower privilege modes.
-
 When programs that use Zicfiss instructions are installed on a processor that
 supports the Zicfiss extension but the extension is not enabled at the privilege
 mode where the program executes, the program continues to function correctly but
@@ -302,7 +298,7 @@ followed by a write of the link register at the new top of the shadow stack.
   {bits:  2, name: 'op', attr:'C1'},
   {bits:  5, name: '00000'},
   {bits:  1, name: '1'},
-  {bits:  3, name: 'n[2:0]', attr:['000']},
+  {bits:  3, name: 'n[3:1]', attr:['000']},
   {bits:  1, name: '0'},
   {bits:  1, name: '0'},
   {bits:  3, name: '011', attr:['C.SSPUSH x1']},
@@ -315,7 +311,7 @@ defined `C.MOP.1` encoding. The `C.SSPUSH x1` expands to `SSPUSH x1`.
 
 The `SSPUSH` instruction and its compressed form `C.SSPUSH` can be used, to push
 a link register on the shadow stack. The `SSPUSH` and `C.SSPUSH` instructions
-performs a store identically to the existing `STORE` instruction, with the
+performs a store identically to the existing store instructions, with the
 difference that the base is implicitly `ssp` and the width is implicitly `XLEN`.
 
 The `SSPUSH` and `C.SSPUSH` instructions require the virtual address in `ssp` to
@@ -364,7 +360,7 @@ current top of the shadow stack followed by an increment of the `ssp` by
   {bits:  2, name: 'op', attr:'C1'},
   {bits:  5, name: '00000'},
   {bits:  1, name: '1'},
-  {bits:  3, name: 'n[2:0]', attr:['010']},
+  {bits:  3, name: 'n[3:1]', attr:['010']},
   {bits:  1, name: '0'},
   {bits:  1, name: '0'},
   {bits:  3, name: '011', attr:['C.SSPOPCHK x5']},
@@ -414,32 +410,14 @@ unsafe code sequences.
 
 [NOTE]
 ====
-Programs that use the shadow stack can operate in two modes: a shadow stack mode
-or a control stack mode.
+When shadow stack is active, programs store the return addresses on both the
+regular stack and the shadow stack in the function prologue, and then pop them
+them from both stacks and compare the values before returning from the function.
+Storing the return address on both stacks preserves the call stack layout and
+the ABI, while also allowing for the detection of corruption of the return
+address on the regular stack.
 
-In shadow stack mode, programs store the return addresses on both the regular
-stack and the shadow stack in the function prologue, and then pop them them from
-both stacks and compare the values before returning from the function. In the
-control stack mode, programs only store the return addresses on the shadow stack
-and pop it from there to return from the function.
-
-Operating in shadow stack mode preserves the call stack layout and the ABI,
-while also allowing for the detection of corruption of the return address on
-the regular stack. Such programs are portable between implementations that
-support the Zicfiss extension as well as those that do not. Most programs are
-expected to use this mode.
-
-Operating in control stack mode breaks the ABI, but has the benefit of avoiding
-additional instructions to store the return address to two stacks, and to pop
-and compare them before returning from a function. This mode also allows the
-program to have a smaller regular stack as the space to save the return address
-is not needed. However, such programs are not portable to implementations that
-do not support the Zicfiss extension. Some just-in-time (JIT) compiled
-programs may dynamically switch between using only the regular stack or only the
-shadow stack to store return addresses, depending on the capabilities of the
-implementation.
-
-The prologue and epilogue of a non-leaf function in shadow stack mode is as
+The prologue and epilogue of a non-leaf function that uses shadow stacks is as
 follows:
 
 [listing]
@@ -457,18 +435,16 @@ follows:
         ret
 ----
 
-These examples illustrate the use of `x1` register as the link register.
+This example illustrate the use of `x1` register as the link register.
 Alternatively, the `x5` register may also be used as the link register.
 
 A leaf function (i.e., a function that does not itself make function calls) does
-not need to push the link register to the shadow stack or pop it from the shadow
-stack in either shadow stack mode or in control stack mode. The return value may
-be held in the link register itself for the duration of the leaf function
-execution.
+not need to spill the link register and the return value may be held in the link
+register itself for the duration of the leaf functions execution.
 ====
 
 The `C.SSPOPCHK`, and `SSPOPCHK` instructions perform a load identically to the
-existing `LOAD` instruction, with the difference that the base is implicitly
+existing load instructions, with the difference that the base is implicitly
 `ssp` and the width is implicitly `XLEN`.
 
 The `SSPOPCHK` and `C.SSPOPCHK` instructions require the virtual address in
@@ -700,7 +676,7 @@ is as follows:
 ----
   if privilege_mode != M && menvcfg.SSE == 0
       raise illegal-instruction exception
-  else if privilege_mode == M && senvcfg.SSE == 0
+  else if privilege_mode == U && senvcfg.SSE == 0
       raise illegal-instruction exception
   else if privilege_mode == VS && henvcfg.SSE == 0
       raise virtual instruction exception
@@ -798,6 +774,9 @@ are disallowed. Under these conditions:
 * The `SSPOPCHK` and `C.SSPOPCHK` instructions will result in a load
   access-fault exception.
 
+The `SSAMOSWAP` instruction will result in a store/AMO access-fault exception
+if the effective privilege mode of its memory access is M.
+
 Implicit accesses, including an instruction fetch, to the shadow stack page are
 not allowed. Such memory accesses cause an access-fault exception corresponding
 to the original access type.
@@ -840,8 +819,8 @@ page faults.
 
 On implementations where address-misaligned exception is prioritized higher than
 access-fault exception, a trap handler handler that emulates misaligned stores
-must cause an access-fault exception if the store is not `SSAMOSWAP`, `SSPUSH`
-or `C.SSPUSH`, and the store is being made to a shadow stack page.
+must cause an access-fault exception if store is being made to a shadow stack
+page.
 
 Shadow stack instructions cause an access-fault if the accessed page is not a
 shadow stack page or if the page is in non-idempotent memory to similarly
