@@ -311,7 +311,7 @@ defined `C.MOP.1` encoding. The `C.SSPUSH x1` expands to `SSPUSH x1`.
 
 The `SSPUSH` instruction and its compressed form `C.SSPUSH` can be used, to push
 a link register on the shadow stack. The `SSPUSH` and `C.SSPUSH` instructions
-performs a store identically to the existing `STORE` instruction, with the
+performs a store identically to the existing store instructions, with the
 difference that the base is implicitly `ssp` and the width is implicitly `XLEN`.
 
 The `SSPUSH` and `C.SSPUSH` instructions require the virtual address in `ssp` to
@@ -444,7 +444,7 @@ register itself for the duration of the leaf functions execution.
 ====
 
 The `C.SSPOPCHK`, and `SSPOPCHK` instructions perform a load identically to the
-existing `LOAD` instruction, with the difference that the base is implicitly
+existing load instructions, with the difference that the base is implicitly
 `ssp` and the width is implicitly `XLEN`.
 
 The `SSPOPCHK` and `C.SSPOPCHK` instructions require the virtual address in
