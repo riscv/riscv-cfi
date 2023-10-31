@@ -39,7 +39,7 @@ epilogue), the function loads the link register from the regular stack and
 the shadow copy of the link register from the shadow stack. Then, the link register
 value from the regular stack and the shadow link register value from the shadow
 stack are compared.  A mismatch of the two values is indicative of a subversion
-of the return address control variable and causes a software check exception.
+of the return address control variable and causes a software-check exception.
 
 The Zicfiss instructions are encoded using a subset of "May be op" instructions
 defined by the Zimop and Zcmop extensions cite:[ZIMOP]. This subset of
@@ -78,7 +78,7 @@ backward-edge control-flow integrity.
 
 The Zicfiss extension has dependencies on the following extensions: A, Zicsr,
 Zimop, and Zcmop. Additionally, use of Zicfiss in U-mode requires S-mode to be
-supported.
+implemented.
 
 === Zicfiss Instructions Summary
 
@@ -107,9 +107,9 @@ instruction follows its Zimop defined behavior.
 
 This section specifies the CSR state of the Zicfiss extensions.
 
-==== Machine environment configuration registers (`menvcfg and menvcfgh`)
+==== Machine environment configuration register (`menvcfg`)
 
-.Machine environment configuration register (`menvcfg`) for MXLEN=64
+.Machine environment configuration register (`menvcfg`)
 [wavedrom, ,svg]
 ....
 {reg: [
@@ -127,9 +127,9 @@ This section specifies the CSR state of the Zicfiss extensions.
 ....
 
 The Zicfiss extension adds the `SSE` field (bit 3) to `menvcfg`. When the `SSE`
-field is set to 1 and S-mode is supported, the Zicfiss extension is enabled in
-S-mode. If S-mode isn't supported but U-mode is, then with the SSE field set to
-1, the Zicfiss extension is enabled in U-mode.
+field is set to 1 and S-mode is implemented, the Zicfiss extension is enabled in
+S-mode. If S-mode isn't implemented but U-mode is, then with the SSE field set
+to 1, the Zicfiss extension is enabled in U-mode.
 
 When `SSE` field is 0, the following rules apply to privilege modes that are
 less than M:
@@ -139,9 +139,9 @@ less than M:
 * The `pte.xwr=010b` encoding in VS/S-stage page tables becomes reserved.
 * The `henvcfg.SSE` and `senvcfg.SSE` fields will read as zero and are read-only.
 
-==== Supervisor environment configuration registers (`senvcfg`)
+==== Supervisor environment configuration register (`senvcfg`)
 
-.Supervisor environment configuration register (`senvcfg`) when `SXLEN=64`
+.Supervisor environment configuration register (`senvcfg`)
 [wavedrom, ,svg]
 ....
 {reg: [
@@ -163,9 +163,9 @@ the following rules apply:
 * 32-bit Zicfiss instructions will revert to their behavior as defined by Zimop.
 * 16-bit Zicfiss instructions will revert to their behavior as defined by Zcmop.
 
-==== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
+==== Hypervisor environment configuration register (`henvcfg`)
 
-.Hypervisor environment configuration register (`henvcfg`) for MXLEN=64
+.Hypervisor environment configuration register (`henvcfg`)
 [wavedrom, ,svg]
 ....
 {reg: [
@@ -176,7 +176,7 @@ the following rules apply:
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
   {bits: 53, name: 'WPRI'},
-  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
   {bits:  1, name: 'STCE'},
 ], config:{lanes: 4, hspace:1024}}
@@ -200,13 +200,13 @@ The `ssp` CSR is an unprivileged read-write (URW) CSR that reads and writes
 of the current privilege mode. The bits 1:0 of `ssp` are read-only zero. If the
 UXLEN or SXLEN may never be 32, then the bit 2 is also read-only zero.
 
-Attempts to access the `ssp` CSR may result in either an illegal instruction
+Attempts to access the `ssp` CSR may result in either an illegal-instruction
 exception or a virtual instruction exception, contingent upon the state of the
 `__x__envcfg.SSE` fields. The conditions are specified as follows:
 
-* If the privilege mode is less than M and `menvcfg.SSE` is 0, an illegal
-  instruction exception is raised.
-* Otherwise, if in U-mode and `senvcfg.SSE` is 0, an illegal instruction
+* If the privilege mode is less than M and `menvcfg.SSE` is 0, an
+  illegal-instruction exception is raised.
+* Otherwise, if in U-mode and `senvcfg.SSE` is 0, an illegal-instruction
   exception is raised.
 * Otherwise, if in VS-mode and `henvcfg.SSE` is 0, a virtual instruction
   exception is raised.
@@ -221,9 +221,9 @@ exception or a virtual instruction exception, contingent upon the state of the
 The term `xSSE` is used to determine if backward-edge CFI using shadow stacks
 provided by the Zicfiss extension is enabled at a privilege mode.
 
-When S-mode is supported, it is determined as follows:
+When S-mode is implemented, it is determined as follows:
 
-.`xSSE` determination when S-mode is supported
+.`xSSE` determination when S-mode is implemented
 [width=100%]
 [%header, cols="^4,^12"]
 |===
@@ -234,7 +234,7 @@ When S-mode is supported, it is determined as follows:
 |  U or VU     | `senvcfg.SSE`
 |===
 
-When S-mode is not supported, then `xSSE` is 0 at both M and U privilege modes.
+When S-mode is not implemented, then `xSSE` is 0 at both M and U privilege modes.
 
 [NOTE]
 ====
@@ -268,12 +268,13 @@ Zimop/Zcmop-defined behavior.
 
 On processors that do not support Zimop/Zcmop extensions, all Zimop/Zcmop code
 points including those used for Zicfiss instructions may cause an
-illegal instruction exception. Execution of programs that use these
+illegal-instruction exception. Execution of programs that use these
 instructions on such machines is not supported.
 
 Activating Zicfiss in M-mode is currently not supported. Additionally, when
-S-mode is not supported, activation in U-mode activation is also not supported.
-These functionalities may be introduced in a future standard extension.
+S-mode is not implemented, activation in U-mode activation is also not
+supported. These functionalities may be introduced in a future standard
+extension.
 ====
 
 <<<
@@ -384,8 +385,8 @@ stack.
 
 The `SSPOPCHK` instruction and its compressed form `C.SSPOPCHK` can be used to
 pop the shadow return address value from the shadow stack and check that the
-value matches the contents of the link register and if not cause a software
-integrity fault exception with `__x__tval` set to "shadow stack fault (code=3)".
+value matches the contents of the link register and if not cause a
+software-check exception with `__x__tval` set to "shadow stack fault (code=3)".
 
 While any register may be used as link register, conventionally the `x1` or `x5`
 registers are used. The shadow stack instructions are designed to be most
@@ -475,14 +476,14 @@ The `SSPOPCHK` and `C.SSPOPCHK` instructions require the virtual address in
 `SSPOPCHK` and `C.SSPOPCHK` requires that `ssp` refers to idempotent memory. If
 the memory reference by `ssp` is not idempotent, then the instructions cause a
 load access-fault exception. If the virtual address in `ssp` is not `XLEN`
-aligned, then `SSPOPCHK` and `C.SSPOPCHK` instructions cause a load access
-fault exception
+aligned, then `SSPOPCHK` and `C.SSPOPCHK` instructions cause a load
+access-fault exception
 
 [NOTE]
 ====
 Misaligned accesses to shadow stack are not required and enforcing alignment is
 more secure to detect errors in the program. An access-fault exception is raised
-instead of address misaligned exception in such cases to indicate fatality and
+instead of address-misaligned exception in such cases to indicate fatality and
 that the instruction must not be emulated by a trap handler.
 
 The `SSPOPCHK` instruction performs a load followed by a check of the loaded
@@ -505,10 +506,10 @@ The operation of the `SSPOPCHK` and `C.SSPOPCHK` instructions is as follows:
 if (xSSE == 1)
     temp = mem[ssp]            # Load temp from address in ssp and
     if temp != X(src)          # Compare temp to value in src and
-                               # cause an SW integrity fault exception
+                               # cause an software-check exception
                                # if they are not bitwise equal.
                                # Only x1 and x5 may be used as src
-       Raise software check exception
+       Raise software-check exception
     else
        ssp = ssp + (XLEN/8)    # increment ssp by XLEN/8.
     endif
@@ -516,12 +517,12 @@ endif
 ----
 
 If the value loaded from the address in `ssp` does not match the value in `rs1`,
-a software check exception (cause=18) is raised with `__x__tval` set to "shadow
-stack fault (code=3)". The software check exception caused by `SSPOPCHK`/
+a software-check exception (cause=18) is raised with `__x__tval` set to "shadow
+stack fault (code=3)". The software-check exception caused by `SSPOPCHK`/
 `C.SSPOPCHK` is lower in priority than a load access-fault exception.
 
 The `ssp` is incremented by `SSPOPCHK` and `C.SSPOPCHK` only if the load from
-the shadow stack completes successfully and no software check exception is
+the shadow stack completes successfully and no software-check exception is
 raised.
 
 [NOTE]
@@ -698,9 +699,9 @@ is as follows:
 [listing]
 ----
   if privilege_mode != M && menvcfg.SSE == 0
-      raise illegal instruction exception
+      raise illegal-instruction exception
   else if privilege_mode == M && senvcfg.SSE == 0
-      raise illegal instruction exception
+      raise illegal-instruction exception
   else if privilege_mode == VS && henvcfg.SSE == 0
       raise virtual instruction exception
   else if privilege_mode == VU && senvcfg.SSE == 0
@@ -794,8 +795,8 @@ and the effective privilege mode is less than M, shadow stack memory accesses
 are disallowed. Under these conditions:
 * The `SSPUSH`, `SSAMOSWAP`, and `C.SSPUSH` instructions will result in a
   store/AMO access-fault exception.
-* The `SSPOPCHK` and `C.SSPOPCHK` instructions will result in a load access
-  fault exception.
+* The `SSPOPCHK` and `C.SSPOPCHK` instructions will result in a load
+  access-fault exception.
 
 Implicit accesses, including an instruction fetch, to the shadow stack page are
 not allowed. Such memory accesses cause an access-fault exception corresponding
@@ -823,7 +824,7 @@ The following faults may occur:
 ====
 Stores to shadow stack by instructions other than `SSAMOSWAP`, `SSPUSH`, and
 `C.SSPUSH` cause a store/AMO access-fault exception, rather than a store/AMO
-page fault exception, to indicate fatality.
+page-fault exception, to indicate fatality.
 
 If a store/AMO page fault was triggered, it would suggest that the operating
 system should service that fault and correct the condition. Correcting the
@@ -837,7 +838,7 @@ causing an access-fault instead of a page fault enables the operating system to
 easily distinguish between the fatal/non-recoverable conditions and recoverable
 page faults.
 
-On implementations where address misaligned exception is prioritized higher than
+On implementations where address-misaligned exception is prioritized higher than
 access-fault exception, a trap handler handler that emulates misaligned stores
 must cause an access-fault exception if the store is not `SSAMOSWAP`, `SSPUSH`
 or `C.SSPUSH`, and the store is being made to a shadow stack page.
@@ -859,25 +860,25 @@ section 4.3.2 of the Privileged Specification cite:[PRIV] is modified as
 follows:
 [start=3]
 3. If `pte.v = 0` or if any bits of encodings that are reserved for future
-   standard use are set within `pte`, stop and raise a page fault exception
+   standard use are set within `pte`, stop and raise a page-fault exception
    corresponding to the original access type. The encoding `pte.xwr = 010b`
    is not reserved if `V=0` and `menvcfg.SSE` is 1 or if `V=1` and
    `henvcfg.SSE` is 1.
 
 4. Otherwise, the PTE is valid. If `pte.r = 1` or `pte.w = 1` or `pte.x = 1`,
    go to step 5. Otherwise, this PTE is a pointer to the next level of the page
-   table. Let `i = i - 1`. If `i < 0`, store and raise a page fault exception
+   table. Let `i = i - 1`. If `i < 0`, store and raise a page-fault exception
    corresponding to the original access type. Otherwise, let `a = pte.ppn x
    PAGESIZE` and go to step 2.
 
 5. A leaf PTE has been found. If the memory access is by a shadow stack
-   instruction and `pte.xwr != 010b`, then cause an access-violation exception
+   instruction and `pte.xwr != 010b`, then cause an access-fault exception
    corresponding to the access type. If the memory access is either a
    non-shadow-stack store/AMO or an implicit access, and `pte.xwr == 010b`, then
    an access-fault exception is raised, corresponding to the original access type.
    If the requested memory access is not allowed by the `pte.r`, `pte.w`, `pte.x`,
    and `pte.u` bits, given the current privilege mode and the value of the `SUM`
-   and `MXR` fields of the `mstatus` register, stop and raise a page fault
+   and `MXR` fields of the `mstatus` register, stop and raise a page-fault
    exception corresponding to the original access type.
 
 The PMA checks are extended to require memory referenced by `SSAMOSWAP`, `SSPUSH`,

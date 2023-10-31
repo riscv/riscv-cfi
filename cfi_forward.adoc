@@ -17,7 +17,7 @@ using indirect call and jumps, and this is referred to as forward-edge
 protection. When the Zicfilp is active, the hart tracks an expected landing pad
 (`ELP`) state that is updated by an _indirect_call_ or _indirect_jump_ to
 require a landing pad instruction at the target of the branch. If the
-instruction at the target is not a landing pad, then a software check exception
+instruction at the target is not a landing pad, then a software-check exception
 is raised.
 
 A landing pad may be optionally associated with a 20-bit label. With labeling
@@ -155,7 +155,7 @@ not need to establish an expected landing pad label value in `x7`.
 When `ELP` is set to `LP_EXPECTED`, if the next instruction in the instruction
 stream is not 4-byte aligned, or is not `LPAD`, or if the landing pad label
 encoded in `LPAD` is not zero and does not match the expected landing pad label
-in bits 31:12 of the `x7` register, then a software check exception (cause=18) with
+in bits 31:12 of the `x7` register, then a software-check exception (cause=18) with
 `*tval` set to "landing pad fault (code=2)" is raised else the `ELP` is updated to
 `NO_LP_EXPECTED`.
 
@@ -185,9 +185,9 @@ the accidental landing pad.
 
 This section specifies the CSR state of the Zicfilp extension.
 
-==== Machine environment configuration registers (`menvcfg and menvcfgh`)
+==== Machine environment configuration register (`menvcfg`)
 
-.Machine environment configuration register (`menvcfg`) for MXLEN=64
+.Machine environment configuration register (`menvcfg`)
 [wavedrom, ,svg]
 ....
 {reg: [
@@ -199,15 +199,15 @@ This section specifies the CSR state of the Zicfilp extension.
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
   {bits: 53, name: 'WPRI'},
-  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
   {bits:  1, name: 'STCE'},
 ], config:{lanes: 4, hspace:1024}}
 ....
 
 Zicfilp extension introduces the `LPE` field (bit 2) in `menvcfg`. When the
-`LPE` field is set to 1 and S-mode is supported, the Zicfilp extension is
-enabled in S-mode. If `LPE` field is set to 1 and S-mode is not supported, the
+`LPE` field is set to 1 and S-mode is implemented, the Zicfilp extension is
+enabled in S-mode. If `LPE` field is set to 1 and S-mode is not implemented, the
 Zicfilp extension is enabled in U-mode.
 
 When `LPE` field is 0, the Zicfilp extension is not enabled in S-mode, and the
@@ -217,11 +217,12 @@ following rules apply to S-mode:
   state remains `NO_LP_EXPECTED`.
 * The `LPAD` instruction operates as a no-op.
 
-If the `LPE` field is 0 and S-mode is not supported, these rules apply to U-mode.
+If the `LPE` field is 0 and S-mode is not implemented, these rules apply to
+U-mode.
 
-==== Supervisor environment configuration registers (`senvcfg`)
+==== Supervisor environment configuration register (`senvcfg`)
 
-.Supervisor environment configuration register (`senvcfg`) when `SXLEN=64`
+.Supervisor environment configuration register (`senvcfg`)
 [wavedrom, ,svg]
 ....
 {reg: [
@@ -245,9 +246,9 @@ following rules apply to VU/U-mode:
   state remains `NO_LP_EXPECTED`.
 * The `LPAD` instruction operates as a no-op.
 
-==== Hypervisor environment configuration registers (`henvcfg and henvcfgh`)
+==== Hypervisor environment configuration register (`henvcfg`)
 
-.Hypervisor environment configuration register (`henvcfg`) for MXLEN=64
+.Hypervisor environment configuration register (`henvcfg`)
 [wavedrom, ,svg]
 ....
 {reg: [
@@ -259,7 +260,7 @@ following rules apply to VU/U-mode:
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
   {bits: 53, name: 'WPRI'},
-  {bits:  1, name: 'HADE'},
+  {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
   {bits:  1, name: 'STCE'},
 ], config:{lanes: 4, hspace:1024}}
@@ -454,9 +455,9 @@ holds the previous `ELP`, and is updated as specified in <<FORWARD_TRAPS>>. The
 The term `xLPE` is used to determine if forward-edge CFI using landing pads
 provided by the Zicfilp extension is enabled at a privilege mode.
 
-When S-mode is supported, it is determined as follows:
+When S-mode is implemented, it is determined as follows:
 
-.`xLPE` determination when S-mode is supported
+.`xLPE` determination when S-mode is implemented
 [width=100%]
 [%header, cols="^4,^12"]
 |===
@@ -467,9 +468,9 @@ When S-mode is supported, it is determined as follows:
 |  U or VU     | `senvcfg.LPE`
 |===
 
-When S-mode is not supported, it is determined as follows:
+When S-mode is not implemented, it is determined as follows:
 
-.`xLPE` determination when S-mode is not supported
+.`xLPE` determination when S-mode is not implemented
 [width=100%]
 [%header, cols="^4,^12"]
 |===
@@ -492,18 +493,17 @@ implemented or is not enabled.
 
 When Zicfilp is enabled, `LPAD` is the only instruction allowed to execute when
 the `ELP` state is `LP_EXPECTED`. If Zicfilp is not enabled then the instruction
-is a no-op. If Zicfilp is enabled, the `LPAD` instruction causes a software
-error exception with `*tval` set to "landing pad fault (code=2)" if any of the
-following conditions are true:
+is a no-op. If Zicfilp is enabled, the `LPAD` instruction causes a
+software-check exception with `*tval` set to "landing pad fault (code=2)" if any
+of the following conditions are true:
 
 * The `pc` is not 4-byte aligned.
 * The `ELP` is `LP_EXPECTED` and the `LPL` is not zero and the `LPL` does not
   match the expected landing pad label in bits 31:12 of the `x7` register.
 
-If the instruction causes an software check exception, the `ELP` does not
-change. The behavior of the trap caused by this software check exception is
-specified in section <<FORWARD_TRAPS>>. If a software check exception is not
-caused then the `ELP` is updated to `NO_LP_EXPECTED`.
+The behavior of the trap if a software-check exception is raised by this
+instruction is specified in section <<FORWARD_TRAPS>>. If a software-check
+exception is not caused then the `ELP` is updated to `NO_LP_EXPECTED`.
 
 [wavedrom, ,svg]
 ....
@@ -519,13 +519,13 @@ The operation of the `LPAD` instruction is as follows:
 .`LPAD` operation
 [listing]
 ----
-if (xLPE != 0)
-    // If PC not 4-byte aligned then software integrity fault
+if (xLPE == 1 && ELP == LP_EXPECTED)
+    // If PC not 4-byte aligned then software-check exception
     if pc[1:0] != 0
-        Cause software check exception
-    // If landing pad label not matched -> software integrity fault
-    else if (inst.LPL != x7[31:12] && inst.LPL != 0 && ELP == LP_EXPECTED)
-        Cause software check exception
+        Cause software-check exception
+    // If landing pad label not matched -> software-check exception
+    else if (inst.LPL != x7[31:12] && inst.LPL != 0)
+        Cause software-check exception
     else
         ELP = NO_LP_EXPECTED
 else
@@ -541,15 +541,15 @@ completion of `JALR`/`C.JALR`/`C.JR`, but before the instruction at the target
 of indirect call/jump was decoded, due to:
 
 * Asynchronous interrupts.
-* Synchronous exceptions with priority higher than that of an software
-  error exception with `*tval` set to "landing pad fault (code=2)"
+* Synchronous exceptions with priority higher than that of a
+  software-check exception with `*tval` set to "landing pad fault (code=2)"
   (See Table 3.7 of Privileged Specification cite:[PRIV]).
 
-The software check exception caused by Zicfilp has higher priority than an
-illegal instruction exception but lower priority than instruction access fault.
+The software-check exception caused by Zicfilp has higher priority than an
+illegal-instruction exception but lower priority than instruction access-fault.
 
-The software check exception due to the instruction not being an `LPAD`
-instruction when `ELP` is `LP_EXPECTED` or an software check exception caused by
+The software-check exception due to the instruction not being an `LPAD`
+instruction when `ELP` is `LP_EXPECTED` or an software-check exception caused by
 the `LPAD` instruction itself (See <<LP_INST>>) leads to a trap being delivered
 to the same or to a higher privilege mode.
 
@@ -567,20 +567,22 @@ When a trap is taken into privilege mode `x`, the `xPELP` is set to `ELP` and
 `ELP` is set to `NO_LP_EXPECTED`.
 
 An `MRET` or `SRET` instruction is used to return from a trap in M-mode or
-S-mode, respectively. An `xRET` instruction sets the `ELP` to `xPELP`, and sets
-`xPELP` to `NO_LP_EXPECTED`.
+S-mode, respectively.  When executing an `xRET` instruction, if `xPP` holds the
+value `y`, then `ELP` is set to the value of `xPELP` if `yLPE` is 1; otherwise,
+it is set to `NO_LP_EXPECTED`; `xPELP` is set to `NO_LP_EXPECTED`.
 
 Upon entry into Debug Mode, the `pelp` bit in `dcsr` is updated with the `ELP`
-at the privilege level the hart was previously in and the `ELP` is set to
-`NO_LP_EXPECTED`. When a hart resumes from Debug Mode, the `ELP` is changed to
-that specified by `pelp` in `dcsr`.
+at the privilege level the hart was previously in, and the `ELP` is set to
+`NO_LP_EXPECTED`. When a hart resumes from Debug Mode, if `dcsr.prv` holds the
+value `y`, then `ELP` is set to the value of `pelp` if `yLPE` is 1; otherwise,
+it is set to `NO_LP_EXPECTED`.
 
 [NOTE]
 ====
 The trap handler in privilege mode `x` must save the `xPELP` bit and the `x7`
-register before performing an indirect call/jump. If the privilege mode `x`
-can respond to interrupts, then the trap handler should also save these values
-before enabling interrupts.
+register before performing an indirect call/jump if `xLPE=1`. If the privilege
+mode `x` can respond to interrupts and `xLPE=1`, then the trap handler should
+also save these values before enabling interrupts.
 
 The trap handler in privilege mode `x` must restore the saved `xPELP` bit and
 the `x7` register before executing the `xRET` instruction to return from a
