@@ -819,8 +819,8 @@ page faults.
 
 On implementations where address-misaligned exception is prioritized higher than
 access-fault exception, a trap handler handler that emulates misaligned stores
-must cause an access-fault exception if the store is not `SSAMOSWAP`, `SSPUSH`
-or `C.SSPUSH`, and the store is being made to a shadow stack page.
+must cause an access-fault exception if store is being made to a shadow stack
+page.
 
 Shadow stack instructions cause an access-fault if the accessed page is not a
 shadow stack page or if the page is in non-idempotent memory to similarly
