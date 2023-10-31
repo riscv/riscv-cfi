@@ -774,6 +774,9 @@ are disallowed. Under these conditions:
 * The `SSPOPCHK` and `C.SSPOPCHK` instructions will result in a load
   access-fault exception.
 
+The `SSAMOSWAP` instruction will result in a store/AMO access-fault exception
+if the effective privilege mode of its memory access is M.
+
 Implicit accesses, including an instruction fetch, to the shadow stack page are
 not allowed. Such memory accesses cause an access-fault exception corresponding
 to the original access type.
