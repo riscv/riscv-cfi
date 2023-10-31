@@ -410,32 +410,14 @@ unsafe code sequences.
 
 [NOTE]
 ====
-Programs that use the shadow stack can operate in two modes: a shadow stack mode
-or a control stack mode.
+When shadow stack is active, programs store the return addresses on both the
+regular stack and the shadow stack in the function prologue, and then pop them
+them from both stacks and compare the values before returning from the function.
+Storing the return address on both stacks preserves the call stack layout and
+the ABI, while also allowing for the detection of corruption of the return
+address on the regular stack.
 
-In shadow stack mode, programs store the return addresses on both the regular
-stack and the shadow stack in the function prologue, and then pop them them from
-both stacks and compare the values before returning from the function. In the
-control stack mode, programs only store the return addresses on the shadow stack
-and pop it from there to return from the function.
-
-Operating in shadow stack mode preserves the call stack layout and the ABI,
-while also allowing for the detection of corruption of the return address on
-the regular stack. Such programs are portable between implementations that
-support the Zicfiss extension as well as those that do not. Most programs are
-expected to use this mode.
-
-Operating in control stack mode breaks the ABI, but has the benefit of avoiding
-additional instructions to store the return address to two stacks, and to pop
-and compare them before returning from a function. This mode also allows the
-program to have a smaller regular stack as the space to save the return address
-is not needed. However, such programs are not portable to implementations that
-do not support the Zicfiss extension. Some just-in-time (JIT) compiled
-programs may dynamically switch between using only the regular stack or only the
-shadow stack to store return addresses, depending on the capabilities of the
-implementation.
-
-The prologue and epilogue of a non-leaf function in shadow stack mode is as
+The prologue and epilogue of a non-leaf function that uses shadow stacks is as
 follows:
 
 [listing]
@@ -453,14 +435,12 @@ follows:
         ret
 ----
 
-These examples illustrate the use of `x1` register as the link register.
+This example illustrate the use of `x1` register as the link register.
 Alternatively, the `x5` register may also be used as the link register.
 
 A leaf function (i.e., a function that does not itself make function calls) does
-not need to push the link register to the shadow stack or pop it from the shadow
-stack in either shadow stack mode or in control stack mode. The return value may
-be held in the link register itself for the duration of the leaf function
-execution.
+not need to spill the link register and the return value may be held in the link
+register itself for the duration of the leaf functions execution.
 ====
 
 The `C.SSPOPCHK`, and `SSPOPCHK` instructions perform a load identically to the
