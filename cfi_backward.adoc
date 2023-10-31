@@ -676,7 +676,7 @@ is as follows:
 ----
   if privilege_mode != M && menvcfg.SSE == 0
       raise illegal-instruction exception
-  else if privilege_mode == M && senvcfg.SSE == 0
+  else if privilege_mode == U && senvcfg.SSE == 0
       raise illegal-instruction exception
   else if privilege_mode == VS && henvcfg.SSE == 0
       raise virtual instruction exception
