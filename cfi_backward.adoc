@@ -98,8 +98,10 @@ The Zicfiss extension introduces the following instructions:
 * Perform an atomic swap from a shadow stack location (See <<SSAMOSWAP>>)
 ** `SSAMOSWAP`
 
-When a Zimop encoding is not used by the Zicfiss extension then the
-instruction follows its Zimop defined behavior.
+When a `MOP.RR.7` or `MOP.R.28` encoding is not utilized by the Zicfiss
+extension, the instruction adheres to its Zimop-defined behavior, unless it is
+employed by another extension. In such cases, the instruction follows the
+behavior specified by that other extension.
 
 <<<
 
