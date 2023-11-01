@@ -37,7 +37,7 @@ This project uses submodules to include the RISC-V documentation toolchain.
 
 ```
   git clone --recurse-submodule https://github.com/riscv/riscv-cfi.git
-  cd ./riscv-cfi.git
+  cd ./riscv-cfi
   make VERSION=v1.0.0 REVMARK=Draft
 ```
 
