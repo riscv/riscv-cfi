@@ -657,7 +657,7 @@ operation is then stored into the register specified in the `dst` operand.
   {bits:  5, name: 'rs2', attr:'src'},
   {bits:  1, name: 'rl'},
   {bits:  1, name: 'aq'},
-  {bits:  5, name: '00101', attr:['SSAMOSWAP.W', 'SSAMOSWAP.D']},
+  {bits:  5, name: '01001', attr:['SSAMOSWAP.W', 'SSAMOSWAP.D']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
