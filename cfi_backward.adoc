@@ -425,11 +425,9 @@ follows:
         sd x1,(sp)     # on data stack
         sspush x1      # push link register x1 on shadow stack
          :
-         :
         ld x1,(sp)     # pop link register x1 from data stack
         addi sp,sp,8
-        sspopchk x1    # compare link register x1 to shadow
-                       # return address; faults if not same
+        sspopchk x1    # fault if x1 not equal to shadow return address
         ret
 ----
 
@@ -471,6 +469,8 @@ non-idempotent memory, such as non-idempotent device memory, is not an expected
 usage, and requiring memory referenced by `ssp` to be idempotent does not pose a
 significant restriction.
 ====
+
+<<<
 
 The operation of the `SSPOPCHK` and `C.SSPOPCHK` instructions is as follows:
 
