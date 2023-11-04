@@ -111,6 +111,8 @@ An indirect branch using `JALR`, `C.JALR`, or `C.JR` with `rs1` as `x7` is
 termed a software guarded branch. Such branches do not need to land on a
 `LPAD` instruction and thus do not set `ELP` to `LP_EXPECTED`.
 
+<<<
+
 [NOTE]
 ====
 When the register source is a link register and the register destination is `x0`
@@ -159,6 +161,8 @@ in bits 31:12 of the `x7` register, then a software-check exception (cause=18)
 with `__x__tval` set to "landing pad fault (code=2)" is raised else the `ELP` is
 updated to `NO_LP_EXPECTED`.
 
+<<<
+
 [NOTE]
 ====
 The tracking of `ELP` and the requirement for a landing pad instruction
@@ -180,6 +184,8 @@ boundary to force the unintended `LPAD` pattern to become misaligned and thus
 not a valid landing pad or may use an alternate register allocation to prevent
 the accidental landing pad.
 ====
+
+<<<
 
 === Zicfilp CSRs
 

@@ -409,14 +409,14 @@ register, e.g., `x1` and/or `x5`, from arbitrary modification by not emitting
 unsafe code sequences.
 ====
 
+<<<
+
 [NOTE]
 ====
 Storing the return address on both stacks preserves the call stack layout and
 the ABI, while also allowing for the detection of corruption of the return
-address on the regular stack.
-
-The prologue and epilogue of a non-leaf function that uses shadow stacks is as
-follows:
+address on the regular stack. The prologue and epilogue of a non-leaf function
+that uses shadow stacks is as follows:
 
 [listing]
 ----
@@ -517,15 +517,15 @@ jump to the return address.
         c.sd x1,(sp)     # on data stack
         c.sspush x1      # push link register x1 on shadow stack
          :
-         :
         c.ld x5,(sp)     # pop link register x5 from data stack
         c.addi sp,sp,8
-        c.sspopchk x5    # compare link register x5 to shadow
-                         # return address; faults if not same
+        c.sspopchk x5    # fault if x5 not equal to shadow return address
         c.jr x5
 ----
 
 ====
+
+<<<
 
 [NOTE]
 ====
@@ -591,6 +591,8 @@ Operating systems and runtimes must not locate shadow stacks at address 0 to
 assist with the use of such code sequences.
 ====
 
+<<<
+
 [NOTE]
 ====
 A common operation performed on stacks is to unwind them to support constructs
@@ -638,6 +640,8 @@ back_cfi_not_active:
     :
 }
 ====
+
+<<<
 
 [[SSAMOSWAP]]
 === Atomic Swap from a shadow stack location
@@ -696,6 +700,8 @@ consistency semantics, using the `aq` and `rl` bits, to help implement
 multiprocessor synchronization. The memory operation performed by an
 `SSAMOSWAP`, has acquire semantics if `aq=1` and has release semantics if `rl=1`.
 
+<<<
+
 [NOTE]
 ====
 Stack switching is a common operation in user programs as well as supervisor
@@ -745,6 +751,8 @@ instruction can be used to store this checkpoint. When the old value at the
 memory location operated on by `SSAMOSWAP` is not required, `rd` can be set to
 `x0`.
 ====
+
+<<<
 
 [[SSMP]]
 === Shadow Stack Memory Protection
