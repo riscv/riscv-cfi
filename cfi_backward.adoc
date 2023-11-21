@@ -710,6 +710,8 @@ address in `rs1`.
   endif
 ----
 
+<<<
+
 If the memory referenced by `rs1` is not idempotent, then `SSAMOSWAP.W/D`
 causes a store/AMO access-fault exception.
 
@@ -722,8 +724,6 @@ Just as for AMOs in the A extension, `SSAMOSWAP.W/D` optionally provides
 release consistency semantics, using the `aq` and `rl` bits, to help implement
 multiprocessor synchronization. An `SSAMOSWAP.W/D` operation has acquire
 semantics if `aq=1` and release semantics if `rl=1`.
-
-<<<
 
 [NOTE]
 ====
@@ -830,6 +830,8 @@ of implicit access subjected to single- or VS-stage address translation.
 
 The access type is classified as a store/AMO in the event of an access-fault,
 page-fault, or guest-page fault exception triggered by shadow stack instructions.
+
+<<<
 
 Shadow stack instructions are restricted to accessing shadow stack
 (`pte.xwr=010b`) pages. Should a shadow stack instruction access a page that is
