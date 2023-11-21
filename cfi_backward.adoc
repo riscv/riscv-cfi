@@ -97,7 +97,7 @@ The Zicfiss extension introduces the following instructions:
 ** `SSRDP` - encoded using `MOP.R.28`
 
 * Perform an atomic swap from a shadow stack location (See <<SSAMOSWAP>>)
-** `SSAMOSWAP`
+** `SSAMOSWAP.W` and `SSAMOSWAP.D`
 
 When a `MOP.RR.7` or `MOP.R.28` encoding is not utilized by the Zicfiss
 extension, the instruction adheres to its Zimop-defined behavior, unless it is
@@ -646,11 +646,6 @@ back_cfi_not_active:
 [[SSAMOSWAP]]
 === Atomic Swap from a shadow stack location
 
-The `SSAMOSWAP` instruction performs an atomic swap operation between the `XLEN`
-bits of the `src` register and the `XLEN` bits located on the shadow stack at the
-address specified in the `addr` register.  The resulting value from the swap
-operation is then stored into the register specified in the `dst` operand.
-
 [wavedrom, , ]
 ....
 {reg: [
@@ -665,17 +660,18 @@ operation is then stored into the register specified in the `dst` operand.
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-The `SSAMOSWAP` instruction requires the virtual address in `addr` to have a
-shadow stack attribute (see <<SSMP>>). If the virtual address is not XLEN
-aligned, then `SSAMOSWAP` causes a store/AMO access-fault exception. If the
-memory reference by the `ssp` is not idempotent, then `SSAMOSWAP` causes a
-store/AMO access-fault exception. The operation of the `SSAMOSWAP` instructions
-is as follows:
+For RV32, `SSAMOSWAP.W` atomically loads a 32-bit data value from address of a
+shadow stack location in `rs1`, puts the loaded value into register `rd`, and
+stores the 32-bit value held in `rs2` to the original address in `rs1`.
+`SSAMOSWAP.D` (RV64 only) is similar to `SSAMOSWAP.W` but operates on 64-bit
+data values.
 
-.`SSAMOSWAP` operation
+.`SSAMOSWAP.W` for RV32 and `SSAMOSWAP.D` (RV64 only) operation
 [listing]
 ----
   if privilege_mode != M && menvcfg.SSE == 0
+      raise illegal-instruction exception
+  if S-mode not implemented
       raise illegal-instruction exception
   else if privilege_mode == U && senvcfg.SSE == 0
       raise illegal-instruction exception
@@ -689,16 +685,44 @@ is as follows:
   endif
 ----
 
-Just as for AMOs in the A extension, `SSAMOSWAP` requires that the address
-held in `rs1` be naturally aligned to the size of the operand (i.e., 16-byte
-aligned for __quadwords__, eight-byte aligned for __doublewords__, and four-byte
-aligned for __words__). And the same exception options apply if the address is
-not naturally aligned.
+For RV64, `SSAMOSWAP.W` atomically loads a 32-bit data value from address of a
+shadow stack location in `rs1`, sign-extends the loaded value and puts it in
+`rd`, and stores the lower 32 bits of the value held in `rs2` to the original
+address in `rs1`.
 
-Just as for AMOs in the A extension, the `SSAMOSWAP` optionally provides release
-consistency semantics, using the `aq` and `rl` bits, to help implement
+.`SSAMOSWAP.W` for RV64
+[listing]
+----
+  if privilege_mode != M && menvcfg.SSE == 0
+      raise illegal-instruction exception
+  if S-mode not implemented
+      raise illegal-instruction exception
+  else if privilege_mode == U && senvcfg.SSE == 0
+      raise illegal-instruction exception
+  else if privilege_mode == VS && henvcfg.SSE == 0
+      raise virtual instruction exception
+  else if privilege_mode == VU && senvcfg.SSE == 0
+      raise virtual instruction exception
+  else
+      temp[31:0] = mem[X(rs1)]
+      X(rd) = SignExtend(temp[31:0])
+      mem[X(rs1)] = X(rs2)[31:0]
+  endif
+----
+
+If the memory referenced by the `rs1` is not idempotent, then `SSAMOSWAP.W/D`
+cause a store/AMO access-fault exception.
+
+Just as for AMOs in the A extension, `SSAMOSWAP.W/D` require that the address
+held in `rs1` be naturally aligned to the size of the operand (i.e., eight-byte
+aligned for __doublewords__, and four-byte aligned for __words__). And the same
+exception options apply if the address is not naturally aligned.
+
+Just as for AMOs in the A extension, the `SSAMOSWAP.W/D` optionally provide
+release consistency semantics, using the `aq` and `rl` bits, to help implement
 multiprocessor synchronization. The memory operation performed by an
-`SSAMOSWAP`, has acquire semantics if `aq=1` and has release semantics if `rl=1`.
+`SSAMOSWAP.W/D`, has acquire semantics if `aq=1` and has release semantics if
+`rl=1`.
 
 <<<
 
@@ -725,14 +749,14 @@ follows:
 # a0 hold pointer to top of new shadow stack to switch to
 stack_switch:
    ssrdp ra
-   beqz ra, 2f                  # skip if Zicfiss not active
-   ssamoswap ra, x0,  (a0)      # ra=*[a0] and *[a0]=0
-   beq       ra, a0,  1f        # [a0] must be == [ra]
-   unimp                        # else crash
-1: addi      ra, ra,  XLEN/8    # pop the checkpoint
-   csrrw     ra, ssp, ra        # swap ssp: ra=ssp, ssp=ra
-   addi      ra, ra,  -(XLEN/8) # checkpoint = "old ssp - XLEN/8"
-   ssamoswap x0, ra,  (ra)      # Save checkpoint at "old ssp - XLEN/8" 
+   beqz ra, 2f                    # skip if Zicfiss not active
+   ssamoswap.d ra, x0,  (a0)      # ra=*[a0] and *[a0]=0
+   beq         ra, a0,  1f        # [a0] must be == [ra]
+   unimp                          # else crash
+1: addi        ra, ra,  XLEN/8    # pop the checkpoint
+   csrrw       ra, ssp, ra        # swap ssp: ra=ssp, ssp=ra
+   addi        ra, ra,  -(XLEN/8) # checkpoint = "old ssp - XLEN/8"
+   ssamoswap.d x0, ra,  (ra)      # Save checkpoint at "old ssp - XLEN/8" 
 2:
 ----
 
@@ -746,10 +770,10 @@ restore it prior to returning from the trap.
 
 When a new shadow stack is created by the supervisor, it needs to store a
 checkpoint at the highest address on that stack. This enables the shadow stack
-pointer to be switched using the process outlined in this note. The `SSAMOSWAP`
-instruction can be used to store this checkpoint. When the old value at the
-memory location operated on by `SSAMOSWAP` is not required, `rd` can be set to
-`x0`.
+pointer to be switched using the process outlined in this note. The
+`SSAMOSWAP.W/D` instruction can be used to store this checkpoint. When the old
+value at the memory location operated on by `SSAMOSWAP.W/D` is not required,
+`rd` can be set to `x0`.
 ====
 
 <<<
@@ -766,15 +790,15 @@ encoding `R=0`, `W=1`, and `X=0`, is defined to represent an SS page. When
 If `satp.MODE` (or `vsatp.MODE` when `V=1`) is set to `Bare` and the effective
 privilege mode is below M, shadow stack memory accesses are prohibited, and
 shadow stack instructions will raise a store/AMO access-fault exception. At
-privilege mode M, any memory access by an `SSAMOSWAP` instruction will result in
-a store/AMO access-fault exception.
+effective privilege mode M, any memory access by an `SSAMOSWAP.W/D` instruction
+will result in a store/AMO access-fault exception.
 
 Memory mapped as an SS page cannot be written to by instructions other than
-`SSAMOSWAP`, `SSPUSH`, and `C.SSPUSH`. Attempts will raise a store/AMO page-fault
-exception. Implicit accesses, including instruction fetches to an SS page, are
-not permitted. Such accesses will raise an access-fault exception appropriate
-to the access type. However, the shadow stack is readable by all instructions
-that only load from memory.
+`SSAMOSWAP.W/D`, `SSPUSH`, and `C.SSPUSH`. Attempts will raise a store/AMO
+page-fault exception. Implicit accesses, including instruction fetches to an SS
+page, are not permitted. Such accesses will raise an access-fault exception
+appropriate to the access type. However, the shadow stack is readable by all
+instructions that only load from memory.
 
 [NOTE]
 ====
