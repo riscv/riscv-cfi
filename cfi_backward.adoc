@@ -710,19 +710,18 @@ address in `rs1`.
   endif
 ----
 
-If the memory referenced by the `rs1` is not idempotent, then `SSAMOSWAP.W/D`
-cause a store/AMO access-fault exception.
+If the memory referenced by `rs1` is not idempotent, then `SSAMOSWAP.W/D`
+causes a store/AMO access-fault exception.
 
-Just as for AMOs in the A extension, `SSAMOSWAP.W/D` require that the address
+Just as for AMOs in the A extension, `SSAMOSWAP.W/D` requires that the address
 held in `rs1` be naturally aligned to the size of the operand (i.e., eight-byte
-aligned for __doublewords__, and four-byte aligned for __words__). And the same
+aligned for __doublewords__, and four-byte aligned for __words__). The same
 exception options apply if the address is not naturally aligned.
 
-Just as for AMOs in the A extension, the `SSAMOSWAP.W/D` optionally provide
+Just as for AMOs in the A extension, `SSAMOSWAP.W/D` optionally provides
 release consistency semantics, using the `aq` and `rl` bits, to help implement
-multiprocessor synchronization. The memory operation performed by an
-`SSAMOSWAP.W/D`, has acquire semantics if `aq=1` and has release semantics if
-`rl=1`.
+multiprocessor synchronization. An `SSAMOSWAP.W/D` operation has acquire
+semantics if `aq=1` and release semantics if `rl=1`.
 
 <<<
 
