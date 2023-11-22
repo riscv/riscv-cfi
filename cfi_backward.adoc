@@ -8,8 +8,8 @@ shadow copy of the return address in the link register if it needs to be
 spilled.
 
 The shadow stack is designed to provide integrity to control transfers performed
-using a _return_ (where the return may be from a procedure invoked using an
-indirect call or a direct call), and this is referred to as backward-edge
+using a _return_, where the return may be from a procedure invoked using an
+indirect call or a direct call, and this is referred to as backward-edge
 protection.
 
 A program using backward-edge control-flow integrity has two stacks: a regular
@@ -18,10 +18,11 @@ if required, by non-leaf functions. An additional register, shadow-stack-pointer
 (`ssp`), is introduced in the architecture to hold the address of the top of the
 active shadow stack.
 
-The shadow stack, similar to the regular stack, grows downwards, i.e., from
+The shadow stack, similar to the regular stack, grows downwards, from
 higher addresses to lower addresses. Each entry on the shadow stack is `XLEN`
 wide and holds the link register value. The `ssp` points to the top of the
-shadow stack, i.e., address of the last element stored on the shadow stack.
+shadow stack, which is the address of the last element stored on the shadow
+stack.
 
 The shadow stack is architecturally protected from inadvertent corruptions and
 modifications, as detailed later (See <<SSMP>>).
@@ -31,8 +32,8 @@ to/from the shadow stack and to check the integrity of the return address. The
 extension provides instructions to support common stack maintenance operations
 such as stack unwinding and stack switching.
 
-When Zicfiss is enabled, each function that needs to spill the link register
-(e.g., non-leaf functions) stores the link register value to the regular stack
+When Zicfiss is enabled, each functions that needs to spill the link register,
+typically non-leaf functions, store the link register value to the regular stack
 and a shadow copy of the link register value to the shadow stack when the
 function is entered (the prologue). When such a function returns (the
 epilogue), the function loads the link register from the regular stack and
@@ -42,9 +43,9 @@ the shadow stack are compared. A mismatch of the two values is indicative of a
 subversion of the return address control variable and causes a software-check
 exception.
 
-The Zicfiss instructions are encoded using a subset of "May be op" instructions
-defined by the Zimop and Zcmop extensions cite:[ZIMOP]. This subset of
-instructions revert to their Zimop/Zcmop defined behavior when the Zicfiss
+The Zicfiss instructions are encoded using a subset of May-Be-Operation
+instructions defined by the Zimop and Zcmop extensions cite:[ZIMOP]. This subset
+of instructions revert to their Zimop/Zcmop defined behavior when the Zicfiss
 extension is not implemented or if the extension has not been activated. A
 program that is built with Zicfiss instructions can thus continue to operate
 correctly, but without backward-edge control-flow integrity, on processors that
@@ -72,14 +73,11 @@ system or the administrator) configuration, could either deny the request or
 deactivate the Zicfiss extension for the application. It is strongly recommended
 that the policy enforces a strict security posture and denies the request.
 
-When the Zicfiss extension is not active or not implemented, the Zicfiss
-instructions revert to their Zimop/Zcmop defined behavior. This allows a
-program compiled with Zicfiss instructions to operate correctly but without
-backward-edge control-flow integrity.
-
 The Zicfiss extension has dependencies on the following extensions: Zicsr,
 Zimop, and Zcmop. Additionally, use of Zicfiss in U-mode requires S-mode to be
 implemented. Use of Zicfiss in M-mode is not supported.
+
+<<<
 
 === Zicfiss Instructions Summary
 
@@ -157,7 +155,7 @@ This section specifies the CSR state of the Zicfiss extensions.
 ....
 
 The Zicfiss extension adds the `SSE` field (bit 3) to `menvcfg`. When the `SSE`
-field is set to 1 the Zicfiss extension is enabled in S-mode.
+field is set to 1 the Zicfiss extension is activated in S-mode.
 
 When `SSE` field is 0, the following rules apply to privilege modes that are
 less than M:
@@ -293,8 +291,8 @@ Zimop/Zcmop-defined behavior.
 
 On processors that do not support Zimop/Zcmop extensions, all Zimop/Zcmop code
 points including those used for Zicfiss instructions may cause an
-illegal-instruction exception. Execution of programs that use these
-instructions on such machines is not supported.
+illegal-instruction exception. Execution of programs that use these instructions
+on such machines is not supported.
 
 Activating Zicfiss in M-mode is currently not supported. Additionally, when
 S-mode is not implemented, activation in U-mode is also not supported. These
@@ -365,6 +363,8 @@ endif
 The `ssp` is decremented by `SSPUSH` and `C.SSPUSH` only if the store to the
 shadow stack completes successfully.
 
+<<<
+
 [[SS_POP]]
 === Pop from the shadow stack
 
@@ -397,19 +397,19 @@ current top of the shadow stack followed by an increment of the `ssp` by
 ....
 
 Only `x1` and `x5` registers are supported as `rs1` for `SSPOPCHK`. Zicfiss
-provides a 16-bit version of the `SSPOPCHK x5` using Zcmop define `C.MOP.5`
+provides a 16-bit version of the `SSPOPCHK x5` using the Zcmop defined `C.MOP.5`
 encoding. The `C.SSPOPCHK x5` expands to `SSPOPCHK x5`.
 
 Programs with a shadow stack push the return address onto the regular stack as
-well as the shadow stack in the function prologue of non-leaf functions. Such
-programs when returning from the non-leaf function pop the link register from
-the regular stack and pop a shadow copy of the link register from the shadow
-stack. The two values are then compared. If the values do not match it is
-indicative of a corruption of the return address variable on the regular stack.
+well as the shadow stack in the prologue of non-leaf functions. When returning
+from these non-leaf functions, such programs pop the link register from the
+regular stack and pop a shadow copy of the link register from the shadow stack.
+The two values are then compared. If the values do not match, it is indicative
+of a corruption of the return address variable on the regular stack.
 
-The `SSPOPCHK` instruction and its compressed form `C.SSPOPCHK` can be used to
+The `SSPOPCHK` instruction, and its compressed form `C.SSPOPCHK`, can be used to
 pop the shadow return address value from the shadow stack and check that the
-value matches the contents of the link register and if not cause a
+value matches the contents of the link register, and if not cause a
 software-check exception with `__x__tval` set to "shadow stack fault (code=3)".
 
 While any register may be used as link register, conventionally the `x1` or `x5`
@@ -449,10 +449,10 @@ that uses shadow stacks is as follows:
 ----
     function_entry:
         addi sp,sp,-8  # push link register x1
-        sd x1,(sp)     # on data stack
+        sd x1,(sp)     # on regular stack
         sspush x1      # push link register x1 on shadow stack
          :
-        ld x1,(sp)     # pop link register x1 from data stack
+        ld x1,(sp)     # pop link register x1 from regular stack
         addi sp,sp,8
         sspopchk x1    # fault if x1 not equal to shadow return address
         ret
@@ -461,7 +461,7 @@ that uses shadow stacks is as follows:
 This example illustrate the use of `x1` register as the link register.
 Alternatively, the `x5` register may also be used as the link register.
 
-A leaf function (i.e., a function that does not itself make function calls) does
+A leaf function, a function that does not itself make function calls, does
 not need to spill the link register and the return value may be held in the link
 register itself for the duration of the leaf functions execution.
 ====
@@ -541,10 +541,10 @@ jump to the return address.
 ----
     function_entry:
         c.addi sp,sp,-8  # push link register x1
-        c.sd x1,(sp)     # on data stack
+        c.sd x1,(sp)     # on regular stack
         c.sspush x1      # push link register x1 on shadow stack
          :
-        c.ld x5,(sp)     # pop link register x5 from data stack
+        c.ld x5,(sp)     # pop link register x5 from regular stack
         c.addi sp,sp,8
         c.sspopchk x5    # fault if x5 not equal to shadow return address
         c.jr x5
@@ -627,13 +627,14 @@ like `setjmp`/`longjmp`, C++ exception handling, etc. A program that uses shadow
 stacks must unwind the shadow stack in addition to the stack used to store data.
 The unwind function must verify that it does not accidentally unwind past the
 bounds of the shadow stack. Shadow stacks are expected to be bounded on each end
-using guard pages, i.e. pages that do not have a shadow stack attribute. To
-detect if the unwind occurs past the bounds of the shadow stack, the unwind may
-be done in maximal increments of 4 KiB, testing whether the `ssp` is still
-pointing to a shadow stack page or has unwound into the guard page. The
-following examples illustrate the use of shadow stack instructions to
-unwind a shadow stack. This example assumes that the `setjmp` function itself does
-not push on to the shadow stack (being a leaf function, it is not required to).
+using guard pages. A guard page for a stack is a page that is not accessible by
+the process that owns the stack. To detect if the unwind occurs past the bounds
+of the shadow stack, the unwind may be done in maximal increments of 4 KiB,
+testing whether the `ssp` is still pointing to a shadow stack page or has
+unwound into the guard page. The following examples illustrate the use of shadow
+stack instructions to unwind a shadow stack. This example assumes that the
+`setjmp` function itself does not push on to the shadow stack (being a leaf
+function, it is not required to).
 
 [listing]
 setjmp() {
@@ -767,8 +768,13 @@ switch the shadow stack pointer. If the pointer to the top of the deactivated
 shadow stack is held in a context data structure, then it  may be susceptible to
 memory corruption vulnerabilities. To protect the pointer value, the program may
 store it at the top of the deactivated shadow stack itself and thereby create a
-checkpoint.
+checkpoint. A legal checkpoint is defined as one that holds a value of `X`,
+where `X` is the address at which the checkpoint is positioned on the shadow
+stack.
+====
 
+[NOTE]
+====
 An example sequence to restore the shadow stack pointer from the new shadow
 stack and save the old shadow stack pointer on the old shadow stack is as
 follows:
@@ -789,10 +795,7 @@ stack_switch:
 2:
 ----
 
-A legal checkpoint is defined as one that holds a value of `X`, where `X` is the
-address at which the checkpoint is positioned on the shadow stack.
-
-The sequence uses the `ra` register. If the privilege mode at which this
+This sequence uses the `ra` register. If the privilege mode at which this
 sequence is executed can be interrupted then the trap handler should save the
 `ra` on the shadow stack itself, where it is guarded against tampering and
 restore it prior to returning from the trap.
@@ -921,4 +924,3 @@ instructions to be idempotent. The PMP checks are extended to require read-write
 permission for memory accessed by shadow stack instructions. If the PMP does not
 provide read-write permissions or if the accessed memory is not idempotent then
 a store/AMO access-fault exception is raised.
-
