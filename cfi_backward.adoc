@@ -77,9 +77,9 @@ instructions revert to their Zimop/Zcmop defined behavior. This allows a
 program compiled with Zicfiss instructions to operate correctly but without
 backward-edge control-flow integrity.
 
-The Zicfiss extension has dependencies on the following extensions: A, Zicsr,
+The Zicfiss extension has dependencies on the following extensions: Zicsr,
 Zimop, and Zcmop. Additionally, use of Zicfiss in U-mode requires S-mode to be
-implemented.
+implemented. Use of Zicfiss in M-mode is not supported.
 
 === Zicfiss Instructions Summary
 
@@ -103,6 +103,33 @@ When a `MOP.RR.7` or `MOP.R.28` encoding is not utilized by the Zicfiss
 extension, the instruction adheres to its Zimop-defined behavior, unless it is
 employed by another extension. In such cases, the instruction follows the
 behavior specified by that other extension.
+
+If a shadow stack (SS) instruction raises an access-fault, page-fault, or
+guest-page-fault exception that is supposed to indicate the original instruction
+type (load or store/AMO), then the reported exception cause is respectively a
+store/AMO access fault (code 7), a store/AMO page fault (code 15), or a
+store/AMO guest-page fault (code 23). For shadow stack instructions, the
+reported instruction type is always as though it were a store or AMO, even for
+instructions `SSPOPCHK` and `C.SSPOPCHK` that only read from memory and do not
+write to it.
+
+[NOTE]
+====
+When Zicfiss is implemented, the existing "store/AMO" exceptions can be thought
+of as "store/AMO/SS" exceptions, indicating that the trapping instruction is
+either a store, an AMO, or a shadow stack instruction.
+====
+
+[NOTE]
+====
+The H (hypervisor) extension specifies that when a guest-page fault is caused by
+an implicit memory access of VS-stage address translation, the reported
+exception is either a load or store/AMO guest-page fault based not on the
+original instruction type but rather on whether the memory access attempted for
+VS-stage translation was a read or a write of memory. VS-stage address
+translation can thus cause a shadow stack instruction to raise a load
+guest-page-fault exception.
+====
 
 <<<
 
@@ -725,6 +752,9 @@ release consistency semantics, using the `aq` and `rl` bits, to help implement
 multiprocessor synchronization. An `SSAMOSWAP.W/D` operation has acquire
 semantics if `aq=1` and release semantics if `rl=1`.
 
+The `SSAMOSWAP.W/D` instructions require the PMA of the accessed memory range to
+provide AMOSwap level support.
+
 [NOTE]
 ====
 Stack switching is a common operation in user programs as well as supervisor
@@ -781,16 +811,16 @@ value at the memory location operated on by `SSAMOSWAP.W/D` is not required,
 === Shadow Stack Memory Protection
 
 To protect shadow stack memory, the memory is associated with a new page type –
-the Shadow Stack (SS) page – in the single- and first-stage page tables. The
+the Shadow Stack (SS) page – in the single-stage and VS-stage page tables. The
 encoding `R=0`, `W=1`, and `X=0`, is defined to represent an SS page. When
 `menvcfg.SSE=0`, this encoding remains reserved. Similarly, when `V=1` and
 `henvcfg.SSE=0`, this encoding remains reserved at `VS` and `VU` levels.
 
 If `satp.MODE` (or `vsatp.MODE` when `V=1`) is set to `Bare` and the effective
 privilege mode is below M, shadow stack memory accesses are prohibited, and
-shadow stack instructions will raise a store/AMO access-fault exception. At
-effective privilege mode M, any memory access by an `SSAMOSWAP.W/D` instruction
-will result in a store/AMO access-fault exception.
+shadow stack instructions will raise a store/AMO access-fault exception. When
+the effective privilege mode is M, any memory access by an `SSAMOSWAP.W/D`
+instruction will result in a store/AMO access-fault exception.
 
 Memory mapped as an SS page cannot be written to by instructions other than
 `SSAMOSWAP.W/D`, `SSPUSH`, and `C.SSPUSH`. Attempts will raise a store/AMO
