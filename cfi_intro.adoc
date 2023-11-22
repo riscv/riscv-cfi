@@ -2,16 +2,15 @@
 == Introduction
 
 Control-flow Integrity (CFI) capabilities help defend against Return-Oriented
-Programming (ROP) and the Zicfilp extension provides CFI capabilities to defend
-against Call/Jump-Oriented Programming (COP/JOP) style control-flow subversion
-attacks. These attack methodologies use code sequences in authorized modules,
-with at least one instruction in the sequence being a control transfer
-instruction that depends on attacker-controlled data either in the return stack
-or in memory used to obtain the target address for a call or jump. Attackers
-stitch these sequences together by diverting the control flow instructions
-(e.g., `JALR`, `C.JR`, `C.JALR`), from their original target address to a new
-target via modification in the return stack or in the memory used to obtain the
-jump/call target address.
+Programming (ROP) and Call/Jump-Oriented Programming (COP/JOP) style
+control-flow subversion attacks. These attack methodologies use code sequences
+in authorized modules, with at least one instruction in the sequence being a
+control transfer instruction that depends on attacker-controlled data either in
+the return stack or in memory used to obtain the target address for a call or
+jump. Attackers stitch these sequences together by diverting the control flow
+instructions (e.g., `JALR`, `C.JR`, `C.JALR`), from their original target
+address to a new target via modification in the return stack or in the memory
+used to obtain the jump/call target address.
 
 RV32/RV64 provide two types of control transfer instructions - unconditional
 jumps and conditional branches. Conditional branches encode an offset in the
