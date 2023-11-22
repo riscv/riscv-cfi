@@ -355,6 +355,8 @@ fields that hold the previous `ELP`, and are updated as specified in
 ], config:{lanes: 4, hspace:1024}}
 ....
 
+<<<
+
 Access to the `SPELP` field introduced by Zicfilp accesses the homonymous
 fields of `mstatus` when `V=0` and the homonymous fields of `vsstatus`
 when `V=1`.
@@ -420,6 +422,8 @@ apply to M-mode.
 * The hart does not update the expected landing pad (`ELP`) state and the `ELP`
   state remains `NO_LP_EXPECTED`.
 * The `LPAD` instruction operates as a no-op.
+
+<<<
 
 ==== Debug Control and Status (`dcsr`)
 
@@ -493,6 +497,8 @@ Programs compiled with the `LPAD` instruction continue to function correctly,
 but without forward-edge CFI protection, when the Zicfilp extension is not
 implemented or is not enabled.
 ====
+
+<<<
 
 [[LP_INST]]
 === Landing pad instruction
