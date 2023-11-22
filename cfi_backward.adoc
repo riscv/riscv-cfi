@@ -81,6 +81,8 @@ The Zicfiss extension has dependencies on the following extensions: Zicsr,
 Zimop, and Zcmop. Additionally, use of Zicfiss in U-mode requires S-mode to be
 implemented. Use of Zicfiss in M-mode is not supported.
 
+<<<
+
 === Zicfiss Instructions Summary
 
 The Zicfiss extension introduces the following instructions:
@@ -364,6 +366,8 @@ endif
 
 The `ssp` is decremented by `SSPUSH` and `C.SSPUSH` only if the store to the
 shadow stack completes successfully.
+
+<<<
 
 [[SS_POP]]
 === Pop from the shadow stack
@@ -767,8 +771,13 @@ switch the shadow stack pointer. If the pointer to the top of the deactivated
 shadow stack is held in a context data structure, then it  may be susceptible to
 memory corruption vulnerabilities. To protect the pointer value, the program may
 store it at the top of the deactivated shadow stack itself and thereby create a
-checkpoint.
+checkpoint. A legal checkpoint is defined as one that holds a value of `X`,
+where `X` is the address at which the checkpoint is positioned on the shadow
+stack.
+====
 
+[NOTE]
+====
 An example sequence to restore the shadow stack pointer from the new shadow
 stack and save the old shadow stack pointer on the old shadow stack is as
 follows:
@@ -789,10 +798,7 @@ stack_switch:
 2:
 ----
 
-A legal checkpoint is defined as one that holds a value of `X`, where `X` is the
-address at which the checkpoint is positioned on the shadow stack.
-
-The sequence uses the `ra` register. If the privilege mode at which this
+This sequence uses the `ra` register. If the privilege mode at which this
 sequence is executed can be interrupted then the trap handler should save the
 `ra` on the shadow stack itself, where it is guarded against tampering and
 restore it prior to returning from the trap.
