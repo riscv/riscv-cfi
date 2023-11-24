@@ -360,7 +360,7 @@ Access to the `SPELP` field introduced by Zicfilp accesses the homonymous
 fields of `mstatus` when `V=0` and the homonymous fields of `vsstatus`
 when `V=1`.
 
-==== Virtual supervisor status registers (`vsstatus`)
+==== Virtual Supervisor Status Register (`vsstatus`)
 
 .Virtual supervisor status register (`vsstatus`) when `VSXLEN=64`
 [wavedrom, ,svg]
