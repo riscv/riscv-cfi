@@ -250,6 +250,8 @@ following rules apply to VU/U-mode:
 * The hart does not update the `ELP` state; it remains as `NO_LP_EXPECTED`.
 * The `LPAD` instruction operates as a no-op.
 
+<<<
+
 ==== Hypervisor environment configuration register (`henvcfg`)
 
 .Hypervisor environment configuration register (`henvcfg`)
@@ -324,8 +326,6 @@ fields that hold the previous `ELP`, and are updated as specified in
 
 * 0 - `NO_LP_EXPECTED` - no landing pad instruction expected.
 * 1 - `LP_EXPECTED` - a landing pad instruction is expected.
-
-<<<
 
 ==== Supervisor status registers (`sstatus`)
 
@@ -420,8 +420,6 @@ apply to M-mode.
 
 * The hart does not update the `ELP` state; it remains as `NO_LP_EXPECTED`.
 * The `LPAD` instruction operates as a no-op.
-
-<<<
 
 ==== Debug Control and Status (`dcsr`)
 
