@@ -413,7 +413,7 @@ The `SPELP` field is encoded as follows:
   {bits:  1, name: 'SSEED'},
   {bits:  1, name: 'MLPE'},
   {bits: 53, name: 'WPRI'},
-], config:{lanes: 4, hspace:1024}}
+], config:{lanes: 2, hspace:1024}}
 ....
 
 The Zicfilp extension introduces the `MLPE` (bit 10) field in `mseccfg`. When
