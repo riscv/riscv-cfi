@@ -83,7 +83,7 @@ for each privilege mode.
 
 The Zicfilp extension depends on the Zicsr extension.
 
-=== Landing pad enforceement
+=== Landing pad enforcement
 
 To enforce that the target of an indirect call or indirect jump must be a valid
 landing pad instruction, the hart maintains an expected landing pad (`ELP`) state
