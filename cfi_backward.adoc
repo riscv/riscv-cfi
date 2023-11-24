@@ -135,7 +135,7 @@ guest-page-fault exception.
 
 This section specifies the CSR state of the Zicfiss extensions.
 
-==== Machine environment configuration register (`menvcfg`)
+==== Machine Environment Configuration Register (`menvcfg`)
 
 .Machine environment configuration register (`menvcfg`)
 [wavedrom, ,svg]
@@ -165,7 +165,7 @@ less than M:
 * The `pte.xwr=010b` encoding in VS/S-stage page tables becomes reserved.
 * The `henvcfg.SSE` and `senvcfg.SSE` fields will read as zero and are read-only.
 
-==== Supervisor environment configuration register (`senvcfg`)
+==== Supervisor Environment Configuration Register (`senvcfg`)
 
 .Supervisor environment configuration register (`senvcfg`)
 [wavedrom, ,svg]
@@ -191,7 +191,7 @@ the following rules apply:
 
 <<<
 
-==== Hypervisor environment configuration register (`henvcfg`)
+==== Hypervisor Environment Configuration Register (`henvcfg`)
 
 .Hypervisor environment configuration register (`henvcfg`)
 [wavedrom, ,svg]
@@ -220,7 +220,7 @@ the following rules apply when `V=1`:
 * The `pte.xwr=010b` encoding in VS-stage page tables becomes reserved.
 * The `senvcfg.SSE` field will read as zero and is read-only.
 
-==== Shadow stack pointer (`ssp`)
+==== Shadow Stack Pointer (`ssp`)
 
 The `ssp` CSR is an unprivileged read-write (URW) CSR that reads and writes
 `XLEN` low order bits of the shadow stack pointer (`ssp`). The CSR address is
@@ -244,7 +244,7 @@ exception or a virtual instruction exception, contingent upon the state of the
 
 <<<
 
-=== Shadow-Stack-Enabled (SSE) state
+=== Shadow-Stack-Enabled (SSE) State
 
 The term `xSSE` is used to determine if backward-edge CFI using shadow stacks
 provided by the Zicfiss extension is enabled at a privilege mode.
@@ -302,7 +302,7 @@ functionalities may be introduced in a future standard extension.
 <<<
 
 [[SS_PUSH]]
-=== Push to shadow stack
+=== Push to Shadow Stack
 A shadow stack push operation is defined as decrement of the `ssp` by `XLEN/8`
 followed by a store of the value in the link register to memory at the new top
 of the shadow stack.
@@ -366,7 +366,7 @@ shadow stack completes successfully.
 <<<
 
 [[SS_POP]]
-=== Pop from the shadow stack
+=== Pop from the Shadow Stack
 
 A shadow stack pop operation is defined as an `XLEN` wide read from the
 current top of the shadow stack followed by an increment of the `ssp` by
@@ -566,7 +566,7 @@ and thus may be used to transiently forward the data from such stores to
 ====
 
 [[SSP_READ]]
-=== Read `ssp` into a register
+=== Read `ssp` into a Register
 
 The `SSRDP` instruction is provided to move the contents of `ssp` to a destination
 register.
@@ -672,7 +672,7 @@ back_cfi_not_active:
 <<<
 
 [[SSAMOSWAP]]
-=== Atomic Swap from a shadow stack location
+=== Atomic Swap from a Shadow Stack Location
 
 [wavedrom, , ]
 ....

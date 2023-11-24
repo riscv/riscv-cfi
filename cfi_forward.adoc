@@ -1,5 +1,5 @@
 [[forward]]
-== Landing pad (Zicfilp)
+== Landing Pad (Zicfilp)
 
 To enforce forward-edge control-flow integrity, the Zicfilp extension introduces
 a landing pad (`LPAD`) instruction. The `LPAD` instruction must be placed at the
@@ -83,7 +83,7 @@ for each privilege mode.
 
 The Zicfilp extension depends on the Zicsr extension.
 
-=== Landing pad enforcement
+=== Landing Pad Enforcement
 
 To enforce that the target of an indirect call or indirect jump must be a valid
 landing pad instruction, the hart maintains an expected landing pad (`ELP`) state
@@ -191,7 +191,7 @@ the accidental landing pad.
 
 This section specifies the CSR state of the Zicfilp extension.
 
-==== Machine environment configuration register (`menvcfg`)
+==== Machine Environment Configuration Register (`menvcfg`)
 
 .Machine environment configuration register (`menvcfg`)
 [wavedrom, ,svg]
@@ -225,7 +225,7 @@ following rules apply to S-mode:
 If the `LPE` field is 0 and S-mode is not implemented, these rules apply to
 U-mode.
 
-==== Supervisor environment configuration register (`senvcfg`)
+==== Supervisor Environment Configuration Register (`senvcfg`)
 
 .Supervisor environment configuration register (`senvcfg`)
 [wavedrom, ,svg]
@@ -252,7 +252,7 @@ following rules apply to VU/U-mode:
 
 <<<
 
-==== Hypervisor environment configuration register (`henvcfg`)
+==== Hypervisor Environment Configuration Register (`henvcfg`)
 
 .Hypervisor environment configuration register (`henvcfg`)
 [wavedrom, ,svg]
@@ -280,7 +280,7 @@ rules apply to VS-mode:
 * The hart does not update the `ELP` state; it remains as `NO_LP_EXPECTED`.
 * The `LPAD` instruction operates as a no-op.
 
-==== Machine status registers (`mstatus`)
+==== Machine Status Register (`mstatus`)
 
 .Machine-mode status register (`mstatus`) for RV64
 [wavedrom, ,svg]
@@ -327,7 +327,7 @@ fields that hold the previous `ELP`, and are updated as specified in
 * 0 - `NO_LP_EXPECTED` - no landing pad instruction expected.
 * 1 - `LP_EXPECTED` - a landing pad instruction is expected.
 
-==== Supervisor status registers (`sstatus`)
+==== Supervisor Status Register (`sstatus`)
 
 .Supervisor-mode status register (`sstatus`) when `SXLEN=64`
 [wavedrom, ,svg]
@@ -396,7 +396,7 @@ The `SPELP` field is encoded as follows:
 * 0 - `NO_LP_EXPECTED` - no landing pad instruction expected.
 * 1 - `LP_EXPECTED` - a landing pad instruction is expected.
 
-==== Machine Security Configuration (`mseccfg`)
+==== Machine Security Configuration Register (`mseccfg`)
 
 .Machine security configuration register (`mseccfg`) when `MXLEN=64`
 [wavedrom, ,svg]
@@ -423,7 +423,7 @@ apply to M-mode.
 
 <<<
 
-==== Debug Control and Status (`dcsr`)
+==== Debug Control and Status Register (`dcsr`)
 
 .Debug Control and Status (`dcsr`)
 [wavedrom, ,svg]
@@ -458,7 +458,7 @@ holds the previous `ELP`, and is updated as specified in <<FORWARD_TRAPS>>. The
 * 1 - `LP_EXPECTED` - a landing pad instruction is expected.
 
 [[FCIFIACT]]
-=== Landing-Pad-Enabled (LPE) state
+=== Landing-Pad-Enabled (LPE) State
 
 The term `xLPE` is used to determine if forward-edge CFI using landing pads
 provided by the Zicfilp extension is enabled at a privilege mode.
@@ -499,7 +499,7 @@ implemented or is not enabled.
 <<<
 
 [[LP_INST]]
-=== Landing pad instruction
+=== Landing Pad Instruction
 
 When Zicfilp is enabled, `LPAD` is the only instruction allowed to execute when
 the `ELP` state is `LP_EXPECTED`. If Zicfilp is not enabled then the instruction
@@ -546,7 +546,7 @@ endif
 <<<
 
 [[FORWARD_TRAPS]]
-=== Preserving expected landing pad state on traps
+=== Preserving Expected Landing Pad State on Traps
 
 A trap may need to be delivered to the same or to a higher privilege mode upon
 completion of `JALR`/`C.JALR`/`C.JR`, but before the instruction at the target
