@@ -421,6 +421,8 @@ apply to M-mode.
 * The hart does not update the `ELP` state; it remains as `NO_LP_EXPECTED`.
 * The `LPAD` instruction operates as a no-op.
 
+<<<
+
 ==== Debug Control and Status (`dcsr`)
 
 .Debug Control and Status (`dcsr`)
@@ -454,8 +456,6 @@ holds the previous `ELP`, and is updated as specified in <<FORWARD_TRAPS>>. The
 
 * 0 - `NO_LP_EXPECTED` - no landing pad instruction expected.
 * 1 - `LP_EXPECTED` - a landing pad instruction is expected.
-
-<<<
 
 [[FCIFIACT]]
 === Landing-Pad-Enabled (LPE) state
