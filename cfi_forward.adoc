@@ -328,6 +328,8 @@ fields that hold the previous `ELP`, and are updated as specified in
 * 0 - `NO_LP_EXPECTED` - no landing pad instruction expected.
 * 1 - `LP_EXPECTED` - a landing pad instruction is expected.
 
+<<<
+
 ==== Supervisor status registers (`sstatus`)
 
 .Supervisor-mode status register (`sstatus`) when `SXLEN=64`
@@ -356,8 +358,6 @@ fields that hold the previous `ELP`, and are updated as specified in
   {bits:  1, name: 'SD'},
 ], config:{lanes: 4, hspace:1024}}
 ....
-
-<<<
 
 Access to the `SPELP` field introduced by Zicfilp accesses the homonymous
 fields of `mstatus` when `V=0` and the homonymous fields of `vsstatus`
