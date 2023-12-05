@@ -12,7 +12,7 @@ instructions (e.g., `JALR`, `C.JR`, `C.JALR`), from their original target
 address to a new target via modification in the return stack or in the memory
 used to obtain the jump/call target address.
 
-RV32/RV64 provide two types of control transfer instructions - unconditional
+RV32/RV64 provides two types of control transfer instructions - unconditional
 jumps and conditional branches. Conditional branches encode an offset in the
 immediate field of the instruction and are thus direct branches that are not
 susceptible to control-flow subversion. Unconditional direct jumps using `JAL`
@@ -34,8 +34,8 @@ specifications cite:[UNPRIV].
 The RVC standard extension for compressed instructions provides unconditional
 jump and conditional branch instructions. The `C.J` and `C.JAL` instructions
 encode an offset in the immediate field of the instruction and thus are not
-susceptible to control-flow subversion. The `C.JR` and `C.JALR` RVC instruction
-performs an unconditional control transfer to the address in register `rs1`. The
+susceptible to control-flow subversion. The `C.JR` and `C.JALR` RVC instructions
+perform an unconditional control transfer to the address in register `rs1`. The
 `C.JALR` additionally writes the address of the instruction following the jump
 (`pc+2`) to the link register `x1` and is a procedure call. The `C.JR` is a
 return from procedure if `rs1` is a conventional link register (i.e. `x1` or
