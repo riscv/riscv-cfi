@@ -302,7 +302,7 @@ functionalities may be introduced in a future standard extension.
 <<<
 
 [[SS_PUSH]]
-=== Push to Shadow Stack
+=== Push to the Shadow Stack
 A shadow stack push operation is defined as decrement of the `ssp` by `XLEN/8`
 followed by a store of the value in the link register to memory at the new top
 of the shadow stack.
