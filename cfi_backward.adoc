@@ -515,7 +515,7 @@ if (xSSE == 1)
                                # cause an software-check exception
                                # if they are not bitwise equal.
                                # Only x1 and x5 may be used as src
-       Raise software-check exception
+       raise software-check exception
     else
        ssp = ssp + (XLEN/8)    # increment ssp by XLEN/8.
     endif
