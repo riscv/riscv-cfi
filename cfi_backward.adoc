@@ -679,7 +679,7 @@ back_cfi_not_active:
 [[SSAMOSWAP]]
 === Atomic Swap from a Shadow Stack Location
 
-[wavedrom, , ]
+[wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'AMO'},
