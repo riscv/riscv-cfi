@@ -7,4 +7,3 @@ The group can be joined by RISC-V members at:
 
 Mailing list archives are available at:
     https://lists.riscv.org/g/tech-ss-lp-cfi
-
