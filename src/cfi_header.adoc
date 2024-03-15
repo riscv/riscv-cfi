@@ -1,5 +1,5 @@
-[[header]]
-:description: RISC-V Shadow Stacks and Landing Pads
+= RISC-V Shadow Stacks and Landing Pads
+:description: RISC-V Shadow-stack and Landing-pads Task Group
 :company: RISC-V.org
 :revdate: 07/2023
 :revnumber: 0.1
@@ -9,15 +9,16 @@
 :preface-title: Preamble
 :colophon:
 :appendix-caption: Appendix
-:imagesdir: images
-:title-logo-image: image:risc-v_logo.svg[pdfwidth=3.25in,align=center]
+// https://docs.asciidoctor.org/asciidoc/latest/macros/images-directory/
+:imagesdir: ../docs-resources/images
+:title-logo-image: image:risc-v_logo.png["RISC-V International Logo",pdfwidth=3.25in,align=center]
 // Settings:
 :experimental:
 :reproducible:
-// needs to be changed? bug discussion started
 //:WaveDromEditorApp: app/wavedrom-editor.app
-:imagesoutdir: images
-:bibtex-file: sslpcfi.bib
+:imagesoutdir: build/images
+:srcdir: src
+:bibtex-file: {srcdir}/sslpcfi.bib
 :bibtex-order: occurrence
 :bibtex-style: ieee
 :icons: font
@@ -36,29 +37,26 @@ endif::[]
 :footnote:
 :xrefstyle: short
 
-= RISC-V Shadow Stacks and Landing Pads
-RISC-V Shadow-stack and Landing-pads Task Group
-
-// Preamble
 [WARNING]
 .This document is in the link:http://riscv.org/spec-state[Development state]
 ====
-Assume everything can change. This draft specification will change before 
-being accepted as standard, so implementations made to this draft 
+Assume everything can change. This draft specification will change before
+being accepted as standard, so implementations made to this draft
 specification will likely not conform to the future standard.
 ====
 
 [preface]
 == Copyright and license information
-This specification is licensed under the Creative Commons 
-Attribution 4.0 International License (CC-BY 4.0). The full 
+
+This specification is licensed under the Creative Commons
+Attribution 4.0 International License (CC-BY 4.0). The full
 license text is available at
 https://creativecommons.org/licenses/by/4.0/.
 
 Copyright 2022 by RISC-V International.
 
 [preface]
-include::cfi_contributors.adoc[]
+include::contributors.adoc[]
 
 include::cfi_intro.adoc[]
 include::cfi_backward.adoc[]
