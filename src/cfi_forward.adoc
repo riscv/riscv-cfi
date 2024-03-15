@@ -590,6 +590,13 @@ at the privilege level the hart was previously in, and the `ELP` is set to
 value `y`, then `ELP` is set to the value of `pelp` if `__y__LPE` is 1;
 otherwise, it is set to `NO_LP_EXPECTED`.
 
+When the Smrnmi extension is implemented, a `MNPELP` field (bit 9) is provided
+in the `mnstatus` CSR to hold the previous `ELP` state on a trap to the RNMI
+handler. When a RNMI trap is delivered, the `MNPELP` is set to `ELP` and `ELP`
+set to `NO_LP_EXPECTED`. Upon a `MNRET`, if the `mnstatus.MNPP` holds the value
+`y`, then `ELP` is set to the value of `MNPELP` if `yLPE` is 1; otherwise, it is
+set to `NO_LP_EXPECTED`.
+
 [NOTE]
 ====
 The trap handler in privilege mode `x` must save the `__x__PELP` bit and the
