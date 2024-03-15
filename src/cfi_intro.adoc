@@ -60,5 +60,3 @@ The Zicfiss and Zicfilp extensions build on these conventions and hints and
 provide backward-edge and forward-edge control flow integrity respectively. The
 Zicfilp extension is specified in <<forward>> and the Zicfiss extension is
 specified in <<backward>>.
-
-

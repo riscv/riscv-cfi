@@ -797,7 +797,7 @@ stack_switch:
 1: addi        ra, ra,  XLEN/8    # pop the checkpoint
    csrrw       ra, ssp, ra        # swap ssp: ra=ssp, ssp=ra
    addi        ra, ra,  -(XLEN/8) # checkpoint = "old ssp - XLEN/8"
-   ssamoswap.d x0, ra,  (ra)      # Save checkpoint at "old ssp - XLEN/8" 
+   ssamoswap.d x0, ra,  (ra)      # Save checkpoint at "old ssp - XLEN/8"
 2:
 ----
 
