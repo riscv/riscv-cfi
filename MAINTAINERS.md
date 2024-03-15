@@ -2,4 +2,5 @@
 
 This project is maintained by the following people:
 
-- Maintainer1
+- George Christou
+- Ved Shanbhogue
