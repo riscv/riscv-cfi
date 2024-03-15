@@ -1,7 +1,10 @@
 # Governance
 
-This project for the template specification is governed by the TBD
+This project is governed by the Priv and Unpriv IC.
 
-The group can be joined by RISC-V members at: TBD
+The group can be joined by RISC-V members at:
+    https://lists.riscv.org/g/tech-ss-lp-cfi
 
-Mailing list archives are available at: TBD
+Mailing list archives are available at:
+    https://lists.riscv.org/g/tech-ss-lp-cfi
+
