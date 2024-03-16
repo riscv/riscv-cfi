@@ -472,7 +472,7 @@ holds the previous `ELP`, and is updated as specified in <<FORWARD_TRAPS>>. The
   {bits:  1, name: 'WPRI'},
   {bits:  2, name: 'MNPP'},
   {bits: 51, name: 'WPRI'},
-], config:{lanes: 2, hspace:1024}}
+], config:{lanes: 4, hspace:1024}}
 ....
 
 The Zicfilp extension introduces the `MNPELP` (bit 9) in `mnstatus`. The
