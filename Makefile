@@ -13,7 +13,7 @@
 # the Doc Template for RISC-V Extensions.
 
 DOCS := \
-	cfi_header.adoc
+	riscv-cfi.adoc
 
 DATE ?= $(shell date +%Y-%m-%d)
 VERSION ?= v0.0.0
