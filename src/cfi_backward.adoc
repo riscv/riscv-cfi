@@ -100,9 +100,8 @@ The Zicfiss extension introduces the following instructions:
 
 Zicfiss does not use all encodings of `MOP.RR.7` or `MOP.R.28`. When a
 `MOP.RR.7` or `MOP.R.28` encoding is not utilized by the Zicfiss extension, the
-corresponding instruction adheres to its Zimop-defined behavior, unless it is
-employed by another extension. In such cases, the instruction follows the
-behavior specified by that other extension.
+corresponding instruction adheres to its Zimop-defined behavior, unless
+redefined by another extension.
 
 If a shadow stack (SS) instruction raises an access-fault, page-fault, or
 guest-page-fault exception that is supposed to indicate the original instruction
