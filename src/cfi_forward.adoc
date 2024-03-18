@@ -457,6 +457,33 @@ holds the previous `ELP`, and is updated as specified in <<FORWARD_TRAPS>>. The
 * 0 - `NO_LP_EXPECTED` - no landing pad instruction expected.
 * 1 - `LP_EXPECTED` - a landing pad instruction is expected.
 
+==== Resumable NMI Status Register (`mnstatus`)
+
+.Resumable NMI Status (`mnstatus`) when `MXLEN=64`
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  3, name: 'WPRI'},
+  {bits:  1, name: 'NMIE'},
+  {bits:  3, name: 'WPRI'},
+  {bits:  1, name: 'MNPV'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'MNPELP'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  2, name: 'MNPP'},
+  {bits: 51, name: 'WPRI'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+The Zicfilp extension introduces the `MNPELP` (bit 9) in `mnstatus`. The
+`MNPELP` field holds the previous `ELP`, and is updated as specified in
+<<FORWARD_TRAPS>>. The `MNPELP` field is encoded as follows:
+
+* 0 - `NO_LP_EXPECTED` - no landing pad instruction expected.
+* 1 - `LP_EXPECTED` - a landing pad instruction is expected.
+
+<<<
+
 [[FCIFIACT]]
 === Landing-Pad-Enabled (LPE) State
 
