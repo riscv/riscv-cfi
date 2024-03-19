@@ -99,7 +99,7 @@ The Zicfiss extension introduces the following instructions:
 ** `SSAMOSWAP.W` and `SSAMOSWAP.D`
 
 Zicfiss does not use all encodings of `MOP.RR.7` or `MOP.R.28`. When a
-`MOP.RR.7` or `MOP.R.28` encoding is not utilized by the Zicfiss extension, the
+`MOP.RR.7` or `MOP.R.28` encoding is not used by the Zicfiss extension, the
 corresponding instruction adheres to its Zimop-defined behavior, unless
 redefined by another extension.
 
