@@ -1,21 +1,19 @@
 = RISC-V Shadow Stacks and Landing Pads
 :description: RISC-V Shadow-stack and Landing-pads Task Group
 :company: RISC-V.org
-:revdate: 07/2023
-:revnumber: 0.1
-:revremark: This document is in development. Assume everything can change. See http://riscv.org/spec-state for details.
+:revdate: 03/2024
+:revnumber: 1.0
+:revremark: This document is in Frozen. See http://riscv.org/spec-state for details.
 :url-riscv: http://riscv.org
 :doctype: book
 :preface-title: Preamble
 :colophon:
 :appendix-caption: Appendix
-// https://docs.asciidoctor.org/asciidoc/latest/macros/images-directory/
 :imagesdir: ../docs-resources/images
 :title-logo-image: image:risc-v_logo.png["RISC-V International Logo",pdfwidth=3.25in,align=center]
 // Settings:
 :experimental:
 :reproducible:
-//:WaveDromEditorApp: app/wavedrom-editor.app
 :imagesoutdir: build/images
 :srcdir: src
 :bibtex-file: {srcdir}/sslpcfi.bib
@@ -38,11 +36,12 @@ endif::[]
 :xrefstyle: short
 
 [WARNING]
-.This document is in the link:http://riscv.org/spec-state[Development state]
+.This document is in the link:http://riscv.org/spec-state[Frozen state]
 ====
-Assume everything can change. This draft specification will change before
-being accepted as standard, so implementations made to this draft
-specification will likely not conform to the future standard.
+Change is extremely unlikely. A high threshold will be used, and a change will
+only occur because of some truly critical issue being identified during the
+public review cycle. Any other desired or needed changes can be the subject of a
+follow-on new extension.
 ====
 
 [preface]
@@ -53,13 +52,11 @@ Attribution 4.0 International License (CC-BY 4.0). The full
 license text is available at
 https://creativecommons.org/licenses/by/4.0/.
 
-Copyright 2022 by RISC-V International.
+Copyright 2022 - 2024 by RISC-V International.
 
 [preface]
 include::contributors.adoc[]
-
 include::cfi_intro.adoc[]
 include::cfi_backward.adoc[]
 include::cfi_forward.adoc[]
-//the index must precede the bibliography
 include::cfi_biblio.adoc[]
