@@ -558,8 +558,6 @@ jump to the return address.
 
 ====
 
-<<<
-
 [NOTE]
 ====
 Store-to-load forwarding is a common technique employed by high-performance
@@ -570,6 +568,8 @@ stack. However, such determination may be delayed till the PTE has been examined
 and thus may be used to transiently forward the data from such stores to
 `SSPOPCHK` or to `C.SSPOPCHK`.
 ====
+
+<<<
 
 [[SSP_READ]]
 === Read `ssp` into a Register
