@@ -28,7 +28,7 @@ convention that a `JAL`/`JALR` where `rd` (i.e. the link register) is `x1` or
 `x5` is a procedure call, and a `JALR` where `rs1` is the conventional
 link register (i.e. `x1` or `x5`) is a return from procedure. The architecture
 allows for using these hints and conventions to support return address
-prediction. The hints are specified in Table 2.1 of the Unprivileged ISA
+prediction. The hints are specified in Table 3 of the Unprivileged ISA
 specifications cite:[UNPRIV].
 
 The RVC standard extension for compressed instructions provides unconditional
