@@ -1,9 +1,9 @@
 = RISC-V Shadow Stacks and Landing Pads
 :description: RISC-V Shadow-stack and Landing-pads Task Group
 :company: RISC-V.org
-:revdate: 03/2024
+:revdate: 06/2024
 :revnumber: 1.0
-:revremark: This document is in Frozen. See http://riscv.org/spec-state for details.
+:revremark: This document is in Ratified. See http://riscv.org/spec-state for details.
 :url-riscv: http://riscv.org
 :doctype: book
 :preface-title: Preamble
@@ -36,12 +36,10 @@ endif::[]
 :xrefstyle: short
 
 [WARNING]
-.This document is in the link:http://riscv.org/spec-state[Frozen state]
+.This document is in the link:http://riscv.org/spec-state[Ratified state]
 ====
-Change is extremely unlikely. A high threshold will be used, and a change will
-only occur because of some truly critical issue being identified during the
-public review cycle. Any other desired or needed changes can be the subject of a
-follow-on new extension.
+No changes are allowed. Any desired or needed changes can be the subject of a
+follow-on new extension. Ratified extensions are never revised.
 ====
 
 [preface]
