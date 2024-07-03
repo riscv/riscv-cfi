@@ -15,7 +15,7 @@ on:
         type: choice
         options:
           - Draft
-          - Release
+          - Ratified
           - Stable
         default: Draft
       prerelease:
