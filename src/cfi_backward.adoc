@@ -153,8 +153,10 @@ less than M:
 * 32-bit Zicfiss instructions will revert to their behavior as defined by Zimop.
 * 16-bit Zicfiss instructions will revert to their behavior as defined by Zcmop.
 * The `pte.xwr=010b` encoding in VS/S-stage page tables becomes reserved.
-* The `henvcfg.SSE` and `senvcfg.SSE` fields will read as zero and are read-only.
 * `SSAMOSWAP.W/D` raises an illegal-instruction exception.
+
+When `menvcfg.SSE` is 0, `henvcfg.SSE` and `senvcfg.SSE` fields will are
+read-only zero.
 
 ==== Supervisor Environment Configuration Register (`senvcfg`)
 
