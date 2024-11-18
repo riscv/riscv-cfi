@@ -1,7 +1,8 @@
-= RISC-V CFI specification
+= -DEPRECATED- RISC-V CFI specification
 
-This specification is integrated into the Priv. and Unpriv. specifications. This repo is no
-longer maintained. Please refer to the Priv. and Unpriv. specifications at 
+[WARNING]
+*DEPRECATED:* This specification is integrated into the Priv. and Unpriv. specifications. This repo is no
+longer maintained. Please refer to the Priv. and Unpriv. specifications at
 https://github.com/riscv/riscv-isa-manual
 
 This document is capturing discussions at the Shadow Stacks and Landing Pads TG and attempts
