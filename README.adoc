@@ -1,7 +1,7 @@
-= -DEPRECATED- RISC-V CFI specification
+= -GIT REPO DEPRECATED- RISC-V CFI specification
 
 [WARNING]
-*DEPRECATED:* This specification is integrated into the Priv. and Unpriv. specifications. This repo is no
+*GIT REPO DEPRECATED:* This specification is integrated into the Priv. and Unpriv. specifications. This repo is no
 longer maintained. Please refer to the Priv. and Unpriv. specifications at
 https://github.com/riscv/riscv-isa-manual
 
